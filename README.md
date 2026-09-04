@@ -1,5 +1,6 @@
-```markdown
+
 # ShilpSaathi (शिल्पसाथी)
+
 > **Your Craft. Your Story. Your Market.**  
 > *AI-Powered Virtual Business Manager for Marginalized Artisans*
 
@@ -11,13 +12,13 @@
 
 ## 📌 Executive Summary
 
-India has millions of generational artisans producing world-class heritage handicrafts[cite: 1]. However, their ability to earn sustainable online livelihoods is obstructed by three critical non-financial barriers[cite: 1]:
+India has millions of generational artisans producing world-class heritage handicrafts. However, their ability to earn sustainable online livelihoods is obstructed by three critical non-financial barriers:
 
-1. **Visual Barrier:** Poor lighting, lack of studio equipment, and cluttered backgrounds yield photos unsuitable for modern e-commerce standards[cite: 1].
-2. **Language Barrier:** Artisans are fluent in regional dialects and speech, but lack the technical English literacy required to draft search-optimized, professional product listings[cite: 1].
-3. **Pricing Asymmetry:** Artisans have limited visibility into urban retail and online benchmark rates, resulting in underpricing relative to their hours and raw material costs[cite: 1].
+1. **Visual Barrier:** Poor lighting, lack of studio equipment, and cluttered backgrounds yield photos unsuitable for modern e-commerce standards.
+2. **Language Barrier:** Artisans are fluent in regional dialects and speech, but lack the technical English literacy required to draft search-optimized, professional product listings.
+3. **Pricing Asymmetry:** Artisans have limited visibility into urban retail and online benchmark rates, resulting in underpricing relative to their hours and raw material costs.
 
-**ShilpSaathi** solves this with a zero-typing, voice-and-visual-first Progressive Web Application (PWA)[cite: 1]. An artisan takes a photo, speaks naturally in Hindi or their native dialect, and receives an enhanced, bilingual (Hindi + English), market-ready digital product listing with heuristic fair-price recommendations[cite: 1].
+**ShilpSaathi** solves this with a zero-typing, voice-and-visual-first Progressive Web Application (PWA). An artisan takes a photo, speaks naturally in Hindi or their native dialect, and receives an enhanced, bilingual (Hindi + English), market-ready digital product listing with heuristic fair-price recommendations.
 
 ---
 
@@ -29,23 +30,11 @@ India has millions of generational artisans producing world-class heritage handi
 ```
 
 * **Step 1: Capture Product** — Simple camera access with zero complex settings.
-
-
 * **Step 2: AI Image Studio** — Background isolation, clutter removal, and studio lighting normalization.
-
-
 * **Step 3: Voice Cataloging** — Hands-free Hindi tap-to-speak input powered by BHASHINI.
-
-
 * **Step 4: AI Auto-Cataloger** — LLM-structured title, category, material, and bilingual descriptions.
-
-
 * **Step 5: Hybrid Pricing Engine** — Transparent price range recommendation based on material cost and craft complexity.
-
-
 * **Step 6: Review & Publish** — Full artisan override control before generating shareable digital cards.
-
-
 
 ---
 
@@ -55,39 +44,19 @@ The interface adopts a craft-inspired, earthy palette avoiding generic corporate
 
 | Role | Colour | Hex | Usage |
 | --- | --- | --- | --- |
-| **Primary** | Deep Terracotta | `#A44932` | Key buttons, active states, brand headers
-
- |
-| **Secondary** | Muted Mustard | `#D4A72C` | AI indicators, smart badges, highlights
-
- |
-| **Background** | Warm Ivory | `#FFF9F0` | Non-fatiguing base background canvas
-
- |
-| **Text** | Deep Charcoal | `#292524` | Primary high-contrast body typography
-
- |
-| **Success** | Natural Forest Green | `#3F7D58` | Confirmation badges, published cards
-
- |
+| **Primary** | Deep Terracotta | `#A44932` | Key buttons, active states, brand headers |
+| **Secondary** | Muted Mustard | `#D4A72C` | AI indicators, smart badges, highlights |
+| **Background** | Warm Ivory | `#FFF9F0` | Non-fatiguing base background canvas |
+| **Text** | Deep Charcoal | `#292524` | Primary high-contrast body typography |
+| **Success** | Natural Forest Green | `#3F7D58` | Confirmation badges, published cards |
 
 ### 5 Foundational UI Principles
 
 1. **One Primary Action Per Screen:** Prevents cognitive overload; user never guesses next steps.
-
-
 2. **Visual First:** Cards, clean product imagery, and recognizable icons over text paragraphs.
-
-
 3. **Progressive Disclosure:** Reveals only the input/information needed for the current step.
-
-
 4. **AI Transparency:** Clear, reassuring states (`"Enhancing your photo..."`) rather than opaque loading spinners.
-
-
 5. **Artisan Control:** AI never finalizes listings silently; all suggestions remain fully editable.
-
-
 
 ---
 
@@ -96,17 +65,9 @@ The interface adopts a craft-inspired, earthy palette avoiding generic corporate
 Judges and evaluators frequently ask why ShilpSaathi was structured as a PWA rather than a native `.apk` on Google Play:
 
 * **Zero App-Store Friction:** Artisans do not need Google Play accounts, Apple IDs, or multi-step app store downloads.
-
-
 * **Ultra-Lightweight Footprint:** Standard native e-commerce applications consume 60MB–150MB of storage. ShilpSaathi installs as a standalone PWA in under 2MB, making it practical for budget smartphones.
-
-
 * **Instant WhatsApp Distribution:** Self-Help Groups (SHGs) and Ministry field coordinators can distribute the app via an instant URL or QR code.
-
-
 * **Hardware Interoperability:** Grants direct access to the camera and microphone via web standards while remaining decoupled to wrap into React Native/Flutter for future native deployments.
-
-
 
 ---
 
@@ -114,19 +75,19 @@ Judges and evaluators frequently ask why ShilpSaathi was structured as a PWA rat
 
 ```text
                +-------------------------------------------+
-               |           Artisan Smartphone              |
-               |        (React + Tailwind PWA Shell)       |
+               |            Artisan Smartphone             |
+               |         (React + Tailwind PWA Shell)      |
                +---------------------+---------------------+
                                      |  HTTPS REST
                                      v
                +---------------------+---------------------+
-               |         Node.js / Express Backend         |
-               |  (Authentication, Validation, Pipelines)  |
+               |          Node.js / Express Backend        |
+               |   (Authentication, Validation, Pipelines) |
                +---+-----------------+-----------------+---+
                    |                 |                 |
                    v                 v                 v
            +---------------+ +---------------+ +---------------+
-           |   Image AI    | |   BHASHINI    | |  PostgreSQL   |
+           |   Image AI    | |   BHASHINI    | |   PostgreSQL  |
            | Pipeline      | |  + GenAI LLM  | |  (via Supabase|
            | (Sharp / BG)  | |  (Voice-Text) | |  DB & Storage)|
            +---------------+ +---------------+ +---------------+
@@ -134,23 +95,11 @@ Judges and evaluators frequently ask why ShilpSaathi was structured as a PWA rat
 ```
 
 * **Frontend:** React, Tailwind CSS (v3), Lucide Icons, Vite PWA Plugin.
-
-
 * **Backend:** Node.js, Express.js (REST APIs, server-side credential isolation).
-
-
 * **Database & Storage:** PostgreSQL via Supabase with binary asset storage.
-
-
 * **Multilingual AI:** Government-backed BHASHINI for Indian-language speech-to-text and translation.
-
-
 * **Generative Engine:** LLM pipeline structuring unstructured voice into standardized catalog entities.
-
-
 * **Pricing Engine:** Hybrid heuristic calculation (Raw Material Cost + Hours Worked × Craft Complexity Markup).
-
-
 
 ---
 
@@ -207,8 +156,8 @@ CREATE TABLE processing_logs (
 
 ### Prerequisites
 
-* Node.js (v18.x or v20.x recommended)
-* npm (v9.x or higher)
+* Node.js (`v18.x` or `v20.x` recommended)
+* npm (`v9.x` or higher)
 
 ### 1. Clone & Set Up Backend
 
@@ -252,39 +201,18 @@ npm run dev -- --host
 
 | Member | Domain | Key Responsibilities |
 | --- | --- | --- |
-| **Harshit** | Frontend & PWA | React screen flows, PWA service worker, camera/mic bindings, API consumption
-
- |
-| **Shakti** | Team Lead & Presentation | Pitch narrative, product vision, demo presentation, slides delivery
-
- |
-| **Somesh** | Backend & Database | Express APIs, Supabase PostgreSQL, file storage schemas, data validation
-
- |
-| **Shiva** | AI Integration | BHASHINI speech integration, LLM prompt engineering, background cleanup pipeline
-
- |
-| **Piyush** | QA & Content | Demo catalog sample data, Hindi/English terminology checks, test scenarios
-
- |
+| **Harshit** | Frontend & PWA | React screen flows, PWA service worker, camera/mic bindings, API consumption |
+| **Shakti** | Team Lead & Presentation | Pitch narrative, product vision, demo presentation, slides delivery |
+| **Somesh** | Backend & Database | Express APIs, Supabase PostgreSQL, file storage schemas, data validation |
+| **Shiva** | AI Integration | BHASHINI speech integration, LLM prompt engineering, background cleanup pipeline |
+| **Piyush** | QA & Content | Demo catalog sample data, Hindi/English terminology checks, test scenarios |
 
 ---
 
 ## 🗺 Roadmap
 
 * [x] **Phase 1 (MVP Sprint):** 9-screen linear PWA, camera integration, voice-to-bilingual catalog, heuristic pricing, shareable card.
-
-
 * [ ] **Phase 2:** Direct GeM (Government e-Marketplace) and ONDC (Open Network for Digital Commerce) API adapters for 1-click publishing.
-
-
 * [ ] **Phase 3:** Integration of trained ML pricing models utilizing historical regional handicraft sales data.
-
-
 * [ ] **Phase 4:** B2B direct artisan-to-exporter bulk discovery dashboard with logistics handoff.
 
-
-
-```
-
-```
