@@ -3,13 +3,13 @@ import { CheckCircle2 } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 
 export default function ReviewScreen() {
-  const { productData, nextStep } = useCraft();
+  const { productData, nextStep, t } = useCraft();
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-black">Verify Your Listing</h2>
-        <p className="text-xs text-stone-500">Full control: verify before sharing</p>
+        <h2 className="text-xl font-black">{t.verifyTitle}</h2>
+        <p className="text-xs text-stone-500">{t.verifySub}</p>
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-stone-200 space-y-3 text-xs shadow-sm">
@@ -33,7 +33,7 @@ export default function ReviewScreen() {
         onClick={nextStep} 
         className="w-full py-4 bg-forest text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg shadow-forest/25 hover:bg-[#326647]"
       >
-        <CheckCircle2 size={20} /> Publish Digital Listing
+        <CheckCircle2 size={20} /> {t.publishBtn}
       </button>
     </div>
   );

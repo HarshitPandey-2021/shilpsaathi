@@ -1,23 +1,27 @@
 import React from 'react';
-import { Home, Package, PlusCircle, User } from 'lucide-react';
+import { Home, Package, PlusCircle, Globe } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 
 export default function BottomNav() {
-  const { currentStep, goToStep } = useCraft();
+  const { currentStep, goToStep, setShowLangModal, t } = useCraft();
+  const catalogUnlocked = currentStep >= 9;
 
   return (
     <nav className="absolute bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-stone-200 flex items-center justify-around text-stone-400 z-10">
       <button onClick={() => goToStep(2)} className={`flex flex-col items-center ${currentStep === 2 ? 'text-terracotta font-bold' : ''}`}>
-        <Home size={20} /><span className="text-[10px] mt-0.5">Studio</span>
+        <Home size={20} /><span className="text-[10px] mt-0.5">{t.navStudio}</span>
       </button>
-      <button onClick={() => goToStep(8)} className="flex flex-col items-center">
-        <Package size={20} /><span className="text-[10px] mt-0.5">Catalog</span>
+      <button
+        onClick={() => catalogUnlocked && goToStep(9)}
+        className={`flex flex-col items-center ${catalogUnlocked ? '' : 'opacity-30 pointer-events-none'}`}
+      >
+        <Package size={20} /><span className="text-[10px] mt-0.5">{t.navCatalog}</span>
       </button>
       <button onClick={() => goToStep(3)} className={`flex flex-col items-center ${currentStep === 3 ? 'text-terracotta font-bold' : ''}`}>
-        <PlusCircle size={20} /><span className="text-[10px] mt-0.5">Add</span>
+        <PlusCircle size={20} /><span className="text-[10px] mt-0.5">{t.navAdd}</span>
       </button>
-      <button onClick={() => goToStep(1)} className="flex flex-col items-center">
-        <User size={20} /><span className="text-[10px] mt-0.5">Profile</span>
+      <button onClick={() => setShowLangModal(true)} className="flex flex-col items-center">
+        <Globe size={20} /><span className="text-[10px] mt-0.5">{t.navProfile}</span>
       </button>
     </nav>
   );

@@ -2,13 +2,13 @@ import React from 'react';
 import { useCraft } from '../context/CraftContext';
 
 export default function CatalogEditScreen() {
-  const { productData, updateProduct, nextStep } = useCraft();
+  const { productData, updateProduct, nextStep, t } = useCraft();
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-black">AI Auto-Catalog</h2>
-        <p className="text-xs text-stone-500">Extracted from speech via BHASHINI (Editable)</p>
+        <h2 className="text-xl font-black">{t.catalogTitle}</h2>
+        <p className="text-xs text-stone-500">{t.catalogSub}</p>
       </div>
 
       <div className="space-y-3 bg-white p-4 rounded-2xl border border-stone-200 text-xs shadow-sm">
@@ -29,7 +29,7 @@ export default function CatalogEditScreen() {
           />
         </div>
         <div>
-          <label className="text-stone-400 font-bold block mb-0.5">Hindi Description</label>
+          <label className="text-stone-400 font-bold block mb-0.5">Description (Native)</label>
           <textarea 
             className="w-full border rounded-lg p-2 outline-none leading-relaxed text-xs focus:border-terracotta" 
             rows="2" 
@@ -38,7 +38,7 @@ export default function CatalogEditScreen() {
           />
         </div>
         <div>
-          <label className="text-stone-400 font-bold block mb-0.5">English Catalog Translation</label>
+          <label className="text-stone-400 font-bold block mb-0.5">English Translation</label>
           <textarea 
             className="w-full border rounded-lg p-2 outline-none text-stone-700 leading-relaxed text-xs focus:border-terracotta" 
             rows="2" 
@@ -52,7 +52,7 @@ export default function CatalogEditScreen() {
         onClick={nextStep} 
         className="w-full py-4 bg-terracotta text-white rounded-2xl font-bold shadow-md hover:bg-[#8e3e29]"
       >
-        Calculate Fair Price
+        {t.calcPriceBtn}
       </button>
     </div>
   );
