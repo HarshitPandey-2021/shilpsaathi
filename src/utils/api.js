@@ -1,4 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    return `http://${window.location.hostname}:5000/api`;
+  }
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
 
 async function fetchJSON(url, options = {}) {
   const response = await fetch(url, {
@@ -68,11 +77,16 @@ export const api = {
 
   getProductListing: (id) => fetchJSON(`${API_BASE_URL}/products/${id}/listing`),
 
-  calculatePrice: (rawMaterialCost, hoursSpent) =>
-    fetchJSON(`${API_BASE_URL}/calculate-price`, {
+  calculatePrice: (optionsOrCost = 250, hours = 6) => {
+    const body = typeof optionsOrCost === 'object'
+      ? optionsOrCost
+      : { rawMaterialCost: optionsOrCost, hoursSpent: hours };
+
+    return fetchJSON(`${API_BASE_URL}/calculate-price`, {
       method: 'POST',
-      body: JSON.stringify({ rawMaterialCost, hoursSpent }),
-    }),
+      body: JSON.stringify(body),
+    });
+  },
 
   enhanceImage: (image) =>
     fetchJSON(`${API_BASE_URL}/enhance-image`, {
@@ -80,11 +94,34 @@ export const api = {
       body: JSON.stringify({ image }),
     }),
 
-  processVoice: (audioBlob) => {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
-    return fetchJSON(`${API_BASE_URL}/process-voice`, { method: 'POST', body: formData });
+  processVoice: ({ audioBlob = null, transcript = null, language = 'hi' } = {}) => {
+    if (audioBlob) {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      if (transcript) formData.append('transcript', transcript);
+      formData.append('language', language);
+      return fetchJSON(`${API_BASE_URL}/process-voice`, { method: 'POST', body: formData });
+    }
+
+    return fetchJSON(`${API_BASE_URL}/process-voice`, {
+      method: 'POST',
+      body: JSON.stringify({ transcript, language }),
+    });
   },
+
+  transcribe: (audioBlob, language = 'hi') => {
+    const formData = new FormData();
+    if (audioBlob) formData.append('audio', audioBlob, 'recording.webm');
+    formData.append('language', language);
+    return fetchJSON(`${API_BASE_URL}/products/preview/transcribe`, { method: 'POST', body: formData });
+  },
+
+  generateCatalog: (transcript, language = 'hi') =>
+    fetchJSON(`${API_BASE_URL}/products/preview/generate-catalog`, {
+      method: 'POST',
+      body: JSON.stringify({ transcript, language }),
+    }),
 };
 
 export { API_BASE_URL };
+
