@@ -5,7 +5,7 @@ export default function PricingScreen() {
   const { productData, updateProduct, nextStep, t } = useCraft();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-fade-in-up">
       <div>
         <h2 className="text-xl font-black">{t.priceTitle}</h2>
         <p className="text-xs text-stone-500">{t.priceSub}</p>

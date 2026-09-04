@@ -7,7 +7,7 @@ export default function ImageStudioScreen() {
   const [showOriginal, setShowOriginal] = useState(false);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black flex items-center gap-1.5">

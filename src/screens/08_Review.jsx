@@ -6,7 +6,7 @@ export default function ReviewScreen() {
   const { productData, nextStep, t } = useCraft();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in-up">
       <div>
         <h2 className="text-xl font-black">{t.verifyTitle}</h2>
         <p className="text-xs text-stone-500">{t.verifySub}</p>

@@ -2,9 +2,26 @@ import React, { useRef, useState } from 'react';
 import { Mic, Square, Play, RotateCcw, ArrowRight } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 
+const MOCK_CATALOG_RESULTS = [
+  {
+    name: "Hand-Painted Madhubani Wall Plate",
+    material: "Terracotta with natural pigments",
+    description_hi: "पारंपरिक मधुबनी शैली में हाथ से रंगी हुई मिट्टी की सजावटी थाली।",
+    description_en: "Traditional Madhubani-style hand-painted decorative terracotta plate.",
+    price_min: 600, price_max: 950, final_price: 780
+  },
+  {
+    name: "Handwoven Cotton Table Runner",
+    material: "Handloom cotton, natural dye",
+    description_hi: "हथकरघे पर बुना हुआ सूती टेबल रनर, प्राकृतिक रंगों से बना।",
+    description_en: "Handloom-woven cotton table runner made with natural dyes.",
+    price_min: 450, price_max: 700, final_price: 580
+  }
+];
+
 export default function VoiceInputScreen() {
-  const { nextStep, setIsLoading, setLoadingMessage, t } = useCraft();
-  const [status, setStatus] = useState('idle'); // idle | recording | recorded | error
+  const { updateProduct, nextStep, setIsLoading, setLoadingMessage, t } = useCraft();
+  const [status, setStatus] = useState('idle');
   const [audioURL, setAudioURL] = useState(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -33,15 +50,28 @@ export default function VoiceInputScreen() {
   const stopRecording = () => mediaRecorderRef.current?.stop();
   const retake = () => { setAudioURL(null); setStatus('idle'); };
 
-  const submitVoice = () => {
+  const submitVoice = async () => {
     setLoadingMessage("BHASHINI: Transcribing audio to structured catalog...");
     setIsLoading(true);
-    // TODO: POST the blob at audioURL to /api/process-voice here
-    setTimeout(() => { setIsLoading(false); nextStep(); }, 1400);
+    try {
+      // TODO (backend teammate): replace with real call
+      // const formData = new FormData();
+      // formData.append('audio', await fetch(audioURL).then(r => r.blob()));
+      // const res = await fetch('/api/process-voice', { method: 'POST', body: formData });
+      // const data = await res.json();
+      // updateProduct(data);
+      throw new Error('backend not wired yet');
+    } catch {
+      const mock = MOCK_CATALOG_RESULTS[Math.floor(Math.random() * MOCK_CATALOG_RESULTS.length)];
+      updateProduct(mock);
+    } finally {
+      setIsLoading(false);
+      nextStep();
+    }
   };
 
   return (
-    <div className="text-center space-y-6">
+    <div className="text-center space-y-6 animate-fade-in-up">
       <div>
         <h2 className="text-2xl font-black text-charcoal">{t.voiceTitle}</h2>
         <p className="text-xs text-stone-600 mt-1">{t.voiceSub}</p>

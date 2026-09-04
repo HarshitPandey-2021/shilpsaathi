@@ -5,7 +5,7 @@ export default function CatalogEditScreen() {
   const { productData, updateProduct, nextStep, t } = useCraft();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in-up">
       <div>
         <h2 className="text-xl font-black">{t.catalogTitle}</h2>
         <p className="text-xs text-stone-500">{t.catalogSub}</p>

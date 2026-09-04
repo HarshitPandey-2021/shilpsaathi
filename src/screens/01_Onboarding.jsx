@@ -15,7 +15,7 @@ const handleSpeech = () => {
 };
 
   return (
-    <div className="flex flex-col justify-between min-h-[80vh] text-charcoal">
+  <div className="flex flex-col justify-between text-charcoal animate-fade-in-up">
       
       {/* Visual Craft Banner */}
       <div className="relative my-2">

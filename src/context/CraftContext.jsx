@@ -48,7 +48,11 @@ export const TRANSLATIONS = {
     publishedSub: "आपका शिल्प अब डिजिटल बाज़ार में बिकने के लिए तैयार है",
     shareWhatsapp: "व्हाट्सएप पर शेयर करें",
     homeBtn: "होम पेज",
-    navStudio: "डैशबोर्ड", navCatalog: "कैटलॉग", navAdd: "जोड़ें", navProfile: "प्रोफ़ाइल"
+    navStudio: "डैशबोर्ड", navCatalog: "कैटलॉग", navAdd: "जोड़ें",navProfile: "भाषा",
+beyondTitle: "मेलों से आगे",
+beyondDesc: "अपने पारंपरिक शिल्प को साल भर बेचें। सूरजकुंड मेला, दिल्ली हाट और शिल्प समागम जैसे मौसमी मेलों की सीमाओं से आगे बढ़ें।",
+
+
   },
   en: {
     code: "en-IN",
@@ -95,7 +99,10 @@ export const TRANSLATIONS = {
     publishedSub: "Your craft is now digital and ready to share",
     shareWhatsapp: "Share on WhatsApp",
     homeBtn: "Home",
-    navStudio: "Studio", navCatalog: "Catalog", navAdd: "Add", navProfile: "Profile"
+    navStudio: "Studio", navCatalog: "Catalog", navAdd: "Add",navProfile: "Language",
+beyondTitle: "Beyond Physical Exhibitions",
+beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits of Surajkund Mela, Dilli Haat, and Shilp Samagam.",
+
   },
   bn: {
     code: "bn-IN",
@@ -142,7 +149,10 @@ export const TRANSLATIONS = {
     publishedSub: "আপনার শিল্প এখন অনলাইনে বিক্রি করতে প্রস্তুত",
     shareWhatsapp: "হোয়াটসঅ্যাপে শেয়ার করুন",
     homeBtn: "হোম",
-    navStudio: "স্টুডিও", navCatalog: "ক্যাটালগ", navAdd: "যোগ", navProfile: "প্রোফাইল"
+    navStudio: "স্টুডিও", navCatalog: "ক্যাটালগ", navAdd: "যোগ", navProfile: "ভাষা",
+beyondTitle: "প্রদর্শনীর বাইরেও",
+beyondDesc: "সারা বছর আপনার ঐতিহ্যবাহী পণ্য বিক্রি করুন। সুরজকুণ্ড মেলা, দিল্লি হাট এবং শিল্প সমাগমের মৌসুমি সীমা ছাড়িয়ে যান।",
+
   },
   ta: {
     code: "ta-IN",
@@ -189,7 +199,11 @@ export const TRANSLATIONS = {
     publishedSub: "உங்கள் கைவினைப்பொருள் சந்தைக்குத் தயார்",
     shareWhatsapp: "வாட்ஸ்அப்பில் பகிரவும்",
     homeBtn: "முகப்பு",
-    navStudio: "மையம்", navCatalog: "பட்டியல்", navAdd: "சேர்", navProfile: "சுயவிவரம்"
+    navStudio: "மையம்", navCatalog: "பட்டியல்", navAdd: "சேர்", navProfile: "மொழி",
+beyondTitle: "கண்காட்சிகளுக்கு அப்பால்",
+beyondDesc: "உங்கள் பாரம்பரிய கைவினைப் பொருட்களை ஆண்டு முழுவதும் விற்கவும். சூரஜ்குண்ட் மேளா, தில்லி ஹாட் போன்ற பருவகால வரம்புகளைத் தாண்டவும்.",
+
+// te block
   },
   te: {
     code: "te-IN",
@@ -236,7 +250,10 @@ export const TRANSLATIONS = {
     publishedSub: "మీ కళ ఇప్పుడు మార్కెట్లో అమ్మకానికి సిద్ధంగా ఉంది",
     shareWhatsapp: "వాట్సాప్‌లో షేర్ చేయండి",
     homeBtn: "హోమ్",
-    navStudio: "స్టూడియో", navCatalog: "కేటలాగ్", navAdd: "జోడించు", navProfile: "ప్రొఫైల్"
+    navStudio: "స్టూడియో", navCatalog: "కేటలాగ్", navAdd: "జోడించు",navProfile: "భాష",
+beyondTitle: "ప్రదర్శనలకు మించి",
+beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను ఏడాది పొడవునా అమ్మండి. సూరజ్‌కుండ్ మేళా, దిల్లీ హాట్ వంటి కాలానుగుణ పరిమితులను అధిగమించండి.",
+
   },
   mr: {
     code: "mr-IN",
@@ -283,7 +300,9 @@ export const TRANSLATIONS = {
     publishedSub: "आपली कला आता बाजारात विक्रीसाठी सज्ज आहे",
     shareWhatsapp: "व्हॉट्सॲपवर शेअर करा",
     homeBtn: "मुख्य पान",
-    navStudio: "डॅशबोर्ड", navCatalog: "कॅटलॉग", navAdd: "जोडा", navProfile: "प्रोफाइल"
+    navStudio: "डॅशबोर्ड", navCatalog: "कॅटलॉग", navAdd: "जोडा", navProfile: "भाषा",
+beyondTitle: "मेळ्यांच्या पलीकडे",
+beyondDesc: "आपली पारंपरिक कला वर्षभर विका. सुरजकुंड मेळा, दिल्ली हाट यांसारख्या हंगामी मर्यादा ओलांडा.",
   }
 };
 export function CraftProvider({ children }) {

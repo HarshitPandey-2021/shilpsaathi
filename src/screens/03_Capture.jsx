@@ -18,7 +18,7 @@ export default function CaptureScreen() {
   };
 
   return (
-    <div className="text-center space-y-5">
+    <div className="text-center space-y-5 animate-fade-in-up">
       <div>
         <h2 className="text-2xl font-black text-charcoal">{t.photoTitle}</h2>
         <p className="text-xs text-stone-600 mt-1">{t.photoSub}</p>
