@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { CheckCircle2, Share2, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Share2, Check } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
 
 export default function FinalListingScreen() {
-  const { productData, updateProduct, goToStep, t } = useCraft();
+  const { productData, updateProduct, goToStep, clearOriginalPreview, t } = useCraft();
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -24,7 +24,6 @@ export default function FinalListingScreen() {
         description_en: productData.description_en,
         keywords: productData.keywords,
         image_url: productData.enhancedImage || productData.originalImage,
-        original_image_url: productData.originalImage,
         price_min: productData.price_min,
         price_max: productData.price_max,
         final_price: productData.final_price,
@@ -114,7 +113,11 @@ export default function FinalListingScreen() {
         </button>
       </div>
       <button
-        onClick={() => goToStep(2)}
+        onClick={() => {
+          clearOriginalPreview();
+          updateProduct({ originalImage: null });
+          goToStep(2);
+        }}
         className="w-full py-3 bg-stone-200 hover:bg-stone-300 rounded-2xl font-bold text-xs active:scale-[0.98] transition"
       >
         {t.homeBtn}

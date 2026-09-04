@@ -29,3 +29,17 @@ server/.env.*
 *.njsproj
 *.sln
 *.sw?
+
+
+# Python AI service
+ai-service/venv/
+ai-service/__pycache__/
+ai-service/*.pyc
+
+# AI model weights
+ai-service/weights/
+ai-service/*.pt
+ai-service/*.pth
+
+# Local AI test files
+ai-service/test.jpeg

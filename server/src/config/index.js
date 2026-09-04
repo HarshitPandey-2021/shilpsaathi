@@ -16,6 +16,10 @@ export const config = {
   cors: {
     origin: process.env.CORS_ORIGIN || '*',
   },
+  ai: {
+    serviceUrl: process.env.AI_IMAGE_SERVICE_URL || 'http://localhost:8000',
+    timeout: parseInt(process.env.AI_ENHANCE_TIMEOUT || '120000', 10),
+  },
 };
 
 export function isSupabaseConfigured() {
