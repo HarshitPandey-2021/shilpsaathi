@@ -201,8 +201,8 @@ npm run dev -- --host
 
 | Member | Domain | Key Responsibilities |
 | --- | --- | --- |
-| **Harshit** | Frontend & PWA | React screen flows, PWA service worker, camera/mic bindings, API consumption |
 | **Shakti** | Team Lead & Presentation | Pitch narrative, product vision, demo presentation, slides delivery |
+| **Harshit** | Frontend & PWA | React screen flows, PWA service worker, camera/mic bindings, API consumption |
 | **Somesh** | Backend & Database | Express APIs, Supabase PostgreSQL, file storage schemas, data validation |
 | **Shiva** | AI Integration | BHASHINI speech integration, LLM prompt engineering, background cleanup pipeline |
 | **Piyush** | QA & Content | Demo catalog sample data, Hindi/English terminology checks, test scenarios |
