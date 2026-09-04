@@ -8,6 +8,7 @@
 [![Ministry](https://img.shields.io/badge/Ministry-Social%20Justice%20%26%20Empowerment-D4A72C?style=flat-square)](#)
 [![Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node.js%20%7C%20PWA%20%7C%20PostgreSQL-3F7D58?style=flat-square)](#)
 
+Live Link : https://shilpsaathi.vercel.app/
 ---
 
 ## 📌 Executive Summary
