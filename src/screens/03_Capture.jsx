@@ -68,7 +68,7 @@ export default function CaptureScreen() {
         <p className="text-xs font-semibold text-stone-700 mb-4">{t.photoBtn}</p>
         <label className="cursor-pointer bg-terracotta text-white px-6 py-3.5 rounded-xl font-bold text-sm shadow-md hover:bg-[#8e3e29] transition active:scale-95">
           {t.photoBtn}
-          <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} />
         </label>
       </div>
       <p className="text-[11px] text-stone-400">{t.supportedCrafts}</p>
