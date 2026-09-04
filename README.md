@@ -31,10 +31,10 @@ India has millions of generational artisans producing world-class heritage handi
 ```
 
 * **Step 1: Capture Product** — Simple camera access with zero complex settings.
-* **Step 2: AI Image Studio** — Background isolation, clutter removal, and studio lighting normalization.
-* **Step 3: Voice Cataloging** — Hands-free Hindi tap-to-speak input powered by BHASHINI.
-* **Step 4: AI Auto-Cataloger** — LLM-structured title, category, material, and bilingual descriptions.
-* **Step 5: Hybrid Pricing Engine** — Transparent price range recommendation based on material cost and craft complexity.
+* **Step 2: AI Image Studio** — Background isolation, clutter removal, and studio lighting normalization. *(Pending AI implementation — currently stores original image)*
+* **Step 3: Voice Cataloging** — Hands-free Hindi tap-to-speak input powered by BHASHINI. *(Pending BHASHINI integration — voice recording works)*
+* **Step 4: AI Auto-Cataloger** — LLM-structured title, category, material, and bilingual descriptions. *(Pending Gemini/LLM integration — manual catalog editing available)*
+* **Step 5: Hybrid Pricing Engine** — Transparent price range recommendation based on material cost and craft complexity. *(Heuristic pricing implemented)*
 * **Step 6: Review & Publish** — Full artisan override control before generating shareable digital cards.
 
 ---
@@ -104,11 +104,16 @@ Judges and evaluators frequently ask why ShilpSaathi was structured as a PWA rat
 
 ---
 
-## 🗄 Database Schema (PostgreSQL)
+## 🗄 Database Schema (PostgreSQL / Supabase)
+
+Run `server/src/db/schema.sql` in the Supabase SQL Editor to create these tables.
 
 ```sql
--- Artisan Identity
-CREATE TABLE artisans (
+-- Enable UUID extension (usually enabled by default in Supabase)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Artisans / Users table
+CREATE TABLE IF NOT EXISTS artisans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20) UNIQUE NOT NULL,
@@ -118,7 +123,7 @@ CREATE TABLE artisans (
 );
 
 -- Catalog Items
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     artisan_id UUID REFERENCES artisans(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -139,7 +144,7 @@ CREATE TABLE products (
 );
 
 -- Processing Pipeline Logs
-CREATE TABLE processing_logs (
+CREATE TABLE IF NOT EXISTS processing_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID REFERENCES products(id) ON DELETE CASCADE,
     operation VARCHAR(50) NOT NULL, -- 'image_enhance', 'voice_transcription', 'pricing'
@@ -149,7 +154,23 @@ CREATE TABLE processing_logs (
     completed_at TIMESTAMP WITH TIME ZONE
 );
 
+-- Indexes for common queries
+CREATE INDEX IF NOT EXISTS idx_products_artisan_id ON products(artisan_id);
+CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_processing_logs_product_id ON processing_logs(product_id);
+
+-- Insert a demo artisan for development
+INSERT INTO artisans (name, phone, preferred_language, location)
+VALUES ('Demo Artisan', '0000000000', 'hi', 'India')
+ON CONFLICT (phone) DO NOTHING;
 ```
+
+### Relationships
+
+* **One Artisan → Many Products** (`artisans.id` → `products.artisan_id`)
+* **One Product → Many Processing Logs** (`products.id` → `processing_logs.product_id`)
+* Cascading deletes: deleting an artisan deletes all their products; deleting a product deletes all its processing logs
 
 ---
 
@@ -159,8 +180,9 @@ CREATE TABLE processing_logs (
 
 * Node.js (`v18.x` or `v20.x` recommended)
 * npm (`v9.x` or higher)
+* A Supabase project (for database and storage)
 
-### 1. Clone & Set Up Backend
+### 1. Set Up Backend
 
 ```bash
 # Navigate to server
@@ -169,28 +191,40 @@ cd server
 # Install dependencies
 npm install
 
-# Start Express mock engine
-node index.js
-# Running on http://localhost:5000
+# Configure environment
+cp .env.example .env
+# Edit .env with your Supabase credentials
 
+# Start Express server
+npm start
+# Or for development with auto-reload:
+npm run dev
+# Running on http://localhost:5000
 ```
 
-### 2. Set Up Frontend PWA
+### 2. Set Up Frontend
 
 ```bash
-# Navigate to client directory
-cd ../client
-
-# Install dependencies
+# From project root
 npm install
 
-# Start Vite dev server with network exposure
-npm run dev -- --host
-# Running on http://localhost:5173
+# Optional: create .env to customize backend URL
+echo "VITE_API_URL=http://localhost:5000/api" > .env
 
+# Start Vite dev server
+npm run dev
+# Running on http://localhost:5173
 ```
 
-### 3. Testing PWA on Mobile
+### 3. Configure Supabase
+
+1. Create a Supabase project at https://supabase.com
+2. Open **SQL Editor** and run the contents of `server/src/db/schema.sql`
+3. Go to **Storage**, create a bucket named `product-images`, and make it **Public**
+4. Copy your Supabase URL and service-role key into `server/.env`
+5. Restart the backend
+
+### 4. Test PWA on Mobile
 
 1. Ensure your laptop and phone are on the same local network.
 2. Open Chrome on Android or Safari on iOS and enter the `http://<laptop-ip>:5173` URL.
@@ -212,8 +246,402 @@ npm run dev -- --host
 
 ## 🗺 Roadmap
 
-* [x] **Phase 1 (MVP Sprint):** 9-screen linear PWA, camera integration, voice-to-bilingual catalog, heuristic pricing, shareable card.
-* [ ] **Phase 2:** Direct GeM (Government e-Marketplace) and ONDC (Open Network for Digital Commerce) API adapters for 1-click publishing.
-* [ ] **Phase 3:** Integration of trained ML pricing models utilizing historical regional handicraft sales data.
-* [ ] **Phase 4:** B2B direct artisan-to-exporter bulk discovery dashboard with logistics handoff.
+* [x] **Phase 1 (Backend Foundation):** Express API, Product CRUD, Artisan CRUD, Supabase PostgreSQL, Supabase Storage, image upload, validation, error handling
+* [ ] **Phase 2:** Frontend finalization and full integration testing
+* [ ] **Phase 3:** AI integrations — BHASHINI, Gemini, AI image enhancement, AI pricing
+* [ ] **Phase 4:** Direct GeM (Government e-Marketplace) and ONDC (Open Network for Digital Commerce) API adapters for 1-click publishing.
+* [ ] **Phase 5:** B2B direct artisan-to-exporter bulk discovery dashboard with logistics handoff.
+* [ ] **Phase 6:** Production hardening and deployment.
+
+---
+
+## 🗺 Project Status
+
+| Area | Status |
+| --- | --- |
+| Backend foundation (Express + Supabase) | Implemented & verified |
+| Product CRUD (PostgreSQL) | Implemented & verified |
+| Artisan CRUD (PostgreSQL) | Implemented & verified |
+| Supabase Storage (image upload) | Implemented & verified |
+| Product listing endpoint | Implemented & verified |
+| Product status management | Implemented & verified |
+| Input validation | Implemented & verified |
+| Error handling | Implemented & verified |
+| Heuristic pricing | Implemented |
+| Frontend → Backend integration | Implemented |
+| BHASHINI transcription | Pending (stub preserved) |
+| Gemini catalog generation | Pending (stub preserved) |
+| AI pricing intelligence | Pending (stub preserved) |
+| AI image enhancement | Pending (stub preserved) |
+
+---
+
+## 🏗 Architecture
+
+```
+Frontend (React PWA)
+   ↓ HTTP (JSON / multipart)
+Node.js + Express Backend
+   ↓
+Controller → Service → Supabase Client
+                     ↓
+              ┌──────┴──────┐
+              ↓             ↓
+     PostgreSQL DB     Storage Bucket
+     (artisans,        (product-images)
+      products,
+      processing_logs)
+```
+
+**Responsibilities:**
+
+* **Frontend (React PWA):** Renders the 9-screen artisan workflow. Communicates with the backend via HTTP. Handles camera/mic access, local state, and user interactions.
+* **Express Backend:** Receives requests, validates input, enforces ownership rules, and routes to the appropriate service. Never exposes Supabase credentials.
+* **Supabase:** Provides PostgreSQL database for structured data and object storage for product images.
+---
+
+## 🛠 Technology Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, Vite, Tailwind CSS 3, PWA (vite-plugin-pwa), Lucide Icons |
+| Backend | Node.js, Express 5 |
+| Database | PostgreSQL via Supabase |
+| Storage | Supabase Storage (binary asset storage) |
+| File Upload | Multer 2.x (memory storage) |
+| Config | dotenv |
+| Validation | Custom middleware |
+
+---
+
+## 📁 Repository Structure
+
+```text
+shilpsaathi/
+├── src/                          # Frontend (React PWA)
+│   ├── screens/                  # 9 workflow screens
+│   ├── components/               # Header, BottomNav, LoadingOverlay, ProgressDots
+│   ├── context/                  # CraftContext (global state)
+│   ├── utils/
+│   │   ├── api.js                # Frontend API client
+│   │   └── speech.js             # TTS utilities
+│   ├── App.jsx
+│   └── main.jsx
+├── server/                       # Backend (Express)
+│   ├── src/
+│   │   ├── config/               # Environment config, Supabase client
+│   │   ├── controllers/          # Request handlers
+│   │   ├── middleware/           # Error handler, upload config
+│   │   ├── routes/               # API route definitions
+│   │   ├── services/             # Database operations
+│   │   ├── utils/                # Response helpers, validation
+│   │   ├── db/
+│   │   │   └── schema.sql        # Database schema
+│   │   └── app.js                # Express app setup
+│   ├── package.json
+│   ├── .env.example
+│   └── index.js                  # Server entry point
+├── public/                       # Static assets
+├── .gitignore
+├── package.json                  # Frontend dependencies
+└── README.md
+```
+
+---
+
+## 🔐 Environment Variables
+
+### Backend (`server/.env`)
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `PORT` | No | Server port (default: `5000`) |
+| `NODE_ENV` | No | Environment: `development` or `production` |
+| `SUPABASE_URL` | Yes | Your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes* | Supabase service-role key (server-only) |
+| `SUPABASE_ANON_KEY` | Yes* | Supabase anon key (fallback if service-role not set) |
+| `SUPABASE_STORAGE_BUCKET` | No | Storage bucket name (default: `product-images`) |
+---
+
+## 📡 API Documentation
+
+**Base URL:** `http://localhost:5000/api`
+
+**Standard response format:**
+
+Success:
+```json
+{
+  "success": true,
+  "message": "Descriptive message",
+  "data": { ... }
+}
+```
+
+Error:
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "error": "Detailed error (development only)"
+}
+```
+
+### Product APIs
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/products` | List products (optional `?artisan_id=` filter) |
+| `POST` | `/api/products` | Create product |
+| `GET` | `/api/products/:id` | Get single product |
+| `PUT` | `/api/products/:id` | Update product (partial) |
+| `DELETE` | `/api/products/:id` | Delete product |
+| `GET` | `/api/products/:id/listing` | Get full listing with artisan info |
+| `PATCH` | `/api/products/:id/status` | Update product status |
+
+**Create Product — Required fields:** `name`, `image_url`, `final_price`
+
+**Create Product — Optional fields:** `category`, `material`, `colour`, `craft_type`, `description_hi`, `description_en`, `keywords` (string[]), `price_min`, `price_max`, `original_image_url`, `artisan_id` (UUID), `status` (`draft`/`published`/`archived`)
+
+**Success:** `201` with product object | **Errors:** `422` (validation), `400` (bad request), `503` (DB not configured)
+
+---
+
+### Artisan APIs
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/artisans` | List artisans |
+| `POST` | `/api/artisans` | Create artisan |
+| `GET` | `/api/artisans/:id` | Get single artisan |
+| `PUT` | `/api/artisans/:id` | Update artisan (partial) |
+| `DELETE` | `/api/artisans/:id` | Delete artisan (cascades to products) |
+
+**Create Artisan — Required fields:** `name`, `phone`
+
+**Create Artisan — Optional fields:** `preferred_language`, `location`
+
+---
+
+## 🤖 AI & External Integrations
+
+The following endpoints are **reserved for future implementation**. They currently return controlled responses indicating their pending status.
+
+| Endpoint | Purpose | Current Status |
+| --- | --- | --- |
+| `POST /api/products/:id/transcribe` | BHASHINI speech-to-text | Pending |
+| `POST /api/products/:id/generate-catalog` | Gemini/LLM catalog generation | Pending |
+| `POST /api/products/:id/pricing` | AI pricing intelligence | Pending |
+| `POST /api/products/:id/enhance` | AI image enhancement | Pending |
+
+**Current behavior:**
+
+* **transcribe** — Returns sample transcript with message: `"Transcription pending BHASHINI integration"`
+* **generate-catalog** — Returns placeholder catalog with message: `"Catalog generation pending AI integration"`
+* **pricing** — Returns `{ "message": "Pricing intelligence pending AI integration", "status": "pending_ai" }`
+* **enhance** — Returns original image URL unchanged with `{ "message": "AI enhancement pending integration", "status": "pending_ai" }`
+
+**Future implementation:**
+* BHASHINI → Government-backed Indian-language speech-to-text and translation
+* Gemini/LLM → Structuring unstructured voice into standardized catalog entities
+* AI Image Enhancement → Background isolation, clutter removal, studio lighting normalization
+* AI Pricing Intelligence → ML models utilizing historical regional handicraft sales data
+
+---
+
+## ✅ Validation Rules
+
+### Product Validation
+
+| Rule | Error Message |
+| --- | --- |
+| Name required (create) | `"Product name is required"` |
+| Name ≤ 255 chars | `"Product name must be 255 characters or less"` |
+| Category/Material/Colour/Craft type length limits | Field-specific messages |
+| Final price must be non-negative number | `"Final price must be a valid non-negative number"` |
+| Status must be draft/published/archived | `"Status must be one of: draft, published, archived"` |
+| Keywords must be array of strings | `"Keywords must be an array of strings"` |
+| artisan_id must be valid UUID | `"artisan_id must be a valid UUID"` |
+
+### Artisan Validation
+
+| Rule | Error Message |
+| --- | --- |
+| Name required (create) | `"Artisan name is required"` |
+| Phone required (create) | `"Phone number is required"` |
+| Phone ≤ 20 chars | `"Phone must be 20 characters or less"` |
+| Duplicate phone | HTTP `409` — `"An artisan with this phone number already exists"` |
+
+### File Upload Validation
+
+| Rule | Error | Code |
+| --- | --- | --- |
+| No file | `"No image file provided..."` | 400 |
+| Invalid file type | `"Invalid file type..."` | 400 |
+| File > 10 MB | `"File too large. Maximum size is 10 MB."` | 413 |
+
+---
+
+## 🛡 Error Handling
+
+| Code | Meaning | When Returned |
+| --- | --- | --- |
+| `200` | OK | Successful GET, PUT, DELETE, PATCH |
+| `201` | Created | Successful POST |
+| `400` | Bad Request | Invalid input, malformed request |
+| `403` | Forbidden | Ownership mismatch |
+| `404` | Not Found | Resource does not exist or unknown route |
+| `413` | Payload Too Large | File exceeds 10 MB |
+| `422` | Unprocessable Entity | Validation failed (field-level errors) |
+| `500` | Internal Server Error | Unexpected error (details hidden in production) |
+| `503` | Service Unavailable | Supabase not configured |
+
+---
+
+## 🔗 Frontend → Backend Integration
+
+**Frontend API client:** `src/utils/api.js` | **Default URL:** `http://localhost:5000/api`
+
+```
+Frontend → fetch() → Express API → Controller → Service → Supabase
+```
+
+**Image upload flow:**
+1. Frontend sends `multipart/form-data` (field: `image`) to `POST /api/upload`
+2. Backend validates type/size, uploads to Supabase Storage
+3. Backend returns `publicUrl`
+4. Frontend uses URL for `image_url` / `original_image_url` in product record
+
+---
+
+## 🔒 Security
+
+* Supabase credentials are **server-side only** (`server/.env`)
+- Service-role key never exposed to frontend
+- `.env` files are gitignored
+- File type/size validation on uploads
+- Input validation on all endpoints
+- Error responses don't expose stack traces in production
+
+**Authentication:** Not implemented. Uses demo artisan for development.
+
+---
+
+## 🧪 Testing & Verification
+
+| Feature | Verification | Status |
+| --- | --- | --- |
+| Product CRUD | Real Supabase DB | PASS |
+| Artisan CRUD | Real Supabase DB | PASS |
+| Product listing (with artisan join) | Real Supabase DB | PASS |
+| Image upload to Supabase Storage | Verified | PASS |
+| Image URL persistence in DB | Verified | PASS |
+| Frontend → Backend → Supabase E2E | Verified | PASS |
+| Input validation | API tests | PASS |
+| Error handling | API tests | PASS |
+| AI integrations | Not implemented | PENDING |
+
+---
+
+## 📋 Development Rules
+
+1. **Do NOT expose Supabase secrets** — server-side only
+2. **Do NOT implement AI functionality** unless explicitly requested
+3. **Preserve AI/integration stubs** in `aiController.js`
+4. **Do not break API contracts** — `{ success, message, data }` format
+5. **Do not rename endpoints** — frontend depends on specific URLs
+6. **Do not change schema** without updating documentation
+7. **Keep backend modular** — controller → service → repository
+8. **Validate all incoming data**
+9. **Keep frontend/backend responsibilities separated**
+
+---
+
+## ⚠ Known Limitations
+
+### Pending AI Work
+* BHASHINI speech-to-text
+* Gemini/LLM catalog generation
+* AI image enhancement
+* AI pricing intelligence
+
+### Backend Limitations
+* No authentication (demo artisan)
+* No rate limiting
+* No API versioning
+* No migration system
+
+---
+
+## 🏃 Quick Start
+
+```bash
+# 1. Install frontend deps
+npm install
+
+# 2. Install backend deps
+cd server && npm install
+
+# 3. Configure backend
+cp .env.example .env  # Add Supabase credentials
+
+# 4. Set up Supabase (run schema.sql in SQL Editor + create 'product-images' bucket)
+
+# 5. Start backend
+npm start  # → http://localhost:5000
+
+# 6. Start frontend (new terminal)
+cd .. && npm run dev  # → http://localhost:5173
+
+# 7. Verify
+curl http://localhost:5000/api/health
+```
+
+---
+
+### Upload API
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/api/upload` | Upload product image to Supabase Storage |
+
+**Request:** `multipart/form-data` with field name `image`
+
+**Allowed types:** JPEG, PNG, WebP, GIF | **Max size:** 10 MB
+
+**Success (201):**
+```json
+{
+  "success": true,
+  "message": "Image uploaded successfully",
+  "data": {
+    "filePath": "products/1788516454948-tsgeiytn.png",
+    "publicUrl": "https://your-project.supabase.co/storage/v1/object/public/product-images/products/..."
+  }
+}
+```
+
+**Errors:** `400` (invalid file type), `413` (file too large), `503` (storage not configured), `500` (bucket not found)
+
+---
+
+### Utility Endpoints
+
+| Method | Endpoint | Description | Status |
+| --- | --- | --- | --- |
+| `GET` | `/api/health` | Health check with DB status | Real |
+| `POST` | `/api/calculate-price` | Heuristic price calculation | Real (heuristic) |
+| `POST` | `/api/enhance-image` | Image enhancement | Mock |
+| `POST` | `/api/process-voice` | Voice processing | Mock |
+| `CORS_ORIGIN` | No | CORS origin (default: `*`) |
+
+\* At least one key must be set. The service-role key is recommended for full functionality.
+
+### Frontend (`.env` or `.env.local`)
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `VITE_API_URL` | No | Backend API URL (default: `http://localhost:5000/api`) |
+
+**AI/Integration isolation:** Endpoints for BHASHINI, Gemini, AI image enhancement, and AI pricing are preserved as stubs in `aiController.js` and `aiRoutes.js`. They return controlled "pending" responses and are architecturally isolated from the working CRUD pipeline.
 
