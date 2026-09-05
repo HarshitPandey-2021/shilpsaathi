@@ -9,7 +9,24 @@ import aiRoutes from './routes/aiRoutes.js';
 
 const app = express();
 
-app.use(cors({ origin: config.cors.origin, credentials: true }));
+const allowedOrigins = (config.cors?.origin || '*')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow server-to-server, mobile app, or tools with no origin header
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
