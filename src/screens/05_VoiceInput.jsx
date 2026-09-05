@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Mic, Square, Play, RotateCcw, ArrowRight, Sparkles, Volume2, Edit3, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mic, Square, Play, RotateCcw, ArrowRight, Sparkles, Volume2, Edit3, CheckCircle2, AlertCircle, Radio } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
+import { WavAudioRecorder } from '../utils/wavEncoder';
 
 const SPEECH_LANG_OPTIONS = [
   { code: 'hi-IN', label: '🇮🇳 हिंदी (Hindi)' },
@@ -29,20 +30,14 @@ export default function VoiceInputScreen() {
   const [audioURL, setAudioURL] = useState(null);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isSpeechApiAvailable, setIsSpeechApiAvailable] = useState(true);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0);
 
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
+  const wavRecorderRef = useRef(null);
   const recognitionRef = useRef(null);
   const audioPlayerRef = useRef(null);
-  const streamRef = useRef(null);
-
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setIsSpeechApiAvailable(false);
-    }
-  }, []);
+  const animFrameRef = useRef(null);
+  const transcriptBufferRef = useRef('');
 
   // Cleanup on unmount
   useEffect(() => {
@@ -50,8 +45,11 @@ export default function VoiceInputScreen() {
       if (recognitionRef.current) {
         try { recognitionRef.current.abort(); } catch (e) { /* ignore */ }
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
+      if (wavRecorderRef.current && wavRecorderRef.current.isRecording) {
+        wavRecorderRef.current.stop();
+      }
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
       }
       if (audioURL) {
         URL.revokeObjectURL(audioURL);
@@ -62,11 +60,11 @@ export default function VoiceInputScreen() {
   const startRecording = async () => {
     setStatus('recording');
     setErrorMessage('');
+    transcriptBufferRef.current = liveTranscript.trim() ? liveTranscript.trim() + ' ' : '';
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let speechActive = false;
 
-    // 1. Initialize & Start Web Speech Recognition directly
+    // 1. Initialize Browser Speech Recognition (Live instant feedback)
     if (SpeechRecognition) {
       try {
         const recognition = new SpeechRecognition();
@@ -75,88 +73,92 @@ export default function VoiceInputScreen() {
         recognition.lang = speechLang;
         recognition.maxAlternatives = 1;
 
-        let accumulatedTranscript = liveTranscript ? liveTranscript + ' ' : '';
-
-        recognition.onstart = () => {
-          console.log('[Voice] SpeechRecognition started for language:', speechLang);
-          speechActive = true;
-        };
-
         recognition.onresult = (event) => {
-          let interim = '';
-          let final = '';
+          let interimTranscript = '';
+          let finalTranscript = '';
+
           for (let i = 0; i < event.results.length; ++i) {
-            const res = event.results[i];
-            if (res.isFinal) {
-              final += res[0].transcript + ' ';
+            const result = event.results[i];
+            if (result.isFinal) {
+              finalTranscript += result[0].transcript + ' ';
             } else {
-              interim += res[0].transcript + ' ';
+              interimTranscript += result[0].transcript;
             }
           }
-          const spoken = (accumulatedTranscript + final + interim).trim();
-          if (spoken) {
-            setLiveTranscript(spoken);
+
+          const combined = (transcriptBufferRef.current + finalTranscript + interimTranscript).trim();
+          if (combined) {
+            setLiveTranscript(combined);
           }
         };
 
         recognition.onerror = (event) => {
           console.warn('[Voice] SpeechRecognition notice:', event.error);
-          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-            setErrorMessage('माइक्रोफ़ोन अनुमति की आवश्यकता है (Microphone permission needed).');
-          }
-        };
-
-        recognition.onend = () => {
-          console.log('[Voice] SpeechRecognition session ended.');
         };
 
         recognition.start();
         recognitionRef.current = recognition;
       } catch (recErr) {
-        console.warn('[Voice] Failed to start SpeechRecognition:', recErr);
+        console.warn('[Voice] SpeechRecognition start notice:', recErr);
       }
     }
 
-    // 2. Also capture audio stream via MediaRecorder if available
+    // 2. Capture Pure 16kHz 16-bit Mono WAV via Web Audio API
     try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-        const recorder = new MediaRecorder(stream);
-        chunksRef.current = [];
+      const recorder = new WavAudioRecorder(16000);
+      await recorder.start();
+      wavRecorderRef.current = recorder;
 
-        recorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-        };
-
-        recorder.onstop = () => {
-          const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-          setAudioBlob(blob);
-          setAudioURL(URL.createObjectURL(blob));
-        };
-
-        recorder.start(250);
-        mediaRecorderRef.current = recorder;
-      }
+      // Simulate live audio meter
+      const meterInterval = setInterval(() => {
+        if (wavRecorderRef.current && wavRecorderRef.current.isRecording) {
+          setAudioVolume(Math.floor(Math.random() * 60) + 30);
+        } else {
+          clearInterval(meterInterval);
+          setAudioVolume(0);
+        }
+      }, 100);
     } catch (micErr) {
-      console.warn('[Voice] MediaRecorder notice:', micErr.message);
-      if (!speechActive && !liveTranscript) {
-        setErrorMessage('कृपया ब्राउज़र में माइक्रोफ़ोन की अनुमति दें, या नीचे दिए गए विकल्पों में से चुनें या टाइप करें।');
-      }
+      console.warn('[Voice] Microphone stream error:', micErr.message);
+      setErrorMessage('माइक्रोफ़ोन चालू नहीं हो सका। कृपया ब्राउज़र में परमिशन चेक करें या नीचे दिए गए बॉक्स में सीधे लिखें।');
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
     }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try { mediaRecorderRef.current.stop(); } catch (e) { /* ignore */ }
+
+    let wavBlob = null;
+    if (wavRecorderRef.current && wavRecorderRef.current.isRecording) {
+      wavBlob = wavRecorderRef.current.stop();
+      if (wavBlob && wavBlob.size > 100) {
+        setAudioBlob(wavBlob);
+        setAudioURL(URL.createObjectURL(wavBlob));
+      }
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-    }
+
+    setAudioVolume(0);
     setStatus('recorded');
+
+    // If live transcript is empty, auto-transcribe via Bhashini Conformer ASR
+    if (!liveTranscript.trim() && wavBlob && wavBlob.size > 100) {
+      setIsTranscribing(true);
+      try {
+        console.log('[Voice] Transcribing 16kHz WAV with Bhashini Conformer ASR...');
+        const res = await api.processVoice({
+          audioBlob: wavBlob,
+          language: speechLang.split('-')[0],
+        });
+        if (res?.data?.transcript && res.data.transcript.trim()) {
+          setLiveTranscript(res.data.transcript.trim());
+        }
+      } catch (err) {
+        console.warn('[Voice] Bhashini transcribe fallback:', err.message);
+      } finally {
+        setIsTranscribing(false);
+      }
+    }
   };
 
   const retake = () => {
@@ -165,6 +167,7 @@ export default function VoiceInputScreen() {
     setAudioBlob(null);
     setLiveTranscript('');
     setErrorMessage('');
+    setAudioVolume(0);
     setStatus('idle');
   };
 
@@ -186,78 +189,101 @@ export default function VoiceInputScreen() {
     const lower = raw.toLowerCase();
 
     // 1. Detect Item Noun
-    let item = 'Artisan Craft';
-    if (lower.includes('diya') || lower.includes('दीया') || lower.includes('deepak') || lower.includes('दीपक')) item = 'Handmade Diya Lamp';
-    else if (lower.includes('plate') || lower.includes('थाली') || lower.includes('thali') || lower.includes('थाल')) item = 'Decorative Wall Plate';
-    else if (lower.includes('vase') || lower.includes('फूलदान') || lower.includes('surahi') || lower.includes('घड़ा') || lower.includes('मटका')) item = 'Handcrafted Floral Vase';
-    else if (lower.includes('saree') || lower.includes('साड़ी') || lower.includes('sari')) item = 'Handwoven Heritage Saree';
-    else if (lower.includes('runner') || lower.includes('रनर') || lower.includes('दुपट्टा') || lower.includes('dupatta')) item = 'Handloom Table Runner';
-    else if (lower.includes('idol') || lower.includes('statue') || lower.includes('मूर्ति') || lower.includes('प्रतिमा')) item = 'Heritage Idol Sculpture';
-    else if (lower.includes('box') || lower.includes('डिब्बा') || lower.includes('संदूक')) item = 'Carved Keepsake Box';
-    else if (lower.includes('toy') || lower.includes('खिलौना')) item = 'Handcrafted Folk Toy';
-    else if (lower.includes('painting') || lower.includes('पेंटिंग') || lower.includes('चित्रकला')) item = 'Traditional Folk Painting';
-
-    // 2. Category & Technique detection
+    let item = 'Handcrafted Item';
     let category = 'Clay & Terracotta';
-    let craftType = 'Traditional Wheel Pottery';
+    let craftType = 'Wheel Pottery / Terracotta Sculpting';
     let material = 'Natural Riverbed Clay';
+    let color = 'Natural Earth Hues';
 
-    if (lower.includes('brass') || lower.includes('metal') || lower.includes('पीतल') || lower.includes('dhokra') || lower.includes('ढोकरा') || lower.includes('तांबा')) {
+    if (lower.includes('कागज़') || lower.includes('कागज') || lower.includes('पेपर') || lower.includes('paper') || lower.includes('डायरी') || lower.includes('diary')) {
+      item = 'Handmade Paper Sheet / Stationery';
+      category = 'Handmade Home Decor';
+      craftType = 'Handmade Paper Craft';
+      material = 'Organic Plant Fiber & Recycled Paper Pulp';
+      color = 'Natural Off-White / Parchment';
+    } else if (lower.includes('diya') || lower.includes('दीया') || lower.includes('deepak') || lower.includes('दीपक')) {
+      item = 'Handmade Diya Lamp';
+      if (lower.includes('पीतल') || lower.includes('brass')) {
+        category = 'Metalcraft';
+        craftType = 'Dhokra Lost-Wax Casting';
+        material = 'Pure Brass & Bell Metal';
+        color = 'Golden Brass';
+      }
+    } else if (lower.includes('plate') || lower.includes('थाली') || lower.includes('thali') || lower.includes('थाल')) {
+      item = 'Decorative Wall Plate';
+    } else if (lower.includes('vase') || lower.includes('फूलदान') || lower.includes('surahi') || lower.includes('घड़ा') || lower.includes('मटका')) {
+      item = 'Handcrafted Floral Vase';
+    } else if (lower.includes('saree') || lower.includes('साड़ी') || lower.includes('sari')) {
+      item = 'Handwoven Heritage Saree';
+      category = 'Textiles & Handloom';
+      craftType = 'Traditional Handloom Weaving';
+      material = 'Organic Handloom Cotton & Silk';
+    } else if (lower.includes('brass') || lower.includes('metal') || lower.includes('पीतल') || lower.includes('dhokra') || lower.includes('ढोकरा')) {
       category = 'Metalcraft';
       craftType = 'Dhokra Lost-Wax Casting';
       material = 'Pure Brass & Bell Metal';
+      color = 'Golden Brass';
     } else if (lower.includes('wood') || lower.includes('लकड़ी') || lower.includes('carved') || lower.includes('नक्काशी') || lower.includes('sheesham')) {
       category = 'Woodcraft';
       craftType = 'Hand Carving & Inlay';
       material = 'Seasoned Sheesham Wood';
-    } else if (lower.includes('cotton') || lower.includes('silk') || lower.includes('कपड़ा') || lower.includes('सूत') || lower.includes('handloom') || lower.includes('बुनाई') || lower.includes('साड़ी')) {
-      category = 'Textiles & Handloom';
-      craftType = 'Traditional Handloom Weaving';
-      material = 'Organic Handloom Cotton & Silk';
-    } else if (lower.includes('madhubani') || lower.includes('painting') || lower.includes('मधुबनी') || lower.includes('पेंटिंग') || lower.includes('warli') || lower.includes('वारली')) {
+      item = 'Carved Keepsake Box';
+    } else if (lower.includes('madhubani') || lower.includes('painting') || lower.includes('मधुबनी') || lower.includes('पेंटिंग')) {
       category = 'Folk Art & Paintings';
       craftType = 'Madhubani / Folk Painting';
       material = 'Handmade Canvas & Natural Pigments';
-    } else if (lower.includes('stone') || lower.includes('marble') || lower.includes('पत्थर') || lower.includes('संगमरमर')) {
-      category = 'Stone Carving';
-      craftType = 'Intricate Stone Inlay';
-      material = 'Natural Marble / Stone';
+      item = 'Traditional Folk Painting';
     }
 
-    // 3. Color detection
-    const colors = [];
-    if (lower.includes('red') || lower.includes('लाल') || lower.includes('गेरुआ')) colors.push('Terracotta Red');
-    if (lower.includes('blue') || lower.includes('नीला')) colors.push('Indigo Blue');
-    if (lower.includes('yellow') || lower.includes('पीला')) colors.push('Mustard Yellow');
-    if (lower.includes('green') || lower.includes('हरा')) colors.push('Forest Green');
-    if (lower.includes('gold') || lower.includes('सुनहरा') || lower.includes('brass') || lower.includes('पीतल')) colors.push('Golden Brass');
-    if (colors.length === 0) colors.push('Natural Heritage Earth Hues');
+    // Number word mappings in Hindi & English
+    const numWords = {
+      'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'छह': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10,
+      'पंद्रह': 15, 'बीस': 20, 'पच्चीस': 25, 'तीस': 30, 'चालीस': 40, 'पचास': 50, 'साठ': 60, 'सौ': 100, 'दो सौ': 200,
+      'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'twenty': 20, 'fifty': 50, 'hundred': 100
+    };
 
-    // 4. Hours & Cost
-    let hours = 5;
-    const hoursMatch = raw.match(/(\d+)\s*(?:hour|hr|ghante|घंटे|घंटा|दिन|day)/i);
-    if (hoursMatch) hours = parseInt(hoursMatch[1], 10);
+    let hours = 4;
+    const hoursDigitMatch = raw.match(/(\d+)\s*(?:hour|hr|ghante|घंटे|घंटा|दिन|day)/i);
+    if (hoursDigitMatch) {
+      hours = parseInt(hoursDigitMatch[1], 10);
+    } else {
+      for (const [w, n] of Object.entries(numWords)) {
+        if (raw.includes(`${w} घंटे`) || raw.includes(`${w} घंटा`) || raw.includes(`${w} hours`)) {
+          hours = n;
+          break;
+        }
+      }
+    }
 
-    let cost = 220;
-    const costMatch = raw.match(/(?:₹|rs|rupee|रुपये|लागत|cost)\s*[:=]?\s*(\d+)/i) || raw.match(/(\d+)\s*(?:₹|rs|rupee|रुपये)/i);
-    if (costMatch) cost = parseInt(costMatch[1], 10);
+    let cost = 150;
+    const costDigitMatch = raw.match(/(?:₹|rs|rupee|रुपये|लागत|cost)\s*[:=]?\s*(\d+)/i) || raw.match(/(\d+)\s*(?:₹|rs|rupee|रुपये)/i);
+    if (costDigitMatch) {
+      cost = parseInt(costDigitMatch[1], 10);
+    } else {
+      for (const [w, n] of Object.entries(numWords)) {
+        if (raw.includes(`${w} रुपये`) || raw.includes(`${w} रुपया`) || raw.includes(`${w} rupees`)) {
+          cost = n;
+          break;
+        }
+      }
+    }
 
-    const title = `Handcrafted ${craftType.split('/')[0].trim()} ${item}`;
+    const title = `Handcrafted ${material.split('&')[0].trim()} ${item}`;
 
     return {
       name: title,
       category: category,
       material: material,
       craft_type: craftType,
-      colour: colors.join(' & '),
-      description_hi: raw.length > 5 ? `पारंपरिक हस्तशिल्प: ${raw}` : `कारीगर द्वारा शुद्ध प्राकृतिक सामग्री से निर्मित उत्कृष्ट कलाकृति। 100% हस्तनिर्मित और पर्यावरण अनुकूल।`,
+      colour: color,
+      description_hi: raw.length > 5 ? `कारीगर द्वारा पारंपरिक तकनीक से तैयार किया गया हस्तशिल्प। ${raw}` : `कारीगर द्वारा शुद्ध प्राकृतिक सामग्री से निर्मित उत्कृष्ट कलाकृति। 100% हस्तनिर्मित।`,
       description_en: `Authentic handcrafted ${item.toLowerCase()} meticulously crafted using traditional ${craftType.toLowerCase()} and natural sustainable materials.`,
-      keywords: ['handmade', category.toLowerCase(), 'heritage craft', 'artisan made', 'eco-friendly'],
+      keywords: ['handmade', category.toLowerCase(), item.toLowerCase().split('/')[0].trim(), 'artisan made', 'eco-friendly'],
       raw_material_cost: cost,
       hours_spent: hours,
-      price_min: Math.round(cost * 1.8 + hours * 120),
-      price_max: Math.round(cost * 2.4 + hours * 180),
-      final_price: Math.round(cost * 2.0 + hours * 150),
+      price_min: Math.round(cost * 1.5 + hours * 100),
+      price_max: Math.round(cost * 2.2 + hours * 150),
+      final_price: Math.round(cost * 1.8 + hours * 125),
       price_reasoning: `Calculated from ₹${cost} materials + ${hours} hrs labor + 25% fair artisan margin.`,
       spoken_transcript: raw
     };
@@ -265,7 +291,7 @@ export default function VoiceInputScreen() {
 
   const submitVoice = async () => {
     const textToSend = liveTranscript.trim();
-    setLoadingMessage("BHASHINI & AI: Converting spoken voice to English catalog & Hindi details...");
+    setLoadingMessage("AI & BHASHINI: Spoken voice ko catalog & fair pricing me convert kiya ja raha hai...");
     setIsLoading(true);
 
     try {
@@ -276,14 +302,25 @@ export default function VoiceInputScreen() {
       });
 
       if (response && response.success && response.data?.catalog) {
-        const { catalog, transcript: finalTranscript, source } = response.data;
+        const { catalog, transcript: finalTranscript, source, pricing } = response.data;
+        const matCost = Number(catalog.raw_material_cost ?? catalog.estimated_material_cost ?? 150);
+        const labHours = Number(catalog.hours_spent ?? catalog.estimated_labor_hours ?? 4);
+
         updateProduct({
           ...catalog,
+          raw_material_cost: matCost,
+          estimated_material_cost: matCost,
+          hours_spent: labHours,
+          estimated_labor_hours: labHours,
+          price_min: catalog.price_min ?? pricing?.price_min,
+          price_max: catalog.price_max ?? pricing?.price_max,
+          final_price: catalog.final_price ?? pricing?.suggested_price,
+          price_reasoning: catalog.price_reasoning ?? pricing?.reasoning,
           spoken_transcript: finalTranscript || textToSend,
           catalog_source: source,
         });
       } else {
-        throw new Error('Using robust client parser');
+        throw new Error('Using client parser fallback');
       }
     } catch (err) {
       console.log('[Voice Screen] Applying dynamic NLP entity parser on spoken input:', textToSend);
@@ -326,7 +363,7 @@ export default function VoiceInputScreen() {
           <button
             onClick={status === 'recording' ? stopRecording : startRecording}
             aria-label={status === 'recording' ? 'Stop recording' : 'Start recording'}
-            className={`w-32 h-32 rounded-full border-4 mx-auto flex flex-col items-center justify-center transition shadow-xl active:scale-95 ${
+            className={`w-32 h-32 rounded-full border-4 mx-auto flex flex-col items-center justify-center transition shadow-xl active:scale-95 relative ${
               status === 'recording'
                 ? 'border-red-600 bg-red-50 text-red-600 animate-pulse ring-8 ring-red-100'
                 : 'border-terracotta bg-terracotta/10 text-terracotta hover:scale-105 hover:bg-terracotta/20'
@@ -340,9 +377,32 @@ export default function VoiceInputScreen() {
         )}
 
         {status === 'recording' && (
-          <div className="flex items-center gap-1.5 text-xs text-red-600 font-bold animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
-            🎙️ सुन रहा है... अपनी भाषा में बोलें (Listening... Speak now)
+          <div className="space-y-1.5 w-full max-w-xs">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-red-600 font-bold">
+              <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+              🎙️ सुन रहा है... अपनी भाषा में बोलें (Listening... Speak now)
+            </div>
+
+            {/* Real-time Voice Wave Meter */}
+            <div className="flex items-center justify-center gap-1 h-5 px-4">
+              {[40, 70, 100, 60, 90, 50, 80, 45, 95, 65, 85].map((factor, i) => {
+                const heightPercent = Math.max(15, Math.min(100, Math.round((audioVolume * factor) / 60)));
+                return (
+                  <span
+                    key={i}
+                    style={{ height: `${heightPercent}%` }}
+                    className="w-1 bg-red-500 rounded-full transition-all duration-75"
+                  ></span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {isTranscribing && (
+          <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3.5 py-1.5 rounded-full animate-pulse font-medium">
+            <span className="w-2.5 h-2.5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></span>
+            ✨ Bhashini & AI आवाज़ पहचान रहे हैं... (Transcribing audio...)
           </div>
         )}
 

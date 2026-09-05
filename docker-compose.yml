@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # 1. Frontend (Vite React PWA)
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - server
+
+  # 2. Node.js Backend API
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - AI_IMAGE_SERVICE_URL=http://ai-service:8000
+    depends_on:
+      - ai-service
+
+  # 3. Python AI Image Service (FastAPI / Uvicorn)
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1

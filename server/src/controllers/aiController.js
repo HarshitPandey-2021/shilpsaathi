@@ -31,14 +31,21 @@ export async function processVoice(req, res, next) {
     });
 
     // Also calculate initial fair price suggestion based on extracted catalog estimates
+    const matCost = Number(result.catalog?.raw_material_cost ?? result.catalog?.estimated_material_cost ?? 150);
+    const labHours = Number(result.catalog?.hours_spent ?? result.catalog?.estimated_labor_hours ?? 4);
+
     const pricingData = pricingService.calculateFairPrice({
-      rawMaterialCost: result.catalog.estimated_material_cost || 250,
-      hoursSpent: result.catalog.estimated_labor_hours || 6,
-      category: result.catalog.category
+      rawMaterialCost: matCost,
+      hoursSpent: labHours,
+      category: result.catalog?.category
     });
 
     const enrichedCatalog = {
       ...result.catalog,
+      raw_material_cost: matCost,
+      estimated_material_cost: matCost,
+      hours_spent: labHours,
+      estimated_labor_hours: labHours,
       price_min: pricingData.price_min,
       price_max: pricingData.price_max,
       final_price: pricingData.suggested_price,
