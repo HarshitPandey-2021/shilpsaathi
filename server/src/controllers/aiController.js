@@ -40,16 +40,19 @@ export async function processVoice(req, res, next) {
       category: result.catalog?.category
     });
 
+    const rawExpPrice = result.catalog?.explicit_price;
+    const hasExplicitPrice = rawExpPrice !== null && rawExpPrice !== undefined && Number.isFinite(Number(rawExpPrice)) && Number(rawExpPrice) > 0;
+    const explicitPrice = hasExplicitPrice ? Number(rawExpPrice) : null;
     const enrichedCatalog = {
       ...result.catalog,
       raw_material_cost: matCost,
       estimated_material_cost: matCost,
       hours_spent: labHours,
       estimated_labor_hours: labHours,
-      price_min: pricingData.price_min,
-      price_max: pricingData.price_max,
-      final_price: pricingData.suggested_price,
-      price_reasoning: pricingData.reasoning
+      price_min: hasExplicitPrice ? explicitPrice : pricingData.price_min,
+      price_max: hasExplicitPrice ? explicitPrice : pricingData.price_max,
+      final_price: hasExplicitPrice ? explicitPrice : pricingData.suggested_price,
+      price_reasoning: hasExplicitPrice ? `Price explicitly provided by artisan: INR ${explicitPrice}.` : pricingData.reasoning
     };
 
     return successResponse(res, {

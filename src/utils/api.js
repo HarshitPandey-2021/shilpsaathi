@@ -109,18 +109,25 @@ export const api = {
     });
   },
 
-  transcribe: (audioBlob, language = 'hi') => {
+  transcribe: (productId, audioBlob, language = 'hi') => {
     const formData = new FormData();
     if (audioBlob) formData.append('audio', audioBlob, 'recording.webm');
     formData.append('language', language);
-    return fetchJSON(`${API_BASE_URL}/products/preview/transcribe`, { method: 'POST', body: formData });
+    const url = productId
+      ? `${API_BASE_URL}/products/${productId}/transcribe`
+      : `${API_BASE_URL}/process-voice`;
+    return fetchJSON(url, { method: 'POST', body: formData });
   },
 
-  generateCatalog: (transcript, language = 'hi') =>
-    fetchJSON(`${API_BASE_URL}/products/preview/generate-catalog`, {
+  generateCatalog: (productId, transcript, language = 'hi') => {
+    const url = productId
+      ? `${API_BASE_URL}/products/${productId}/generate-catalog`
+      : `${API_BASE_URL}/process-voice`;
+    return fetchJSON(url, {
       method: 'POST',
       body: JSON.stringify({ transcript, language }),
-    }),
+    });
+  },
 };
 
 export { API_BASE_URL };

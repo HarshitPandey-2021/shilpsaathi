@@ -85,18 +85,21 @@ export async function startAiService() {
 
   try {
     // Launch uvicorn via python
+    const spawnOptions = {
+      cwd: aiServiceDir,
+      env: {
+        ...process.env,
+        PYTHONUNBUFFERED: '1',
+        PYTHONIOENCODING: 'utf-8',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: false,
+    };
+
     aiProcess = spawn(
       pythonExec,
       ['-m', 'uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '8000'],
-      {
-        cwd: aiServiceDir,
-        env: {
-          ...process.env,
-          PYTHONUNBUFFERED: '1',
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
-        shell: process.platform === 'win32',
-      }
+      spawnOptions
     );
 
     aiProcess.stdout.on('data', (data) => {

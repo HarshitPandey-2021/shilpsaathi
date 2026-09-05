@@ -30,18 +30,22 @@ function getBhashiniConfig() {
 // Standard craft knowledge base for fallback & heuristic entity extraction
 const CRAFT_CATEGORIES = [
   { keywords: ['कागज़', 'कागज', 'पेपर', 'डायरी', 'नोटबुक', 'लिफाफा', 'paper', 'stationery', 'diary', 'journal', 'sheet', 'card', 'papier'], category: 'Handmade Home Decor', craft_type: 'Handmade Paper & Stationery Craft', default_mat: 'Organic Plant Fiber & Recycled Cotton Pulp' },
-  { keywords: ['बांस', 'केन', 'टोकरी', 'जूट', 'चटाई', 'रस्सी', 'bamboo', 'cane', 'jute', 'basket', 'mat'], category: 'Handmade Home Decor', craft_type: 'Natural Bamboo & Cane Weaving', default_mat: 'Seasoned Bamboo & Natural Jute Fiber' },
-  { keywords: ['मिट्टी', 'घड़ा', 'कुल्हड़', 'दीया', 'बर्तन', 'गमला', 'मटका', 'सुराही', 'terracotta', 'clay', 'pottery', 'vase'], category: 'Clay & Terracotta', craft_type: 'Wheel Pottery / Terracotta Sculpting', default_mat: 'Natural Riverbed Clay' },
+  { keywords: ['बांस', 'बाँस', 'केन', 'टोकरी', 'टोकरि', 'जूट', 'चटाई', 'रस्सी', 'bamboo', 'baans', 'cane', 'jute', 'basket', 'tokri', 'mat'], category: 'Handmade Home Decor', craft_type: 'Natural Bamboo & Cane Weaving', default_mat: 'Seasoned Bamboo & Natural Jute Fiber' },
+  { keywords: ['मिट्टी', 'मिट्टी', 'घड़ा', 'कुल्हड़', 'दीया', 'बर्तन', 'गमला', 'मटका', 'सुराही', 'mitti', 'kulhad', 'diya', 'matka', 'terracotta', 'clay', 'pottery', 'vase'], category: 'Clay & Terracotta', craft_type: 'Wheel Pottery / Terracotta Sculpting', default_mat: 'Natural Riverbed Clay' },
   { keywords: ['कपड़ा', 'साड़ी', 'दुपट्टा', 'शॉल', 'धागा', 'बुनाई', 'खादी', 'सूट', 'cotton', 'silk', 'handloom', 'runner', 'textile', 'weaving'], category: 'Textiles & Handloom', craft_type: 'Traditional Handloom Weaving', default_mat: 'Organic Cotton / Silk' },
   { keywords: ['लकड़ी', 'काष्ठ', 'नक्काशी', 'खिलौना', 'संदूक', 'डिब्बा', 'wood', 'wooden', 'carved', 'sheesham', 'teak'], category: 'Woodcraft', craft_type: 'Hand Carving & Inlay', default_mat: 'Seasoned Sheesham / Teak Wood' },
   { keywords: ['पीतल', 'तांबा', 'धातु', 'घंटी', 'ढोकरा', 'मूर्ति', 'brass', 'copper', 'dhokra', 'metal', 'bronze'], category: 'Metalcraft', craft_type: 'Dhokra Lost-Wax / Metal Casting', default_mat: 'Brass & Bell Metal' },
   { keywords: ['मधुबनी', 'पेंटिंग', 'चित्रकला', 'कलमकारी', 'वारली', 'पटचित्र', 'painting', 'madhubani', 'warli', 'kalamkari', 'art'], category: 'Folk Art & Paintings', craft_type: 'Madhubani / Folk Painting', default_mat: 'Handmade Canvas & Natural Pigments' },
-  { keywords: ['चमड़ा', 'जूती', 'बैग', 'बटुआ', 'मोजड़ी', 'leather', 'mojari', 'jooti'], category: 'Leather Craft', craft_type: 'Handcrafted Traditional Leatherwork', default_mat: 'Vegetable-Tanned Genuine Leather' },
+      { keywords: ['चमड़ा', 'जूती', 'बटुआ', 'मोजड़ी', 'leather', 'mojari', 'jooti'], category: 'Leather Craft', craft_type: 'Handcrafted Traditional Leatherwork', default_mat: 'Vegetable-Tanned Genuine Leather' },
+  { keywords: ['बैग', 'बैग', 'बटुआ', 'हैंडबैग', 'झोला', 'पर्स', 'बैकपैक', 'tote', 'backpack', 'handbag', 'wallet', 'purse', 'bag'], category: 'Bags & Accessories', craft_type: 'Handcrafted Bag & Accessory Making', default_mat: 'Not clearly identifiable' },
   { keywords: ['पत्थर', 'संगमरमर', 'stone', 'marble', 'sculpture'], category: 'Stone Carving', craft_type: 'Intricate Stone Inlay / Carving', default_mat: 'Natural Marble / Soapstone' }
 ];
 
 const ITEM_NOUNS = [
   { en: 'Handmade Paper Sheet / Stationery', hi: 'हस्तनिर्मित कागज़ / स्टेशनरी', keys: ['कागज़', 'कागज', 'पेपर', 'डायरी', 'नोटबुक', 'लिखने', 'paper', 'sheet', 'diary', 'journal', 'stationery', 'card'] },
+  { en: 'Bamboo Basket', hi: 'बाँस की टोकरी', keys: ['basket', 'tokri', 'टोकरी', 'टोकरि'] },
+  { en: 'Kulhad / Earthen Cup', hi: 'कुल्हड़', keys: ['kulhad', 'कुल्हड़', 'कुल्हर'] },
+  { en: 'Matka / Earthen Pot', hi: 'मटका', keys: ['matka', 'मटका'] },
   { en: 'Vase / Pot', hi: 'फूलदान / घड़ा', keys: ['vase', 'pot', 'surahi', 'flower pot', 'फूलदान', 'सुराही', 'घड़ा', 'मटका', 'कुल्हड़', 'गमला'] },
   { en: 'Decorative Plate', hi: 'सजावटी थाली', keys: ['plate', 'wall plate', 'thali', 'थाल', 'थाली', 'प्लेट'] },
   { en: 'Diya / Oil Lamp', hi: 'दीया / दीपक', keys: ['diya', 'lamp', 'deepak', 'deep', 'दीया', 'दीपक', 'दीवे'] },
@@ -60,7 +64,7 @@ const CRAFT_TECHNIQUES = [
   { en: 'Handmade Paper Craft', hi: 'हस्तनिर्मित कागज़ निर्माण', keys: ['कागज़', 'कागज', 'पेपर', 'paper', 'stationery'] },
   { en: 'Madhubani Folk Art', hi: 'मधुबनी चित्रकला', keys: ['madhubani', 'mithila', 'मधुबनी', 'मिथिला'] },
   { en: 'Dhokra Lost-Wax Casting', hi: 'ढोकरा धातु ढलाई', keys: ['dhokra', 'dokra', 'lost-wax', 'ढोकरा'] },
-  { en: 'Traditional Wheel Pottery', hi: 'पारंपरिक चाक कुम्हारी', keys: ['wheel', 'pottery', 'terracotta', 'चाक', 'कुम्हार', 'मिट्टी'] },
+  { en: 'Traditional Wheel Pottery', hi: 'पारंपरिक चाक कुम्हारी', keys: ['wheel', 'pottery', 'terracotta', 'चाक', 'कुम्हार', 'कुम्हार', 'kumhar', 'मिट्टी', 'mitti'] },
   { en: 'Handloom Weaving', hi: 'हथकरघा बुनाई', keys: ['handloom', 'woven', 'weave', 'khadi', 'हथकरघा', 'बुनाई', 'खादी'] },
   { en: 'Hand Carving & Inlay', hi: 'हस्त नक्काशी', keys: ['carved', 'carving', 'inlay', 'नक्काशी', 'खुदाई'] },
   { en: 'Block Printing', hi: 'ठप्पा छपाई (Block Print)', keys: ['block print', 'ajrakh', 'dabu', 'ब्लॉक प्रिंट', 'छपाई'] },
@@ -70,24 +74,29 @@ const CRAFT_TECHNIQUES = [
 
 const MATERIALS_MAP = [
   { en: 'Organic Plant Fiber & Handmade Paper', hi: 'प्राकृतिक वनस्पति रेशा व हस्तनिर्मित कागज़', keys: ['कागज़', 'कागज', 'पेपर', 'रद्दी', 'पल्प', 'paper', 'pulp'] },
-  { en: 'Natural Riverbed Clay & Terracotta', hi: 'प्राकृतिक नदी की मिट्टी', keys: ['terracotta', 'clay', 'mud', 'earthen', 'मिट्टी', 'टेराकोटा'] },
+  { en: 'Bamboo', hi: 'बाँस', keys: ['बांस', 'बाँस', 'bamboo', 'baans'] },
+  { en: 'Clay / Mitti', hi: 'मिट्टी', keys: ['terracotta', 'clay', 'mud', 'earthen', 'मिट्टी', 'टेराकोटा', 'mitti'] },
   { en: 'Pure Brass & Bell Metal', hi: 'शुद्ध पीतल एवं धातु', keys: ['brass', 'bronze', 'bell metal', 'metal', 'copper', 'पीतल', 'तांबा', 'धातु'] },
   { en: 'Organic Handloom Cotton', hi: 'हथकरघा सूती धागा', keys: ['cotton', 'khadi', 'सूती', 'कपास', 'खादी'] },
   { en: 'Pure Mulberry Silk', hi: 'शुद्ध रेशम', keys: ['silk', 'tussar', 'chanderi', 'रेशम', 'सिल्क'] },
   { en: 'Seasoned Sheesham / Teak Wood', hi: 'शीशम / सागवान की लकड़ी', keys: ['wood', 'wooden', 'sheesham', 'teak', 'लकड़ी', 'काष्ठ'] },
-  { en: 'Vegetable-Tanned Genuine Leather', hi: 'प्राकृतिक चमड़ा', keys: ['leather', 'hide', 'चमड़ा'] },
+    { en: 'Vegetable-Tanned Genuine Leather', hi: 'प्राकृतिक चमड़ा', keys: ['leather', 'hide', 'चमड़ा'] },
+  { en: 'Nylon & Synthetic Fabric', hi: 'नायलॉन और सिंथेटिक फैब्रिक', keys: ['nylon', 'synthetic', 'polyester', 'fabric', 'नायलॉन', 'सिंथेटिक', 'पॉलीएस्टर', 'फैब्रिक'] },
   { en: 'Natural Marble & Stone', hi: 'प्राकृतिक संगमरमर व पत्थर', keys: ['stone', 'marble', 'पत्थर', 'संगमरमर'] }
 ];
 
 const COLORS_MAP = [
   { en: 'Natural Off-White / Parchment', keys: ['कागज़', 'सफेद', 'सफ़ेद', 'white', 'cream', 'off-white'] },
-  { en: 'Terracotta Red', keys: ['red', 'terracotta', 'लाल', 'गेरुआ'] },
+  { en: 'Terracotta Red', keys: ['red', 'laal', 'terracotta', 'लाल', 'गेरुआ'] },
   { en: 'Indigo Blue', keys: ['blue', 'indigo', 'नीला', 'आसमानी'] },
   { en: 'Mustard Yellow', keys: ['yellow', 'mustard', 'ochre', 'पीला', 'हल्दी'] },
   { en: 'Forest Green', keys: ['green', 'forest', 'हरा', 'धनी'] },
   { en: 'Golden Brass', keys: ['golden', 'gold', 'brass', 'सुनहरा', 'गोल्डन'] },
   { en: 'Natural Ochre & White', keys: ['ochre', 'क्रीम'] },
   { en: 'Charcoal Black', keys: ['black', 'charcoal', 'काला'] }
+  ,{ en: 'Light Brown', keys: ['light brown', 'halka bhura', 'हल्का भूरा'] }
+  ,{ en: 'Brown', keys: ['brown', 'bhura', 'भूरा', 'भूरे', 'भूरी'] }
+  ,{ en: 'Natural', keys: ['natural', 'प्राकृतिक', 'कुदरती'] }
 ];
 
 const HINDI_NUMBER_WORDS = {
@@ -261,27 +270,39 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
 export async function extractCatalogFromText(rawText, sourceLanguage = 'hi') {
   const text = (rawText || '').trim();
   const bhashini = getBhashiniConfig();
+  let aiCatalog = null;
 
   // Try Gemini if configured
   if (bhashini.geminiKey && text.length > 3) {
     try {
       console.log('[AI Catalog] Invoking Gemini LLM for structured catalog extraction...');
-      const prompt = `You are ShilpSaathi AI, an e-commerce assistant for Indian traditional artisans.
-Analyze the following artisan voice description (which may be in Hindi, English, Hinglish, or mixed regional languages) and generate a structured e-commerce catalog in JSON format.
+      const prompt = `You are a fact-grounded product analyst for ShilpSaathi, a platform for Indian traditional artisans.
+
+Your job is to extract ONLY the facts explicitly stated by the artisan. If a fact is not stated, do NOT invent it.
+
+CRITICAL RULES:
+1. NEVER invent or assume materials. If the artisan does not mention a material, use "Not clearly identifiable".
+2. NEVER claim "leather", "genuine leather", "vegetable-tanned", "synthetic leather", or any leather type unless the artisan explicitly says so.
+3. NEVER invent marketing language like "premium", "natural", "sustainable", "heritage", "traditional", "eco-friendly", "genuine".
+4. The colour field must contain ONLY a colour (e.g. Black, Brown, Blue, Red, Green, White, Grey, Beige). If no colour is mentioned, use "Not clearly identifiable".
+5. If the artisan says "bag" or "बैग", the product type is a bag. Do NOT assume leather.
+6. Return ONLY valid JSON. Do not include markdown, code blocks, or extra text.
+
+Allowed categories: Clay & Terracotta, Textiles & Handloom, Woodcraft, Metalcraft, Folk Art & Paintings, Leather Craft, Stone Carving, Handmade Home Decor, Bags & Accessories
 
 Spoken Voice Description: "${text}"
 Detected Language: "${sourceLanguage}"
 
-Return ONLY a valid JSON object matching:
+Return ONLY a valid JSON object matching this exact schema:
 {
-  "name": "Concise attractive English product title (e.g. Handcrafted Madhubani Terracotta Plate)",
-  "category": "One of: Clay & Terracotta, Textiles & Handloom, Woodcraft, Metalcraft, Folk Art & Paintings, Leather Craft, Stone Carving, Handmade Home Decor",
-  "craft_type": "Specific traditional craft technique (e.g. Dhokra Casting, Wheel Pottery, Block Print, Madhubani Art)",
-  "material": "Primary materials used (e.g. Natural Riverbed Clay, Brass, Handloom Cotton)",
-  "colour": "Dominant natural colors / hues",
-  "description_hi": "Polished, cultural, e-commerce ready Hindi description (2-3 sentences)",
-  "description_en": "Professional, heritage-focused English description (2-3 sentences)",
-  "keywords": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "name": "A concise factual product title based on what the artisan said",
+  "category": "One of the allowed categories above",
+  "craft_type": "Traditional craft technique if explicitly mentioned, otherwise empty string",
+  "material": "Material explicitly stated by the artisan, or 'Not clearly identifiable'",
+  "colour": "Colour explicitly mentioned, or 'Not clearly identifiable'",
+  "description_hi": "Factual description in Hindi reflecting the artisan's exact words",
+  "description_en": "Factual description in English reflecting the artisan's exact words",
+  "keywords": ["relevant", "tags", "from", "description"],
   "estimated_material_cost": 250,
   "estimated_labor_hours": 5
 }`;
@@ -305,7 +326,7 @@ Return ONLY a valid JSON object matching:
           parsed.estimated_material_cost = parsed.raw_material_cost;
           parsed.estimated_labor_hours = parsed.hours_spent;
           console.log('[AI Catalog] Gemini structured catalog successfully generated.');
-          return parsed;
+          aiCatalog = parsed;
         }
       }
     } catch (geminiErr) {
@@ -318,70 +339,232 @@ Return ONLY a valid JSON object matching:
   
   const lower = text.toLowerCase();
 
-  // 1. Detect Item Noun
-  let matchedNoun = ITEM_NOUNS.find(n => n.keys.some(k => lower.includes(k))) || { en: 'Craft Item', hi: 'हस्तशिल्प' };
+  // Match complete words or phrases without treating substrings as facts.
+  const wordMatch = (k) => {
+    const kw = k.toLowerCase();
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    return new RegExp(`(?:^|[^a-z0-9\u0900-\u097F])${escaped}(?:$|[^a-z0-9\u0900-\u097F])`, 'iu').test(lower);
+  };
 
-  // 2. Detect Technique
-  let matchedTechnique = CRAFT_TECHNIQUES.find(t => t.keys.some(k => lower.includes(k)));
+  const cleanPhrase = (str) => {
+    if (!str) return '';
+    return str.replace(/^[^\w\u0900-\u097F]+|[^\w\u0900-\u097F]+$/g, '').trim();
+  };
 
-  // 3. Detect Material
-  let matchedMaterial = MATERIALS_MAP.find(m => m.keys.some(k => lower.includes(k)));
+  const toTitleCase = (str) => {
+    if (!str) return '';
+    return str.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  };
 
-  // 4. Detect Category
-  let matchedCategory = CRAFT_CATEGORIES.find(c => c.keywords.some(k => lower.includes(k))) || CRAFT_CATEGORIES[0];
-  if (matchedMaterial && !matchedTechnique) {
-    if (matchedMaterial.keys.includes('clay') || matchedMaterial.keys.includes('मिट्टी')) matchedCategory = CRAFT_CATEGORIES[0];
-    else if (matchedMaterial.keys.includes('cotton') || matchedMaterial.keys.includes('silk')) matchedCategory = CRAFT_CATEGORIES[1];
-    else if (matchedMaterial.keys.includes('wood') || matchedMaterial.keys.includes('लकड़ी')) matchedCategory = CRAFT_CATEGORIES[2];
-    else if (matchedMaterial.keys.includes('brass') || matchedMaterial.keys.includes('पीतल')) matchedCategory = CRAFT_CATEGORIES[3];
+  // 1. Dynamic Extraction of Explicit Material
+  let explicitMaterial = null;
+  const matRegex1 = /(?:ise\s+|ye\s+|yeh\s+|यह\s+|इसे\s+)?([a-z0-9\u0900-\u097F\s]{2,30}?)\s+(?:se\s+(?:haath\s+se\s+)?ban(?:a|i|e)(?:ya\s+gaya|\s+hua|\s+hui|\s+hue)?|से\s+(?:हाथ\s+से\s+)?बन(?:ा|ी|े)(?:या\s+गया|\s+हुआ|\s+हुई|\s+हुए)?|se\s+nirmit|se\s+taiyar|made\s+of|made\s+from|crafted\s+from)/i;
+  const mMatch1 = text.match(matRegex1);
+  if (mMatch1) {
+    let cand = cleanPhrase(mMatch1[1]);
+    cand = cand.replace(/^(?:ek|ye|yeh|ise|kisi|एक|यह|इसे)\s+/i, '').trim();
+    const stopWords = ['haath', 'haath se', 'ek', 'yeh', 'ye', 'kisi', 'kareegar', 'kareegaro', 'हाथ', 'एक', 'यह'];
+    if (cand && !stopWords.includes(cand.toLowerCase())) {
+      explicitMaterial = cand;
+    }
   }
 
-  // 5. Detect Colors
-  const matchedColors = COLORS_MAP.filter(c => c.keys.some(k => lower.includes(k))).map(c => c.en);
-  const colorStr = matchedColors.length > 0 ? matchedColors.join(' & ') : 'Natural Heritage Earth Tones';
+  if (!explicitMaterial) {
+    const matRegex2 = /(?:ye\s+ek\s+|yeh\s+ek\s+|ye\s+|yeh\s+|यह\s+एक\s+|यह\s+)([a-z0-9\u0900-\u097F]{2,20}?)\s+(?:ka|ki|ke|का|की|के)\s+([a-z0-9\u0900-\u097F\s]{2,25}?)(?:\s+hai|\s+है|\s*,|\s*\.|\s+jise|\s+ise)/i;
+    const mMatch2 = text.match(matRegex2);
+    if (mMatch2) {
+      explicitMaterial = cleanPhrase(mMatch2[1]);
+    }
+  }
 
-  // 6. Detect hours spent (digits and words like 'दो घंटे', '4 hours')
+  let matchedMaterial = null;
+  if (explicitMaterial) {
+    matchedMaterial = MATERIALS_MAP.find(m => m.keys.some(k => k.toLowerCase() === explicitMaterial.toLowerCase() || explicitMaterial.toLowerCase().includes(k.toLowerCase())));
+  }
+  if (!matchedMaterial) {
+    matchedMaterial = MATERIALS_MAP.find(m => m.keys.some(k => wordMatch(k)));
+  }
+
+  let finalMaterial = 'Not clearly identifiable';
+  if (matchedMaterial) {
+    finalMaterial = matchedMaterial.en;
+  } else if (explicitMaterial) {
+    const exLower = explicitMaterial.toLowerCase();
+    if (exLower.includes('narial') || exLower.includes('नारियल') || exLower.includes('coconut')) {
+      finalMaterial = 'Coconut Shell';
+    } else {
+      finalMaterial = toTitleCase(explicitMaterial);
+    }
+  } else if (aiCatalog?.material && aiCatalog.material !== 'Not clearly identifiable') {
+    finalMaterial = aiCatalog.material;
+  }
+
+  // 2. Dynamic Extraction of Item Noun & Product Title
+  let explicitItem = null;
+  const itemRegex1 = /(?:se\s+(?:haath\s+se\s+)?ban(?:a|i|e)(?:ya\s+gaya|\s+hua|\s+hui|\s+hue)?|से\s+(?:हाथ\s+से\s+)?बन(?:ा|ी|े)(?:या\s+गया|\s+हुआ|\s+हुई|\s+हुए)?)\s+([a-z0-9\u0900-\u097F\s]{2,25}?)(?:\s+hai|\s+है|\s*,|\s*\.|\s+iska|\s+iski|\s+इसका|\s+इसकी|\s+aur|\s+और|\s+natural|\s+rang|\s+रंग)/i;
+  const iMatch1 = text.match(itemRegex1);
+  if (iMatch1) {
+    let cand = cleanPhrase(iMatch1[1]);
+    cand = cand.replace(/^(?:ek|ye|yeh|ise|एक|यह|इसे)\s+/i, '').trim();
+    const stopWords = ['hua', 'hui', 'hue', 'gaya', 'hai', 'item', 'हुआ', 'हुई', 'हुए', 'गया', 'है'];
+    if (cand && !stopWords.includes(cand.toLowerCase())) {
+      explicitItem = cand;
+    }
+  }
+
+  if (!explicitItem) {
+    const itemRegex2 = /(?:ye\s+ek\s+|yeh\s+ek\s+|ye\s+|yeh\s+|यह\s+एक\s+|यह\s+)(?:[a-z0-9\u0900-\u097F]+\s+(?:ka|ki|ke|का|की|के)\s+)?([a-z0-9\u0900-\u097F\s]{2,25}?)(?:\s+hai|\s+है|\s*,|\s*\.|\s+jise|\s+ise|\s+जिसे|\s+इसे)/i;
+    const iMatch2 = text.match(itemRegex2);
+    if (iMatch2) {
+      let cand = cleanPhrase(iMatch2[1]);
+      cand = cand.replace(/^(?:ek|ye|yeh|ise|handmade|handcrafted|हस्तनिर्मित|हाथ से बना)\s+/i, '').trim();
+      if (cand && cand.toLowerCase() !== explicitMaterial?.toLowerCase()) {
+        explicitItem = cand;
+      }
+    }
+  }
+
+  let matchedNoun = ITEM_NOUNS.find(n => n.keys.some(k => wordMatch(k)));
+
+  let finalTitle = 'Handcrafted Craft Item';
+  if (matchedNoun) {
+    const nounEn = matchedNoun.en.split('/')[0].trim();
+    if (nounEn.toLowerCase().includes('kulhad')) {
+      finalTitle = 'Handcrafted Kulhad';
+    } else if (nounEn.toLowerCase().includes('basket') || nounEn.toLowerCase().includes('tokri')) {
+      finalTitle = (finalMaterial !== 'Not clearly identifiable' && !nounEn.toLowerCase().includes(finalMaterial.toLowerCase()))
+        ? `Handcrafted ${finalMaterial} ${nounEn.replace(/bamboo\s+/i, '')}`
+        : `Handcrafted ${nounEn}`;
+    } else {
+      finalTitle = `Handcrafted ${nounEn}`;
+    }
+  } else if (explicitItem) {
+    const cleanItem = explicitItem.replace(/^(?:handmade|handcrafted|हस्तनिर्मित)\s+/i, '').trim();
+    const itemTitle = toTitleCase(cleanItem);
+    if (itemTitle.toLowerCase() === 'craft item' || itemTitle.toLowerCase() === 'item') {
+      finalTitle = 'Handcrafted Craft Item';
+    } else {
+      finalTitle = (finalMaterial !== 'Not clearly identifiable' && !itemTitle.toLowerCase().includes(finalMaterial.toLowerCase()))
+        ? `Handcrafted ${finalMaterial} ${itemTitle}`
+        : `Handcrafted ${itemTitle}`;
+    }
+  } else if (aiCatalog?.name && aiCatalog.name !== 'Craft Item' && aiCatalog.name !== 'Handcrafted Craft Item') {
+    finalTitle = aiCatalog.name;
+  }
+
+  // 3. Technique
+  let matchedTechnique = CRAFT_TECHNIQUES.find(t => t.keys.some(k => wordMatch(k)));
+  const finalCraftType = matchedTechnique ? matchedTechnique.en : (aiCatalog?.craft_type || '');
+
+  // 4. Category
+  let detectedCategory = CRAFT_CATEGORIES.find(c => c.keywords.some(k => wordMatch(k)));
+  let finalCategory = detectedCategory?.category;
+  if (!finalCategory && aiCatalog?.category && aiCatalog.category !== 'Not clearly identifiable') {
+    finalCategory = aiCatalog.category;
+  }
+  if (!finalCategory) {
+    const matLower = finalMaterial.toLowerCase();
+    const titleLower = finalTitle.toLowerCase();
+    if (matLower.includes('clay') || matLower.includes('mitti') || titleLower.includes('kulhad') || titleLower.includes('pottery')) {
+      finalCategory = 'Clay & Terracotta';
+    } else if (matLower.includes('cotton') || matLower.includes('silk') || matLower.includes('wool') || titleLower.includes('saree')) {
+      finalCategory = 'Textiles & Handloom';
+    } else if (matLower.includes('wood') || matLower.includes('sheesham') || matLower.includes('teak')) {
+      finalCategory = 'Woodcraft';
+    } else if (matLower.includes('brass') || matLower.includes('metal') || matLower.includes('copper')) {
+      finalCategory = 'Metalcraft';
+    } else if (matLower.includes('leather')) {
+      finalCategory = 'Leather Craft';
+    } else if (matLower.includes('stone') || matLower.includes('marble')) {
+      finalCategory = 'Stone Carving';
+    } else if (matLower.includes('bamboo') || matLower.includes('cane') || matLower.includes('jute') || matLower.includes('paper') || titleLower.includes('basket') || titleLower.includes('pen stand')) {
+      finalCategory = 'Handmade Home Decor';
+    } else {
+      finalCategory = 'Handmade Home Decor';
+    }
+  }
+
+  // 5. Colors
+  let explicitColor = null;
+  const colRegex1 = /(?:iska\s+rang|rang|color|colour|रंग)\s*(?:hai\s+)?[:=]?\s*([a-z0-9\u0900-\u097F\s]{2,20}?)(?:\s+hai|\s+है|\s+aur|\s+और|\s*,|\s*\.|\s*$|\s+iski|\s+iska|\s+इसकी|\s+इसका)/i;
+  const cMatch1 = text.match(colRegex1);
+  if (cMatch1) {
+    explicitColor = cleanPhrase(cMatch1[1]);
+  } else {
+    const colRegex2 = /(?:^|\s)([a-z0-9\u0900-\u097F]+)\s+(?:rang\s+me|rang\s+mein|रंग\s+में|color\s+me|colour\s+me)/i;
+    const cMatch2 = text.match(colRegex2);
+    if (cMatch2) {
+      explicitColor = cleanPhrase(cMatch2[1]);
+    }
+  }
+
+  let matchedColorEntries = COLORS_MAP.filter(c => c.keys.some(k => wordMatch(k) || (explicitColor && (k.toLowerCase() === explicitColor.toLowerCase() || explicitColor.toLowerCase().includes(k.toLowerCase())))));
+  if (matchedColorEntries.some(m => m.en === 'Light Brown')) {
+    matchedColorEntries = matchedColorEntries.filter(c => c.en !== 'Brown');
+  }
+
+  let finalColor = 'Not clearly identifiable';
+  if (matchedColorEntries.length > 0) {
+    finalColor = matchedColorEntries.map(c => c.en).join(' & ');
+  } else if (explicitColor) {
+    finalColor = toTitleCase(explicitColor);
+  } else if (aiCatalog?.colour && aiCatalog.colour !== 'Not clearly identifiable') {
+    finalColor = aiCatalog.colour;
+  }
+
+  // 6. Hours spent
   let hours = extractQuantity(text, ['hour', 'hr', 'ghante', 'घंटे', 'घंटा', 'दिन', 'day', 'समय']) || 4;
   hours = Math.min(40, Math.max(1, hours));
 
-  // 7. Detect material cost (digits and words like 'बीस रुपये', '₹200')
-  let cost = extractQuantity(text, ['₹', 'rs', 'rupee', 'रुपये', 'रुपया', 'लागत', 'cost', 'खर्च', 'कीमत']) || 150;
-  cost = Math.min(10000, Math.max(10, cost));
+  // 7. Explicit Price / Cost
+  const explicitCost = extractQuantity(text, ['₹', 'rs', 'rupee', 'रुपये', 'रुपया', 'rupaye', 'rupaya', 'लागत', 'cost', 'खर्च', 'कीमत', 'keemat']);
+  let cost = explicitCost ?? 150;
+  cost = explicitCost !== null
+    ? Math.min(10000, Math.max(0, cost))
+    : Math.min(10000, Math.max(10, cost));
 
-  // 8. Dynamic Title Generation
-  const techName = matchedTechnique ? matchedTechnique.en : (matchedMaterial ? `${matchedMaterial.en.split(' ')[0]} Art` : matchedCategory.category);
-  const titleEn = `Handcrafted ${matchedMaterial ? matchedMaterial.en.split('&')[0].trim() : techName} ${matchedNoun.en}`.replace(/\s+/g, ' ').trim();
+  // 8. Bilingual Descriptions reflecting exact spoken words and item
+  const descHi = text.length > 5 ? text : 'विवरण उपलब्ध नहीं है।';
+  const factParts = [
+    finalMaterial !== 'Not clearly identifiable' ? `made from ${finalMaterial.toLowerCase()}` : null,
+    matchedTechnique && (wordMatch('कुम्हार') || wordMatch('kumhar')) ? 'made by a potter using traditional methods' : matchedTechnique && (wordMatch('traditional') || wordMatch('paramparik')) ? `made using ${matchedTechnique.en.toLowerCase()}` : null,
+    finalColor !== 'Not clearly identifiable' ? `${finalColor.toLowerCase()} in colour` : null,
+    explicitCost !== null ? `priced at INR ${explicitCost}` : null
+  ].filter(Boolean);
 
-  // 9. Bilingual Descriptions reflecting exact spoken words and item
-  const descHi = text.length > 5
-    ? `कारीगर द्वारा पारंपरिक तकनीक से तैयार किया गया हस्तशिल्प। ${text}`
-    : `कारीगर द्वारा शुद्ध पारंपरिक कला और प्राकृतिक सामग्री से तैयार की गई विशिष्ट कलाकृति। 100% हस्तनिर्मित और टिकाऊ।`;
-
-  const descEn = `Authentic artisan-crafted ${matchedNoun.en.toLowerCase()} meticulously created with ${matchedMaterial ? matchedMaterial.en.toLowerCase() : 'natural sustainable materials'} using traditional ${techName.toLowerCase()} methods. Ideal for everyday use, cultural decor, and gifting.`;
+  const cleanItemName = finalTitle.replace(/^Handcrafted\s+/i, '').toLowerCase();
+  const descEn = factParts.length > 0
+    ? `A ${cleanItemName} ${factParts.join(', ')}.`
+    : (aiCatalog?.description_en || 'Product details were not clearly specified.');
 
   const keywords = [
     'handmade',
-    matchedCategory.category.toLowerCase(),
-    matchedNoun.en.split('/')[0].toLowerCase().trim().replace(/[^a-z0-9 ]/g, ''),
-    'artisan made',
-    'heritage craft',
-    'eco-friendly'
+    finalCategory.toLowerCase(),
+    cleanItemName,
+    finalMaterial !== 'Not clearly identifiable' ? finalMaterial.toLowerCase() : null
   ].filter(Boolean);
 
-  return {
-    name: titleEn,
-    category: matchedCategory.category,
-    craft_type: matchedTechnique ? matchedTechnique.en : matchedCategory.craft_type,
-    material: matchedMaterial ? matchedMaterial.en : matchedCategory.default_mat,
-    colour: colorStr,
+  const catalog = {
+    ...aiCatalog,
+    name: finalTitle,
+    category: finalCategory,
+    craft_type: finalCraftType,
+    material: finalMaterial,
+    colour: finalColor,
     description_hi: descHi,
     description_en: descEn,
-    keywords: keywords,
+    keywords: [...new Set(keywords)],
     estimated_material_cost: cost,
     estimated_labor_hours: hours,
-    raw_material_cost: cost,
-    hours_spent: hours
+    raw_material_cost: explicitCost !== null ? cost : Number(aiCatalog?.raw_material_cost ?? cost),
+    hours_spent: Number(aiCatalog?.hours_spent ?? hours),
+    explicit_price: explicitCost,
+    final_price: explicitCost !== null ? explicitCost : (aiCatalog?.final_price ?? cost),
+    price_min: explicitCost !== null ? explicitCost : (aiCatalog?.price_min ?? cost),
+    price_max: explicitCost !== null ? explicitCost : (aiCatalog?.price_max ?? cost)
   };
+
+  return catalog;
 }
 
 /**
