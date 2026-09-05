@@ -73,6 +73,30 @@ final publish action, and the initial context contains demonstration values.
 The final screen creates a product through the API, then uses the browser Web Share
 API or clipboard. It does not open WhatsApp or create a public listing URL/card.
 
+### Design System and UI Principles
+
+The interface uses a craft-inspired visual system defined in `tailwind.config.js`:
+
+| Role | Colour | Hex |
+| --- | --- | --- |
+| Primary | Deep Terracotta | `#A44932` |
+| Secondary | Muted Mustard | `#D4A72C` |
+| Background | Warm Ivory | `#FFF9F0` |
+| Text | Deep Charcoal | `#292524` |
+| Success | Natural Forest Green | `#3F7D58` |
+
+The current screens use one primary action per step, visual product previews,
+progressive disclosure, explicit processing states, and editable AI suggestions.
+These are UI conventions, not guarantees that every future screen will follow them.
+
+### Why a PWA
+
+The project uses `vite-plugin-pwa` with standalone display and auto-update behavior.
+A PWA lets an artisan open the experience from a URL and use browser camera,
+microphone, and sharing capabilities without an app-store release. Offline product
+creation is not implemented yet, and the repository does not claim a measured
+installation size or guaranteed support on every mobile browser.
+
 ### Backend and AI
 
 The Express server provides JSON APIs, multipart upload handling, validation, CORS,
@@ -84,6 +108,39 @@ refinement and crop; product quality analysis; conditional skip/Lanczos/Real-ESR
 enlargement; lighting correction; and composition on a white 1080x1080 canvas.
 The active pipeline does not use YOLO segmentation. The BRIA RMBG 2.0 weights are
 fetched by `rembg`; see `ai-service/AI-MODELS.md` for the license warning.
+
+### Image Enhancement Service Details
+
+The Node upload route forwards the image to the Python service. The streaming route
+returns Server-Sent Events for actual pipeline stages, including `starting`,
+`loaded`, `resizing`, `quality`, `background`, `edges`, `cropping`,
+`product_quality`, `upscaling`, `lighting`, `canvas`, `enhancing`, and `stored`.
+The final enhanced image is encoded as a JPEG and uploaded to Supabase Storage by
+the Node server. The original browser preview remains a temporary object URL and is
+not permanently stored by the upload service.
+
+The local Python service starts with Uvicorn from the `ai-service` directory:
+
+```powershell
+cd ai-service
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+The AI service health check is `GET http://localhost:8000/`. Its direct endpoints
+are `POST /enhance` and `POST /enhance/stream`, using multipart field `file`.
+The frontend does not call these endpoints directly; Node/Express is the bridge.
+
+Required image-model assets:
+
+| Asset | Location | Source behavior |
+| --- | --- | --- |
+| RealESRGAN x4plus | `ai-service/weights/RealESRGAN_x4plus.pth` | Bundled local weight used only when the crop needs substantial enlargement. |
+| BRIA RMBG 2.0 | rembg model cache | `rembg` may fetch it on first use; it is not bundled in this repository. |
+
+Do not treat the Python package license as the model-weight license. Review
+`ai-service/AI-MODELS.md` before any commercial deployment or model replacement.
 
 The browser can provide a live transcript through Web Speech API. A 16 kHz WAV
 recording can be sent to the server. `voiceService.js` tries Bhashini ASR, optionally
@@ -183,6 +240,26 @@ Default base URL: `http://localhost:5000/api`. Most endpoints use response helpe
 Images accept JPEG, PNG, WebP, and GIF with a 25 MB limit. The frontend primarily
 uses `/api/upload/stream`.
 
+### Validation and Error Responses
+
+Product and artisan input is validated for required fields, string lengths, numeric
+prices, allowed product statuses, keyword arrays, UUIDs, and duplicate artisan phone
+numbers. Image uploads use in-memory Multer storage, allow one file, restrict MIME
+types, and enforce a 25 MB limit.
+
+| Code | Meaning |
+| --- | --- |
+| 200 | Successful read, update, delete, or status operation. |
+| 201 | Resource created. |
+| 400 | Malformed request or invalid upload. |
+| 403 | Ownership check failed on a product operation. |
+| 404 | Resource or route not found. |
+| 413 | Upload exceeds 25 MB. |
+| 422 | Field-level validation failure. |
+| 500 | Unexpected server or storage error. |
+| 503 | Supabase or AI service configuration is unavailable. |
+| 504 | Image enhancement request timed out. |
+
 ## Environment Variables
 
 Root `.env.example`:
@@ -258,6 +335,17 @@ There is no integrated automated test script in the root or server package.
 configuration, not a claim that the native Python AI service is compatible with
 Vercel Hobby serverless deployment.
 
+### Troubleshooting
+
+| Problem | Check |
+| --- | --- |
+| AI service unavailable | Open `http://localhost:8000/`, confirm the Python service is running, and check `AI_IMAGE_SERVICE_URL`. |
+| Missing Supabase storage | Confirm `SUPABASE_URL`, a server-side key, and the configured `product-images` bucket. |
+| Missing Real-ESRGAN weight | Confirm `ai-service/weights/RealESRGAN_x4plus.pth` exists. |
+| First enhancement is slow | `rembg` may initialize or fetch its BRIA model on first use; review the model licensing note before production use. |
+| BasicSR/torchvision import error | Verify the installed Python environment and pinned requirements before changing dependency files. |
+| Frontend calls the wrong backend | Set `VITE_API_URL`, restart Vite, and use the Node API URL rather than calling FastAPI directly. |
+
 ## Security and Limitations
 
 Present: in-memory uploads, image type/size validation, request validation,
@@ -277,6 +365,20 @@ The repository contains ad hoc Python checks including `test_rembg.py`,
 `test_realesrgan.py`, and `benchmark_pipeline.py`. The root and server packages do
 not define an automated test command. "Implemented" means the corresponding code
 path exists; it does not imply a complete automated end-to-end verification suite.
+
+## Team Roles
+
+The following roles are part of the project documentation and describe team
+responsibilities. They are not inferred from source-code ownership or runtime
+permissions.
+
+| Member | Domain | Responsibilities |
+| --- | --- | --- |
+| Shakti | Team Lead and Presentation | Pitch narrative, product vision, demo presentation, and slides delivery. |
+| Harshit | Frontend and PWA | React screen flows, PWA shell, camera/microphone bindings, and API consumption. |
+| Somesh | Backend and Database | Express APIs, Supabase PostgreSQL, storage integration, and validation. |
+| Shiva | AI Integration | Bhashini speech integration, catalog extraction prompts, and image-processing pipeline. |
+| Piyush | QA and Content | Demo catalog data, Hindi/English terminology checks, and test scenarios. |
 
 ## Roadmap
 
