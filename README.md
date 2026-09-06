@@ -379,6 +379,7 @@ permissions.
 | Somesh | Backend and Database | Express APIs, Supabase PostgreSQL, storage integration, and validation. |
 | Shiva | AI Integration | Bhashini speech integration, catalog extraction prompts, and image-processing pipeline. |
 | Piyush | QA and Content | Demo catalog data, Hindi/English terminology checks, and test scenarios. |
+| Kamini Singh | Low-Literacy UX & Usability Testing | Voice prompt usability testing, and field demo data curation|
 
 ## Roadmap
 
