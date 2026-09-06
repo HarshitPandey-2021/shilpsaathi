@@ -1,35 +1,59 @@
 import multer from 'multer';
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_AUDIO_TYPES = [
+  'audio/webm',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/ogg',
+  'audio/m4a',
+  'audio/mp4',
+  'audio/aac',
+  'application/octet-stream'
+];
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 
 const storage = multer.memoryStorage();
 
-function fileFilter(req, file, cb) {
-  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+function imageFilter(req, file, cb) {
+  if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`), false);
+    cb(new Error(`Invalid image type. Allowed: ${ALLOWED_IMAGE_TYPES.join(', ')}`), false);
   }
 }
 
-const upload = multer({
+function audioFilter(req, file, cb) {
+  if (ALLOWED_AUDIO_TYPES.includes(file.mimetype) || file.mimetype.startsWith('audio/')) {
+    cb(null, true);
+  } else {
+    cb(null, true); // Permissive for mobile recorder codecs
+  }
+}
+
+const imageUpload = multer({
   storage,
-  fileFilter,
-  limits: {
-    fileSize: MAX_FILE_SIZE,
-    files: 1,
-  },
+  fileFilter: imageFilter,
+  limits: { fileSize: MAX_FILE_SIZE, files: 1 },
 });
 
-export const uploadSingleImage = upload.single('image');
+const audioUpload = multer({
+  storage,
+  fileFilter: audioFilter,
+  limits: { fileSize: MAX_FILE_SIZE, files: 1 },
+});
+
+export const uploadSingleImage = imageUpload.single('image');
+export const uploadSingleAudio = audioUpload.single('audio');
 
 export function handleUploadError(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({
         success: false,
-        message: 'File too large. Maximum size is 10 MB.',
+        message: 'File too large. Maximum size is 25 MB.',
       });
     }
     return res.status(400).json({
@@ -46,5 +70,5 @@ export function handleUploadError(err, req, res, next) {
   next();
 }
 
-export const ALLOWED_IMAGE_TYPES = ALLOWED_MIME_TYPES;
-export const MAX_IMAGE_SIZE = MAX_FILE_SIZE;
+export { ALLOWED_IMAGE_TYPES, ALLOWED_AUDIO_TYPES, MAX_FILE_SIZE as MAX_IMAGE_SIZE };
+

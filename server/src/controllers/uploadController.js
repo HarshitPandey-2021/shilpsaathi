@@ -3,12 +3,14 @@ import * as imageEnhancer from '../services/imageEnhancer.js';
 import { isSupabaseConfigured } from '../config/index.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 
+/**
+ * Enhancement is a PREVIEW/PROCESSING operation only.
+ * The enhanced image is returned as base64 for frontend preview.
+ * It is NOT permanently stored in Supabase Storage at this stage.
+ * Permanent storage happens only at final submission via storePermanentImage.
+ */
 export async function uploadProductImage(req, res, next) {
   try {
-    if (!isSupabaseConfigured()) {
-      return errorResponse(res, 'Storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.', 503);
-    }
-
     if (!req.file) {
       return errorResponse(res, 'No image file provided. Use field name "image".', 400);
     }
@@ -17,17 +19,14 @@ export async function uploadProductImage(req, res, next) {
 
     const enhancedFile = await imageEnhancer.enhanceImage(req.file);
 
-    console.log('[Upload] Enhanced image received, uploading to storage...');
+    console.log('[Upload] Enhanced image processed, returning preview (no permanent storage)');
 
-    const result = await storageService.uploadImage(enhancedFile);
+    const enhancedBase64 = enhancedFile.buffer.toString('base64');
     return successResponse(res, {
-      filePath: result.filePath,
-      publicUrl: result.publicUrl,
-    }, 'Image enhanced and uploaded successfully', 201);
+      image_b64: enhancedBase64,
+      mimeType: enhancedFile.mimetype,
+    }, 'Image enhanced successfully (preview only, not permanently stored)', 200);
   } catch (err) {
-    if (err.message?.includes('Storage bucket')) {
-      return errorResponse(res, err.message, 500);
-    }
     if (err.statusCode === 503) {
       return errorResponse(res, err.message, 503);
     }
@@ -38,11 +37,13 @@ export async function uploadProductImage(req, res, next) {
   }
 }
 
+/**
+ * Stream enhancement is a PREVIEW/PROCESSING operation only.
+ * The enhanced image is returned as base64 in the 'complete' event for frontend preview.
+ * It is NOT permanently stored in Supabase Storage at this stage.
+ * Permanent storage happens only at final submission via storePermanentImage.
+ */
 export async function uploadProductImageStream(req, res, next) {
-  if (!isSupabaseConfigured()) {
-    return errorResponse(res, 'Storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.', 503);
-  }
-
   if (!req.file) {
     return errorResponse(res, 'No image file provided. Use field name "image".', 400);
   }
@@ -112,19 +113,12 @@ export async function uploadProductImageStream(req, res, next) {
             return res.end();
           }
 
-          const enhancedBuffer = Buffer.from(imageB64, 'base64');
-          const enhancedFile = {
-            buffer: enhancedBuffer,
-            mimetype: 'image/jpeg',
-            originalname: `enhanced-${req.file.originalname.replace(/\.[^.]+$/, '.jpg')}`,
-          };
-
-          const result = await storageService.uploadImage(enhancedFile);
+          // Return the enhanced image as base64 for preview only — do NOT store permanently yet
           sendEvent({
-            stage: 'stored',
-            message: 'Image stored successfully',
-            publicUrl: result.publicUrl,
-            filePath: result.filePath,
+            stage: 'complete',
+            message: 'Image enhancement complete (preview only, not permanently stored)',
+            image_b64: imageB64,
+            mimeType: 'image/jpeg',
             success: true,
           });
           streamCtx.cleanup();
@@ -152,5 +146,44 @@ export async function uploadProductImageStream(req, res, next) {
     }
 
     res.end();
+  }
+}
+
+/**
+ * Permanent storage endpoint — the ONLY place where enhanced images become
+ * permanent product assets in Supabase Storage.
+ * Called ONLY when the artisan performs final submission of the product.
+ */
+export async function storePermanentImage(req, res, next) {
+  try {
+    if (!isSupabaseConfigured()) {
+      return errorResponse(res, 'Storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.', 503);
+    }
+
+    const { image_b64, mimeType } = req.body;
+    if (!image_b64) {
+      return errorResponse(res, 'No image data provided. Use field "image_b64".', 400);
+    }
+
+    console.log('[Store Permanent] Storing enhanced image permanently at final submission');
+
+    const result = await storageService.storePermanentImage(image_b64, mimeType);
+    return successResponse(res, {
+      filePath: result.filePath,
+      publicUrl: result.publicUrl,
+      mimeType: result.mimeType,
+    }, 'Image stored permanently', 201);
+  } catch (err) {
+    if (err.message?.includes('Storage bucket')) {
+      return errorResponse(res, err.message, 500);
+    }
+    if (err.statusCode === 503) {
+      return errorResponse(res, err.message, 503);
+    }
+    if (err.statusCode === 504) {
+      return errorResponse(res, err.message, 504);
+    }
+    console.error('[Store Permanent] Error:', err.message);
+    next(err);
   }
 }

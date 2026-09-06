@@ -14,6 +14,32 @@ export default function FinalListingScreen() {
     setSaving(true);
     setSaveError(null);
     try {
+      // FINAL SUBMISSION: This is the ONLY point where the enhanced image
+      // becomes permanently stored in Supabase Storage and the product
+      // database record is created.
+
+      // Step 1: Permanently store the enhanced image in Supabase Storage
+      const imageB64 = productData.enhancedImageB64;
+      let permanentImageUrl = productData.image_url;
+
+      if (imageB64 && !permanentImageUrl) {
+        try {
+          const storeResult = await api.storePermanentImage(imageB64, 'image/jpeg');
+          if (storeResult.success && storeResult.data?.publicUrl) {
+            permanentImageUrl = storeResult.data.publicUrl;
+            updateProduct({ image_url: permanentImageUrl });
+          } else {
+            throw new Error('Image storage did not return a public URL');
+          }
+        } catch (storageErr) {
+          console.error('Permanent image storage failed:', storageErr.message);
+          setSaveError('Failed to store image permanently. Please try again.');
+          setSaving(false);
+          return; // Do NOT create DB record if image storage fails
+        }
+      }
+
+      // Step 2: Create the permanent product database record with the stored image URL
       const productPayload = {
         name: productData.name,
         category: productData.category,
@@ -23,7 +49,7 @@ export default function FinalListingScreen() {
         description_hi: productData.description_hi,
         description_en: productData.description_en,
         keywords: productData.keywords,
-        image_url: productData.enhancedImage || productData.originalImage,
+        image_url: permanentImageUrl,
         price_min: productData.price_min,
         price_max: productData.price_max,
         final_price: productData.final_price,
