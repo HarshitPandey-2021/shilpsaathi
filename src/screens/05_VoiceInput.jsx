@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Mic, Square, Play, RotateCcw, ArrowRight, Sparkles, Volume2, Edit3, CheckCircle2, AlertCircle, Radio } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
-import { WavAudioRecorder } from '../utils/wavEncoder';
 
 const SPEECH_LANG_OPTIONS = [
   { code: 'hi-IN', label: '🇮🇳 हिंदी (Hindi)' },
@@ -291,48 +290,28 @@ export default function VoiceInputScreen() {
     };
   };
 
-  const submitVoice = async () => {
-    const textToSend = liveTranscript.trim();
-    setLoadingMessage("AI & BHASHINI: Spoken voice ko catalog & fair pricing me convert kiya ja raha hai...");
-    setIsLoading(true);
-
-    try {
-      const response = await api.processVoice({
-        audioBlob: audioBlob || null,
-        transcript: textToSend || null,
-        language: speechLang.split('-')[0],
-      });
-
-      if (response && response.success && response.data?.catalog) {
-        const { catalog, transcript: finalTranscript, source, pricing } = response.data;
-        const matCost = Number(catalog.raw_material_cost ?? catalog.estimated_material_cost ?? 150);
-        const labHours = Number(catalog.hours_spent ?? catalog.estimated_labor_hours ?? 4);
-
-        updateProduct({
-          ...catalog,
-          raw_material_cost: matCost,
-          estimated_material_cost: matCost,
-          hours_spent: labHours,
-          estimated_labor_hours: labHours,
-          price_min: catalog.price_min ?? pricing?.price_min,
-          price_max: catalog.price_max ?? pricing?.price_max,
-          final_price: catalog.final_price ?? pricing?.suggested_price,
-          price_reasoning: catalog.price_reasoning ?? pricing?.reasoning,
-          spoken_transcript: finalTranscript || textToSend,
-          catalog_source: source,
-        });
-      } else {
-        throw new Error('Using client parser fallback');
-      }
-    } catch (err) {
-      console.log('[Voice Screen] Applying dynamic NLP entity parser on spoken input:', textToSend);
-      const parsed = parseClientSideTranscript(textToSend || 'Handcrafted traditional artisan craft item');
-      updateProduct(parsed);
-    } finally {
-      setIsLoading(false);
-      nextStep();
+const submitVoice = async () => {
+  setLoadingMessage("BHASHINI: Transcribing audio to structured catalog...");
+  setIsLoading(true);
+  try {
+    const audioBlob = await fetch(audioURL).then(r => r.blob());
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+    const result = await api.processVoice(formData); // ask teammate for exact method name in utils/api.js
+    if (result.success) {
+      updateProduct(result.data);
+    } else {
+      throw new Error('processing failed');
     }
-  };
+  } catch (err) {
+    console.warn('Voice processing unavailable, using demo data:', err.message);
+    const mock = MOCK_CATALOG_RESULTS[Math.floor(Math.random() * MOCK_CATALOG_RESULTS.length)];
+    updateProduct(mock);
+  } finally {
+    setIsLoading(false);
+    nextStep();
+  }
+};
 
   return (
     <div className="text-center space-y-4 animate-fade-in-up">

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
+import ScreenHeader from '../components/ui/ScreenHeader';
+import PrimaryButton from '../components/ui/PrimaryButton';
 
 export default function ImageStudioScreen() {
   const { productData, nextStep, t } = useCraft();
@@ -9,13 +11,8 @@ export default function ImageStudioScreen() {
   return (
     <div className="space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-black flex items-center gap-1.5">
-            <Sparkles className="text-mustard" size={18} /> {t.f1}
-          </h2>
-          <p className="text-[11px] text-stone-500">{t.f1_sub}</p>
-        </div>
-        <span className="text-[10px] bg-forest/10 text-forest border border-forest/30 font-bold px-2 py-0.5 rounded-full">
+        <ScreenHeader title={<span className="flex items-center gap-1.5"><Sparkles className="text-mustard" size={18} />{t.f1}</span>} subtitle={t.f1_sub} />
+        <span className="text-[10px] bg-forest/10 text-forest border border-forest/30 font-bold px-2 py-0.5 rounded-full h-fit">
           Enhanced ✓
         </span>
       </div>
@@ -24,7 +21,7 @@ export default function ImageStudioScreen() {
         <img
           src={showOriginal ? productData.originalImage : (productData.enhancedImage || productData.originalImage)}
           alt={showOriginal ? "Original" : "Enhanced Craft"}
-          className="w-full h-64 object-cover"
+          className="w-full h-64 object-cover transition-opacity duration-300"
         />
         <div className="absolute top-3 left-3 bg-forest text-white text-[10px] px-2.5 py-1 rounded-full font-bold shadow">
           {showOriginal ? "Original" : t.studioCleaned}
@@ -41,9 +38,7 @@ export default function ImageStudioScreen() {
         <p className="text-xs text-stone-600 font-medium">✨ {t.photoSub}</p>
       </div>
 
-      <button onClick={nextStep} className="w-full py-4 bg-terracotta text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-md hover:bg-[#8e3e29]">
-        {t.continueVoice} <ArrowRight size={18} />
-      </button>
+      <PrimaryButton onClick={nextStep} icon={ArrowRight}>{t.continueVoice}</PrimaryButton>
     </div>
   );
 }

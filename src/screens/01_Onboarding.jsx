@@ -53,12 +53,7 @@ const handleSpeech = () => {
       {/* Brand Title & Tagline */}
       <div className="text-center space-y-1.5 pt-2">
         <div className="flex items-center justify-center gap-2">
-          <div className="w-9 h-9 bg-terracotta rounded-xl flex items-center justify-center shadow-md border-2 border-amber-200">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 text-ivory fill-current" aria-hidden="true">
-              <path d="M12 2L14.4 7.2L20 8L16 12.2L17 18L12 15.2L7 18L8 12.2L4 8L9.6 7.2L12 2Z" fill="#D4A72C" opacity="0.35"/>
-              <text x="50%" y="68%" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#FFF9F0" fontFamily="sans-serif">श</text>
-            </svg>
-          </div>
+         <img src="/SIH.png" alt="ShilpSaathi" className="w-9 h-9 rounded-xl object-contain shadow-md border-2 border-amber-200" />
           <h1 className="text-2xl font-black tracking-tight text-charcoal">ShilpSaathi</h1>
         </div>
 
