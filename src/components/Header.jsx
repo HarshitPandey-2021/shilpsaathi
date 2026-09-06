@@ -5,6 +5,8 @@ import { useCraft, TRANSLATIONS } from '../context/CraftContext';
 export default function Header() {
   const { currentStep, prevStep, lang, setLang, t, showLangModal, setShowLangModal } = useCraft();
   const audioCapableLang = lang === 'hi' || lang === 'en';
+  const showBack = currentStep > 2 && currentStep !== 10;
+// use showBack instead of (currentStep > 2) in the back button's conditional render
 
   return (
     <>

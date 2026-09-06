@@ -332,7 +332,8 @@ export function CraftProvider({ children }) {
   });
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.hi;
-
+const getArtisanId = () => localStorage.getItem('shilpsaathi_artisan_phone') || 'guest';
+// add getArtisanId to the provider value
   const updateProduct = (fields) => setProductData(prev => ({ ...prev, ...fields }));
   const setOriginalPreview = (file) => {
     if (originalPreviewUrlRef.current) {
@@ -364,7 +365,7 @@ export function CraftProvider({ children }) {
       loadingMessage, setLoadingMessage,
       showLangModal, setShowLangModal,
       processingStages, setProcessingStages,
-      currentStage, setCurrentStage
+      currentStage, setCurrentStage, getArtisanId
     }}>
       {children}
     </CraftContext.Provider>

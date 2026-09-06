@@ -9,7 +9,7 @@ export default function CatalogEditScreen() {
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <ScreenHeader title={t.catalogTitle} subtitle={t.catalogSub} />
+    <ScreenHeader title={t.catalogTitle} subtitle={t.catalogSub} step={4} totalSteps={7} />
 
       <img
         src={productData.enhancedImage || productData.originalImage}
