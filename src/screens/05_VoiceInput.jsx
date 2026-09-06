@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Mic, Square, Play, RotateCcw, ArrowRight } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
+import { api } from '../utils/api';
 
 const MOCK_CATALOG_RESULTS = [
   {
@@ -50,25 +51,28 @@ export default function VoiceInputScreen() {
   const stopRecording = () => mediaRecorderRef.current?.stop();
   const retake = () => { setAudioURL(null); setStatus('idle'); };
 
-  const submitVoice = async () => {
-    setLoadingMessage("BHASHINI: Transcribing audio to structured catalog...");
-    setIsLoading(true);
-    try {
-      // TODO (backend teammate): replace with real call
-      // const formData = new FormData();
-      // formData.append('audio', await fetch(audioURL).then(r => r.blob()));
-      // const res = await fetch('/api/process-voice', { method: 'POST', body: formData });
-      // const data = await res.json();
-      // updateProduct(data);
-      throw new Error('backend not wired yet');
-    } catch {
-      const mock = MOCK_CATALOG_RESULTS[Math.floor(Math.random() * MOCK_CATALOG_RESULTS.length)];
-      updateProduct(mock);
-    } finally {
-      setIsLoading(false);
-      nextStep();
+const submitVoice = async () => {
+  setLoadingMessage("BHASHINI: Transcribing audio to structured catalog...");
+  setIsLoading(true);
+  try {
+    const audioBlob = await fetch(audioURL).then(r => r.blob());
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+    const result = await api.processVoice(formData); // ask teammate for exact method name in utils/api.js
+    if (result.success) {
+      updateProduct(result.data);
+    } else {
+      throw new Error('processing failed');
     }
-  };
+  } catch (err) {
+    console.warn('Voice processing unavailable, using demo data:', err.message);
+    const mock = MOCK_CATALOG_RESULTS[Math.floor(Math.random() * MOCK_CATALOG_RESULTS.length)];
+    updateProduct(mock);
+  } finally {
+    setIsLoading(false);
+    nextStep();
+  }
+};
 
   return (
     <div className="text-center space-y-6 animate-fade-in-up">

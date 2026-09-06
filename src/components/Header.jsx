@@ -15,9 +15,7 @@ export default function Header() {
               <ChevronLeft size={20} />
             </button>
           )}
-          <div className="w-8 h-8 rounded-xl bg-terracotta flex items-center justify-center text-white font-black text-sm shadow-sm border border-amber-200">
-            श
-          </div>
+          <img src="/SIH.png" alt="ShilpSaathi" className="w-8 h-8 rounded-xl object-contain shadow-sm border border-amber-200" />
           <div>
             <span className="font-extrabold tracking-tight text-charcoal text-base block leading-none">ShilpSaathi</span>
             <span className="text-[10px] text-stone-500 font-medium tracking-tight">शिल्पसाथी • Virtual Studio</span>
@@ -34,36 +32,35 @@ export default function Header() {
       </header>
 
       {showLangModal && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-xs rounded-2xl p-5 shadow-2xl border border-stone-200 space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h3 className="text-sm font-bold text-charcoal">अपनी भाषा चुनें / Select Language</h3>
-              <button onClick={() => setShowLangModal(false)} className="text-xs text-stone-400 font-bold px-1">✕</button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.keys(TRANSLATIONS).map((key) => (
-                <button
-                  key={key}
-                  onClick={() => { setLang(key); setShowLangModal(false); }}
-                  className={`p-3 rounded-xl border text-left flex items-center justify-between transition ${
-                    lang === key
-                      ? 'border-terracotta bg-amber-50 text-terracotta font-bold'
-                      : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
-                  }`}
-                >
-                  <span className="text-xs">{TRANSLATIONS[key].name}</span>
-                  {lang === key && <Check size={14} className="text-terracotta" />}
-                </button>
-              ))}
-            </div>
-            {!audioCapableLang && (
-              <p className="text-[10px] text-stone-400 text-center pt-1">
-                🔈 Spoken audio guidance available in हिंदी / English for now
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-xs flex items-end justify-center z-50 animate-fade-in" onClick={() => setShowLangModal(false)}>
+    <div
+      className="bg-white w-full max-w-md rounded-t-3xl p-5 pb-8 shadow-2xl space-y-4 animate-fade-in-up"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="w-10 h-1 bg-stone-300 rounded-full mx-auto" />
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-charcoal">अपनी भाषा चुनें / Select Language</h3>
+        <button onClick={() => setShowLangModal(false)} className="text-xs text-stone-400 font-bold px-1">✕</button>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {Object.keys(TRANSLATIONS).map((key) => (
+          <button
+            key={key}
+            onClick={() => { setLang(key); setShowLangModal(false); }}
+            className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition active:scale-[0.98] ${
+              lang === key
+                ? 'border-terracotta bg-amber-50 text-terracotta font-bold'
+                : 'border-stone-200 bg-stone-50 text-stone-700'
+            }`}
+          >
+            <span className="text-sm">{TRANSLATIONS[key].name}</span>
+            {lang === key && <Check size={14} className="text-terracotta" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }
