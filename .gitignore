@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+ai-service/venv/
+.env
+server/.env
+.vercel/
+node_modules/
+ai-service/__pycache__/
+ai-service/weights/
+*.pyc
