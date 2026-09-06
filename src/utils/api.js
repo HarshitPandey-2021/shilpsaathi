@@ -31,6 +31,13 @@ export const api = {
     return fetchJSON(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
   },
 
+  uploadImageStream: (file, onStage) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return fetch(`${API_BASE_URL}/upload/stream`, { method: 'POST', body: formData });
+  },
+
   getProducts: (artisanId = null) => {
     const url = artisanId
       ? `${API_BASE_URL}/products?artisan_id=${artisanId}`

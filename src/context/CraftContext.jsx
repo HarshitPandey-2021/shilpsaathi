@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 const CraftContext = createContext();
 
@@ -311,6 +311,9 @@ export function CraftProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showLangModal, setShowLangModal] = useState(false);
+  const [processingStages, setProcessingStages] = useState([]);
+  const [currentStage, setCurrentStage] = useState('');
+  const originalPreviewUrlRef = useRef(null);
 
   const [productData, setProductData] = useState({
     originalImage: null,
@@ -331,6 +334,22 @@ export function CraftProvider({ children }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.hi;
 
   const updateProduct = (fields) => setProductData(prev => ({ ...prev, ...fields }));
+  const setOriginalPreview = (file) => {
+    if (originalPreviewUrlRef.current) {
+      URL.revokeObjectURL(originalPreviewUrlRef.current);
+    }
+    const url = URL.createObjectURL(file);
+    originalPreviewUrlRef.current = url;
+    updateProduct({ originalImage: url, enhancedImage: null, original_image_url: null });
+    return url;
+  };
+  const clearOriginalPreview = () => {
+    if (originalPreviewUrlRef.current) {
+      URL.revokeObjectURL(originalPreviewUrlRef.current);
+      originalPreviewUrlRef.current = null;
+    }
+  };
+  useEffect(() => clearOriginalPreview, []);
   const nextStep = () => setCurrentStep(prev => prev + 1);
   const prevStep = () => setCurrentStep(prev => Math.max(1, prev - 1));
   const goToStep = (step) => setCurrentStep(step);
@@ -340,9 +359,12 @@ export function CraftProvider({ children }) {
       currentStep, nextStep, prevStep, goToStep,
       lang, setLang, t,
       productData, updateProduct,
+      setOriginalPreview, clearOriginalPreview,
       isLoading, setIsLoading,
       loadingMessage, setLoadingMessage,
-      showLangModal, setShowLangModal
+      showLangModal, setShowLangModal,
+      processingStages, setProcessingStages,
+      currentStage, setCurrentStage
     }}>
       {children}
     </CraftContext.Provider>
