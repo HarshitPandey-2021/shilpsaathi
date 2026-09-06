@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -31,3 +38,16 @@ node_modules/
 ai-service/__pycache__/
 ai-service/weights/
 *.pyc
+
+# Python AI service
+ai-service/venv/
+ai-service/__pycache__/
+ai-service/*.pyc
+
+# AI model weights
+ai-service/weights/
+ai-service/*.pt
+ai-service/*.pth
+
+# Local AI test files
+ai-service/test.jpeg
