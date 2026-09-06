@@ -15,15 +15,28 @@ dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+/**
+ * Public (non-secret) default ASR pipeline identifier in the Bhashini ULCA API.
+ * Pipeline IDs are not credentials; they select a standard model pipeline and
+ * can be overridden with BHASHINI_PIPELINE_ID for project-specific pipelines.
+ */
+const DEFAULT_BHASHINI_PIPELINE_ID = '64392f96daac500b55c543cd';
+
+/**
+ * Bhashini configuration is read ONLY from environment variables.
+ *
+ * SECURITY: No credential fallbacks are compiled into the source code. If the
+ * required environment variables are missing, Bhashini ASR is skipped safely
+ * and processing falls back to the heuristic catalog extractor. Credentials
+ * are never echoed in logs or API responses.
+ */
 function getBhashiniConfig() {
   return {
-    userId: process.env.BHASHINI_USER_ID || 'd1702029b78b42f3937d49e75bb0ea9c',
-    apiKey: process.env.BHASHINI_API_KEY || '0607f09a79-ec6c-4ce3-86dd-9ede07cf4b51',
-    inferenceKey: process.env.BHASHINI_INFERENCE_API_KEY || 'umUa8kJX_oMiWfAay3xsSax6XRwlxnNzM6E_DA6RtPpvcAkyzKsxyI1jrZfpHDE5',
-    pipelineId: (process.env.BHASHINI_PIPELINE_ID && process.env.BHASHINI_PIPELINE_ID.trim().length > 10)
-      ? process.env.BHASHINI_PIPELINE_ID.trim()
-      : '64392f96daac500b55c543cd',
-    geminiKey: process.env.GEMINI_API_KEY || ''
+    userId: (process.env.BHASHINI_USER_ID || '').trim(),
+    apiKey: (process.env.BHASHINI_API_KEY || '').trim(),
+    inferenceKey: (process.env.BHASHINI_INFERENCE_API_KEY || '').trim(),
+    pipelineId: (process.env.BHASHINI_PIPELINE_ID || DEFAULT_BHASHINI_PIPELINE_ID).trim(),
+    geminiKey: (process.env.GEMINI_API_KEY || '').trim()
   };
 }
 
@@ -151,7 +164,7 @@ function extractQuantity(text, contextKeywords = []) {
 export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mimeType = 'audio/webm') {
   const bhashini = getBhashiniConfig();
   if (!bhashini.userId || !bhashini.apiKey) {
-    console.log('[Bhashini] Credentials not set in .env; skipping Bhashini.');
+    console.warn('[Bhashini] Bhashini credentials are missing (set BHASHINI_USER_ID and BHASHINI_API_KEY). Skipping Bhashini ASR and using fallback processing.');
     return null;
   }
 
@@ -186,8 +199,8 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
     });
 
     // If initial query failed with 400, retry with default verified pipeline ID
-    if (!configRes.ok && bhashini.pipelineId !== '64392f96daac500b55c543cd') {
-      pipelinePayload.pipelineRequestConfig.pipelineId = '64392f96daac500b55c543cd';
+    if (!configRes.ok && bhashini.pipelineId !== DEFAULT_BHASHINI_PIPELINE_ID) {
+      pipelinePayload.pipelineRequestConfig.pipelineId = DEFAULT_BHASHINI_PIPELINE_ID;
       configRes = await fetch('https://meity-auth.ulcacontrib.org/ulca/apis/v0/model/getModelsPipeline', {
         method: 'POST',
         headers: {
@@ -213,6 +226,11 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
 
     if (!asrCallbackUrl || !serviceId) {
       console.warn('[Bhashini] Incomplete pipeline endpoints from Bhashini ULCA response.');
+      return null;
+    }
+
+    if (!asrInferenceKey) {
+      console.warn('[Bhashini] Bhashini inference API key is not available (not returned by the pipeline config and BHASHINI_INFERENCE_API_KEY is not set). Skipping Bhashini ASR.');
       return null;
     }
 
