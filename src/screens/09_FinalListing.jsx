@@ -45,23 +45,24 @@ export default function FinalListingScreen() {
   };
 
   const handleShare = async () => {
-    const shareText = `${productData.name}\n₹${productData.final_price}\n${productData.description_hi}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: productData.name, text: shareText });
-      } catch {
-        // user cancelled the native share sheet — not an error
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(shareText);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch {
-        alert('कॉपी नहीं हो सका / Could not copy');
-      }
+  const shareText = `${productData.name}\n₹${productData.final_price}\n${productData.description_hi}`;
+  try {
+    const imgBlob = await fetch(productData.enhancedImage || productData.originalImage).then(r => r.blob());
+    const file = new File([imgBlob], 'product.jpg', { type: imgBlob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ title: productData.name, text: shareText, files: [file] });
+      return;
     }
-  };
+  } catch {}
+  // fallback: text-only share or clipboard
+  if (navigator.share) {
+    try { await navigator.share({ title: productData.name, text: shareText }); } catch {}
+  } else {
+    await navigator.clipboard.writeText(shareText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+};
 
   return (
     <div className="space-y-4 text-center animate-fade-in-up">
