@@ -56,6 +56,12 @@ export const api = {
     return fetch(`${API_BASE_URL}/upload/stream`, { method: 'POST', body: formData });
   },
 
+  storePermanentImage: (imageB64, mimeType = 'image/jpeg') =>
+    fetchJSON(`${API_BASE_URL}/upload/permanent`, {
+      method: 'POST',
+      body: JSON.stringify({ image_b64: imageB64, mimeType }),
+    }),
+
   getProducts: (artisanId = null) => {
     const url = artisanId
       ? `${API_BASE_URL}/products?artisan_id=${artisanId}`

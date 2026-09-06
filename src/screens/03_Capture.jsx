@@ -71,13 +71,16 @@ export default function CaptureScreen() {
                 setCurrentStage(eventData.stage);
               }
 
-              if (eventData.stage === 'stored' && eventData.publicUrl) {
+              if (eventData.stage === 'complete' && eventData.image_b64) {
                 success = true;
                 setCurrentStage('');
+                const dataUrl = `data:${eventData.mimeType || 'image/jpeg'};base64,${eventData.image_b64}`;
                 updateProduct({
-                  enhancedImage: eventData.publicUrl,
+                  enhancedImage: dataUrl,
+                  enhancedImageB64: eventData.image_b64,
                   original_image_url: localPreviewUrl,
-                  image_url: eventData.publicUrl,
+                  // NOTE: image_url is NOT set here — it is only set at final submission
+                  // after permanent storage succeeds
                 });
               }
             }
