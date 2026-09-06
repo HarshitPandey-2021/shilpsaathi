@@ -4,11 +4,12 @@ import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
 
 export default function FinalListingScreen() {
-  const { productData, updateProduct, goToStep, clearOriginalPreview, t } = useCraft();
+  const { productData, updateProduct, goToStep, clearOriginalPreview,getArtisanId, t } = useCraft();
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [showToast, setShowToast] = useState(false);
 
   const handlePublish = async () => {
     setSaving(true);
@@ -54,12 +55,15 @@ export default function FinalListingScreen() {
         price_max: productData.price_max,
         final_price: productData.final_price,
         status: 'published',
+        artisan_id: getArtisanId(), // <-- this was missing
       };
 
       const result = await api.createProduct(productPayload);
       if (result.success) {
         updateProduct({ savedProductId: result.data.id });
         setSaved(true);
+        setShowToast(true);
+setTimeout(() => setShowToast(false), 2500);
       }
     } catch (err) {
       console.warn('Could not save product to backend:', err.message);
@@ -140,15 +144,21 @@ export default function FinalListingScreen() {
         </button>
       </div>
       <button
-        onClick={() => {
-          clearOriginalPreview();
-          updateProduct({ originalImage: null });
-          goToStep(2);
-        }}
-        className="w-full py-3 bg-stone-200 hover:bg-stone-300 rounded-2xl font-bold text-xs active:scale-[0.98] transition"
-      >
-        {t.homeBtn}
-      </button>
+  onClick={() => {
+    clearOriginalPreview();
+    updateProduct({ originalImage: null });
+    goToStep(10); // was goToStep(2)
+  }}
+  className="w-full py-3 bg-stone-200 hover:bg-stone-300 rounded-2xl font-bold text-xs active:scale-[0.98] transition"
+>
+  मेरी सूची देखें / View My Listings
+</button>
+{showToast && (
+  <div className="absolute top-4 left-4 right-4 bg-emerald-700 text-white text-xs font-bold py-3 px-4 rounded-2xl shadow-2xl z-50 flex items-center justify-center gap-2 transition-all">
+    <CheckCircle2 size={18} className="text-emerald-200" />
+    <span>लिस्टिंग सफलतापूर्वक प्रकाशित हुई! (Listing Published!)</span>
+  </div>
+)}
     </div>
   );
 }

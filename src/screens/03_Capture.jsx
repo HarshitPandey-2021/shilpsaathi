@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Camera, Sparkles, ArrowRight, RotateCcw } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
+import ScreenHeader from '../components/ui/ScreenHeader';
 
 export default function CaptureScreen() {
   const { updateProduct, setOriginalPreview, nextStep, setIsLoading, setProcessingStages, setCurrentStage, t } = useCraft();
@@ -28,11 +29,12 @@ export default function CaptureScreen() {
 
       // Attempt streaming enhancement with a 5-second network timeout safeguard
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s ceiling for image AI
 
-      try {
-        const response = await api.uploadImageStream(file);
-        clearTimeout(timeoutId);
+try {
+  // MUST pass signal to forward abort control to the fetch call
+  const response = await api.uploadImageStream(file, { signal: controller.signal });
+  clearTimeout(timeoutId);
 
         if (response && response.ok && response.body) {
           const reader = response.body.getReader();
@@ -103,10 +105,7 @@ export default function CaptureScreen() {
 
   return (
     <div className="text-center space-y-5 animate-fade-in-up">
-      <div>
-        <h2 className="text-2xl font-black text-charcoal">{t.photoTitle}</h2>
-        <p className="text-xs text-stone-600 mt-1">{t.photoSub}</p>
-      </div>
+      <ScreenHeader title={t.photoTitle} subtitle={t.photoSub} step={1} totalSteps={7} />
 
       <div className="border-2 border-dashed border-terracotta/40 rounded-3xl p-6 bg-white/70 flex flex-col items-center shadow-inner">
         {preview ? (

@@ -11,7 +11,7 @@ export default function ImageStudioScreen() {
   return (
     <div className="space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <ScreenHeader title={<span className="flex items-center gap-1.5"><Sparkles className="text-mustard" size={18} />{t.f1}</span>} subtitle={t.f1_sub} />
+        <ScreenHeader title={t.f1} subtitle={t.f1_sub} icon={Sparkles} step={2} totalSteps={7} />
         <span className="text-[10px] bg-forest/10 text-forest border border-forest/30 font-bold px-2 py-0.5 rounded-full h-fit">
           Enhanced ✓
         </span>

@@ -9,7 +9,7 @@ export default function PricingScreen() {
 
   return (
     <div className="space-y-5 animate-fade-in-up">
-      <ScreenHeader title={t.priceTitle} subtitle={t.priceSub} />
+      <ScreenHeader title={t.priceTitle} subtitle={t.priceSub} step={5} totalSteps={7} />
 
       <Card className="bg-amber-100/70 border-mustard/60 text-center rounded-3xl space-y-1">
         <span className="text-[11px] text-amber-900 font-bold uppercase tracking-wider">{t.suggestedRange}</span>
