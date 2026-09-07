@@ -1,14 +1,31 @@
-import React from 'react';
+// 02_Home.jsx — complete replacement
+import React, { useEffect, useState } from 'react';
 import { PlusCircle, Sparkles, Store, TrendingUp } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
+import { api } from '../utils/api';
 import Card from '../components/ui/Card';
 import PrimaryButton from '../components/ui/PrimaryButton';
+import IndiaFlag from '../components/ui/IndiaFlag';
 
 export default function HomeScreen() {
-  const { goToStep, t } = useCraft();
+  const { goToStep, getArtisanId, t } = useCraft();
+  const [listingCount, setListingCount] = useState(null);
+
+  useEffect(() => {
+    api.getProducts(getArtisanId())
+      .then(res => setListingCount((res?.data || []).length))
+      .catch(() => setListingCount(null));
+  }, []);
 
   return (
     <div className="space-y-4 animate-fade-in-up">
+      <div className="flex items-center gap-1.5">
+        <IndiaFlag size={13} />
+        <span className="text-[10px] font-bold text-stone-500">
+          Ministry of Social Justice & Empowerment Initiative
+        </span>
+      </div>
+
       <div>
         <span className="text-[11px] uppercase font-bold text-terracotta tracking-wider">
           {t.studioTitle} • Master Artisan
@@ -24,20 +41,15 @@ export default function HomeScreen() {
         <p className="text-[11px] text-amber-900 leading-relaxed font-medium">{t.beyondDesc}</p>
       </Card>
 
-      <div className="grid grid-cols-2 gap-2.5">
-        <Card>
-          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.activeListings}</span>
-          <p className="text-xl font-black text-charcoal mt-0.5">{t.itemsCount}</p>
-          <span className="text-[10px] text-forest font-bold flex items-center gap-1 mt-0.5">
-            <TrendingUp size={11} /> Ready to Order
-          </span>
-        </Card>
-        <Card>
-          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.benchmarkPrice}</span>
-          <p className="text-xl font-black text-charcoal mt-0.5">₹920</p>
-          <span className="text-[10px] text-amber-700 font-bold">Fair Market Rate</span>
-        </Card>
-      </div>
+      <Card className="flex items-center justify-between">
+        <div>
+          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Your Listings</span>
+          <p className="text-xl font-black text-charcoal mt-0.5">
+            {listingCount === null ? '—' : listingCount}
+          </p>
+        </div>
+        <TrendingUp size={20} className="text-forest" />
+      </Card>
 
       <Card className="text-xs space-y-1">
         <div className="flex items-center gap-1.5 font-bold text-stone-800">

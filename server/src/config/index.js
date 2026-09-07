@@ -25,6 +25,20 @@ export const config = {
     serviceUrl: process.env.AI_IMAGE_SERVICE_URL || 'http://localhost:8000',
     timeout: parseInt(process.env.AI_ENHANCE_TIMEOUT || '180000', 10),
   },
+  gemini: {
+    apiKey: (process.env.GEMINI_API_KEY || '').trim(),
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    enabled: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim().length > 0 : false,
+  },
+  openrouter: {
+    apiKey: (process.env.OPENROUTER_API_KEY || '').trim(),
+    llmModel: process.env.OPENROUTER_LLM_MODEL || 'openai/gpt-4o-mini',
+    sttModel: process.env.OPENROUTER_STT_MODEL || 'openai/whisper-large-v3',
+    enabled: process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim().length > 0 : false,
+    referer: process.env.OPENROUTER_REFERER || 'http://localhost:5000',
+    title: process.env.OPENROUTER_TITLE || 'ShilpSaathi',
+    timeoutMs: parseInt(process.env.OPENROUTER_TIMEOUT_MS || '45000', 10),
+  },
   rateLimit: {
     enabled: process.env.RATE_LIMIT_ENABLED !== 'false',
     globalWindowMs: positiveInt(process.env.RATE_LIMIT_GLOBAL_WINDOW_MS, 15 * 60 * 1000),

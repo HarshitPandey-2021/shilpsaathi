@@ -15,12 +15,12 @@ import CatalogEditScreen from './screens/06_CatalogEdit';
 import PricingScreen from './screens/07_Pricing';
 import ReviewScreen from './screens/08_Review';
 import FinalListingScreen from './screens/09_FinalListing';
-
+import MyListingsScreen from './screens/10_MyListings';
 function FlowManager() {
   const { currentStep } = useCraft();
 
   return (
- <main className="p-5 min-h-0 flex-1 flex flex-col justify-start overflow-y-auto scrollbar-hide">
+    <main className="p-5 min-h-0 flex-1 flex flex-col justify-start overflow-y-auto scrollbar-hide">
       {currentStep === 1 && <OnboardingScreen />}
       {currentStep === 2 && <HomeScreen />}
       {currentStep === 3 && <CaptureScreen />}
@@ -30,21 +30,31 @@ function FlowManager() {
       {currentStep === 7 && <PricingScreen />}
       {currentStep === 8 && <ReviewScreen />}
       {currentStep === 9 && <FinalListingScreen />}
+      {currentStep === 10 && <MyListingsScreen />}
     </main>
   );
 }
-// App.jsx — replace the outer wrapper
+
+function AppShell() {
+  const { currentStep } = useCraft();
+  const isOnboarding = currentStep === 1;
+
+  return (
+    <div className="w-full max-w-md sm:rounded-[2.5rem] sm:border-8 sm:border-stone-900 bg-ivory text-charcoal min-h-screen sm:min-h-[90vh] sm:max-h-[880px] flex flex-col justify-between shadow-2xl relative pb-20 sm:overflow-hidden">
+      {!isOnboarding && <Header />}
+      {!isOnboarding && <ProgressDots />}
+      <LoadingOverlay />
+      <FlowManager />
+      {!isOnboarding && <BottomNav />}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <CraftProvider>
       <div className="min-h-screen bg-gradient-to-br from-stone-100 via-amber-50 to-stone-200 flex items-center justify-center p-0 sm:p-6 font-sans antialiased selection:bg-amber-100">
-  <div className="w-full max-w-md sm:rounded-[2.5rem] sm:border-8 sm:border-stone-900 bg-ivory text-charcoal min-h-screen sm:min-h-[90vh] sm:max-h-[880px] flex flex-col justify-between shadow-2xl relative pb-20 sm:overflow-hidden">
-          <Header />
-          <ProgressDots />
-          <LoadingOverlay />
-          <FlowManager />
-          <BottomNav />
-        </div>
+        <AppShell />
       </div>
     </CraftProvider>
   );

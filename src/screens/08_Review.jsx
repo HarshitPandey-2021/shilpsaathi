@@ -10,7 +10,7 @@ export default function ReviewScreen() {
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <ScreenHeader title={t.verifyTitle} subtitle={t.verifySub} />
+      <ScreenHeader title={t.verifyTitle} subtitle={t.verifySub} step={6} totalSteps={7} />
 
       <Card className="space-y-3 text-xs">
         <img src={productData.enhancedImage || productData.originalImage} alt="Review" className="w-full h-36 object-cover rounded-xl" />

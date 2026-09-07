@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Mic, Square, Play, RotateCcw, ArrowRight, Sparkles, Volume2, Edit3, CheckCircle2, AlertCircle, Radio } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
-
+import ScreenHeader from '../components/ui/ScreenHeader';
 const SPEECH_LANG_OPTIONS = [
   { code: 'hi-IN', label: '🇮🇳 हिंदी (Hindi)' },
   { code: 'en-IN', label: '🇬🇧 English' },
@@ -102,15 +102,28 @@ export default function VoiceInputScreen() {
       }
     }
 
-    // 2. Capture Pure 16kHz 16-bit Mono WAV via Web Audio API
+   // 2. Capture audio using standard browser MediaRecorder
     try {
-      const recorder = new WavAudioRecorder(16000);
-      await recorder.start();
-      wavRecorderRef.current = recorder;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioChunks = [];
 
-      // Simulate live audio meter
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        setAudioBlob(recordedBlob);
+        setAudioURL(URL.createObjectURL(recordedBlob));
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      wavRecorderRef.current = mediaRecorder;
+
       const meterInterval = setInterval(() => {
-        if (wavRecorderRef.current && wavRecorderRef.current.isRecording) {
+        if (wavRecorderRef.current && wavRecorderRef.current.state === 'recording') {
           setAudioVolume(Math.floor(Math.random() * 60) + 30);
         } else {
           clearInterval(meterInterval);
@@ -128,20 +141,15 @@ export default function VoiceInputScreen() {
       try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
     }
 
-    let wavBlob = null;
-    if (wavRecorderRef.current && wavRecorderRef.current.isRecording) {
-      wavBlob = wavRecorderRef.current.stop();
-      if (wavBlob && wavBlob.size > 100) {
-        setAudioBlob(wavBlob);
-        setAudioURL(URL.createObjectURL(wavBlob));
-      }
+    if (wavRecorderRef.current && wavRecorderRef.current.state === 'recording') {
+      wavRecorderRef.current.stop();
     }
 
     setAudioVolume(0);
     setStatus('recorded');
 
-    // If live transcript is empty, auto-transcribe via Bhashini Conformer ASR
-    if (!liveTranscript.trim() && wavBlob && wavBlob.size > 100) {
+    // If live transcript is empty, auto-transcribe via backend ASR
+    if (!liveTranscript.trim() && audioBlob && audioBlob.size > 100) {
       setIsTranscribing(true);
       try {
         console.log('[Voice] Transcribing 16kHz WAV with Bhashini Conformer ASR...');
@@ -289,36 +297,47 @@ export default function VoiceInputScreen() {
       spoken_transcript: raw
     };
   };
-
+// 05_VoiceInput.jsx — replace submitVoice entirely
 const submitVoice = async () => {
-  setLoadingMessage("BHASHINI: Transcribing audio to structured catalog...");
+  setLoadingMessage("कैटलॉग तैयार हो रहा है... (Generating Catalog)");
   setIsLoading(true);
+  
+  const currentTranscript = liveTranscript.trim();
+
   try {
-    const audioBlob = await fetch(audioURL).then(r => r.blob());
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
-    const result = await api.processVoice(formData); // ask teammate for exact method name in utils/api.js
-    if (result.success) {
-      updateProduct(result.data);
+    const result = await api.processVoice({
+      audioBlob: audioBlob,
+      transcript: currentTranscript || null,
+      language: speechLang.split('-')[0],
+    });
+
+    if (result?.success && result.data) {
+      // Keep user's exact words in description if backend returned generic fallback
+      const payload = {
+        ...result.data,
+        spoken_transcript: currentTranscript,
+        description_hi: result.data.description_hi || currentTranscript,
+      };
+      updateProduct(payload);
     } else {
-      throw new Error('processing failed');
+      throw new Error('Backend did not return structured catalog data');
     }
   } catch (err) {
-    console.warn('Voice processing unavailable, using demo data:', err.message);
-    const mock = MOCK_CATALOG_RESULTS[Math.floor(Math.random() * MOCK_CATALOG_RESULTS.length)];
-    updateProduct(mock);
+    console.warn('[Voice] Backend catalog fallback active:', err.message);
+    const extracted = parseClientSideTranscript(currentTranscript);
+    updateProduct({
+      ...extracted,
+      description_hi: currentTranscript || extracted.description_hi,
+      spoken_transcript: currentTranscript
+    });
   } finally {
     setIsLoading(false);
     nextStep();
   }
 };
-
   return (
     <div className="text-center space-y-4 animate-fade-in-up">
-      <div>
-        <h2 className="text-2xl font-black text-charcoal">{t.voiceTitle}</h2>
-        <p className="text-xs text-stone-600 mt-0.5">{t.voiceSub}</p>
-      </div>
+      <ScreenHeader title={t.voiceTitle} subtitle={t.voiceSub} step={3} totalSteps={7} />
 
       {/* Language Selection Pill for Speech */}
       <div className="flex items-center justify-center gap-1.5 flex-wrap">
