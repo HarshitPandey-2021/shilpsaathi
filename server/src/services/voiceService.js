@@ -6,6 +6,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { config } from '../config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,7 +37,7 @@ function getBhashiniConfig() {
     apiKey: (process.env.BHASHINI_API_KEY || '').trim(),
     inferenceKey: (process.env.BHASHINI_INFERENCE_API_KEY || '').trim(),
     pipelineId: (process.env.BHASHINI_PIPELINE_ID || DEFAULT_BHASHINI_PIPELINE_ID).trim(),
-    geminiKey: (process.env.GEMINI_API_KEY || '').trim()
+    geminiKey: config.gemini.apiKey,
   };
 }
 
@@ -283,18 +284,21 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
 }
 
 /**
- * Extract structured catalog from raw spoken description using AI / NLP heuristics
+ * Classifies whether a provider failure is recoverable and worth falling back.
  */
-export async function extractCatalogFromText(rawText, sourceLanguage = 'hi') {
-  const text = (rawText || '').trim();
-  const bhashini = getBhashiniConfig();
-  let aiCatalog = null;
+function isRecoverableProviderError(status, message) {
+  if (status === 401) return false;
+  if (status === 429 || status === 402) return true;  // rate limit / quota / insufficient balance
+  if (status >= 500) return true;                      // provider-side error
+  if (/timeout|timed out|socket|network|fetch failed|econnreset/i.test(message || '')) return true;
+  return false;
+}
 
-  // Try Gemini if configured
-  if (bhashini.geminiKey && text.length > 3) {
-    try {
-      console.log('[AI Catalog] Invoking Gemini LLM for structured catalog extraction...');
-      const prompt = `You are a fact-grounded product analyst for ShilpSaathi, a platform for Indian traditional artisans.
+/**
+ * Builds the structured-catalog extraction prompt shared across LLM providers.
+ */
+function buildCatalogPrompt(text, sourceLanguage) {
+  return `You are a fact-grounded product analyst for ShilpSaathi, a platform for Indian traditional artisans.
 
 Your job is to extract ONLY the facts explicitly stated by the artisan. If a fact is not stated, do NOT invent it.
 
@@ -324,31 +328,192 @@ Return ONLY a valid JSON object matching this exact schema:
   "estimated_material_cost": 250,
   "estimated_labor_hours": 5
 }`;
+}
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${bhashini.geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
+/**
+ * Normalizes a parsed LLM catalog response into the schema the app expects.
+ */
+function normalizeCatalog(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const catalog = { ...parsed };
+  catalog.raw_material_cost = Number(catalog.raw_material_cost ?? catalog.estimated_material_cost ?? 150);
+  catalog.hours_spent = Number(catalog.hours_spent ?? catalog.estimated_labor_hours ?? 4);
+  catalog.estimated_material_cost = catalog.raw_material_cost;
+  catalog.estimated_labor_hours = catalog.hours_spent;
+  return catalog;
+}
 
-      if (res.ok) {
-        const data = await res.json();
-        const jsonStr = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (jsonStr) {
-          const parsed = JSON.parse(jsonStr);
-          parsed.raw_material_cost = Number(parsed.raw_material_cost ?? parsed.estimated_material_cost ?? 150);
-          parsed.hours_spent = Number(parsed.hours_spent ?? parsed.estimated_labor_hours ?? 4);
-          parsed.estimated_material_cost = parsed.raw_material_cost;
-          parsed.estimated_labor_hours = parsed.hours_spent;
-          console.log('[AI Catalog] Gemini structured catalog successfully generated.');
-          aiCatalog = parsed;
-        }
+/**
+ * Gemini catalog generation. Returns a normalized catalog or null on any failure.
+ */
+async function generateCatalogWithGemini(prompt) {
+  const { apiKey, model } = config.gemini;
+  if (!apiKey) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), config.openrouter.timeoutMs);
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn(`[AI Catalog] Gemini responded with status ${res.status}.`, isRecoverableProviderError(res.status, errText) ? 'Attempting fallback.' : '');
+      return null;
+    }
+
+    const data = await res.json();
+    const jsonStr = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!jsonStr) {
+      console.warn('[AI Catalog] Gemini returned no parseable content.');
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonStr);
+    return normalizeCatalog(parsed);
+  } catch (err) {
+    console.warn('[AI Catalog] Gemini request failed:', err.name === 'AbortError' ? 'timeout' : err.message);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * OpenRouter LLM catalog generation (fallback). Returns a normalized catalog or null.
+ */
+async function generateCatalogWithOpenRouter(prompt) {
+  const { apiKey, llmModel, referer, title, timeoutMs } = config.openrouter;
+  if (!apiKey) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': referer,
+        'X-Title': title,
+      },
+      body: JSON.stringify({
+        model: llmModel,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      console.warn(`[AI Catalog] OpenRouter responded with status ${res.status}.`);
+      return null;
+    }
+
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) {
+      console.warn('[AI Catalog] OpenRouter returned no content.');
+      return null;
+    }
+
+    const parsed = JSON.parse(content);
+    return normalizeCatalog(parsed);
+  } catch (err) {
+    console.warn('[AI Catalog] OpenRouter request failed:', err.name === 'AbortError' ? 'timeout' : err.message);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * OpenRouter Speech-to-Text transcription (fallback for Bhashini ASR).
+ * Returns a transcript string or null on any failure.
+ */
+async function transcribeWithOpenRouter(audioBuffer, mimeType = 'audio/wav') {
+  const { apiKey, sttModel, referer, title, timeoutMs } = config.openrouter;
+  if (!apiKey || !audioBuffer || audioBuffer.length === 0) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const form = new FormData();
+    const blob = new Blob([audioBuffer], { type: mimeType });
+    form.append('file', blob, 'audio.wav');
+    form.append('model', sttModel);
+
+    const res = await fetch('https://openrouter.ai/api/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': referer,
+        'X-Title': title,
+      },
+      body: form,
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      console.warn(`[OpenRouter STT] responded with status ${res.status}.`);
+      return null;
+    }
+
+    const data = await res.json();
+    const transcript = (data?.text || '').trim();
+    if (transcript) {
+      console.log('[OpenRouter STT] Transcription successful.');
+      return transcript;
+    }
+    return null;
+  } catch (err) {
+    console.warn('[OpenRouter STT] request failed:', err.name === 'AbortError' ? 'timeout' : err.message);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Extract structured catalog from raw spoken description using AI / NLP heuristics
+ */
+export async function extractCatalogFromText(rawText, sourceLanguage = 'hi') {
+  const text = (rawText || '').trim();
+  const bhashini = getBhashiniConfig();
+  let aiCatalog = null;
+
+  // Try LLM providers if configured: Gemini -> OpenRouter -> (heuristic below)
+  if (text.length > 3) {
+    const prompt = buildCatalogPrompt(text, sourceLanguage);
+
+    // Provider 1: Gemini
+    if (config.gemini.enabled) {
+      console.log('[AI Catalog] Invoking Gemini LLM for structured catalog extraction...');
+      const geminiCatalog = await generateCatalogWithGemini(prompt);
+      if (geminiCatalog) {
+        console.log('[AI Catalog] Gemini structured catalog successfully generated.');
+        aiCatalog = geminiCatalog;
       }
-    } catch (geminiErr) {
-      console.warn('[AI Catalog] Gemini LLM extraction notice:', geminiErr.message);
+    }
+
+    // Provider 2: OpenRouter (fallback if Gemini did not produce a catalog)
+    if (!aiCatalog && config.openrouter.enabled) {
+      console.log('[AI Catalog] Gemini unavailable/failed. Falling back to OpenRouter LLM...');
+      const orCatalog = await generateCatalogWithOpenRouter(prompt);
+      if (orCatalog) {
+        console.log('[AI Catalog] OpenRouter structured catalog successfully generated.');
+        aiCatalog = orCatalog;
+      }
     }
   }
 
@@ -381,7 +546,7 @@ Return ONLY a valid JSON object matching this exact schema:
   if (mMatch1) {
     let cand = cleanPhrase(mMatch1[1]);
     cand = cand.replace(/^(?:ek|ye|yeh|ise|kisi|एक|यह|इसे)\s+/i, '').trim();
-    const stopWords = ['haath', 'haath se', 'ek', 'yeh', 'ye', 'kisi', 'kareegar', 'kareegaro', 'हाथ', 'एक', 'यह'];
+    const stopWords = ['haath', 'haath se', 'ek', 'yeh', 'ye', 'kisi', 'kareegar', 'kareegaro', 'taknik', 'taknik se', 'paramparik taknik', 'paramparik', 'पारंपरिक तकनीक', 'पारंपरिक', 'तकनीक', 'तकनीक से', 'technique', 'technique se', 'traditional technique', 'traditional', 'हाथ', 'एक', 'यह'];
     if (cand && !stopWords.includes(cand.toLowerCase())) {
       explicitMaterial = cand;
     }
@@ -562,16 +727,29 @@ Return ONLY a valid JSON object matching this exact schema:
     finalMaterial !== 'Not clearly identifiable' ? finalMaterial.toLowerCase() : null
   ].filter(Boolean);
 
+  // Helper: treat "Craft Item", "Handcrafted Craft Item", empty, null as invalid LLM name
+  const isValidLlmName = (n) => n && n.trim() && !['craft item', 'handcrafted craft item'].includes(n.trim().toLowerCase());
+  const isValidLlmValue = (v) => v !== null && v !== undefined && String(v).trim() !== '';
+
   const catalog = {
     ...aiCatalog,
-    name: finalTitle,
-    category: finalCategory,
-    craft_type: finalCraftType,
-    material: finalMaterial,
-    colour: finalColor,
-    description_hi: descHi,
-    description_en: descEn,
-    keywords: [...new Set(keywords)],
+    // Prefer LLM name when valid; fall back to heuristic title
+    name: isValidLlmName(aiCatalog?.name) ? aiCatalog.name : finalTitle,
+    // Prefer LLM category when valid; fall back to heuristic category
+    category: isValidLlmValue(aiCatalog?.category) ? aiCatalog.category : finalCategory,
+    // Prefer LLM craft_type when valid; fall back to heuristic
+    craft_type: isValidLlmValue(aiCatalog?.craft_type) ? aiCatalog.craft_type : finalCraftType,
+    // Prefer LLM material when valid; fall back to heuristic material
+    material: isValidLlmValue(aiCatalog?.material) ? aiCatalog.material : finalMaterial,
+    // Prefer LLM colour when valid; fall back to heuristic colour
+    colour: isValidLlmValue(aiCatalog?.colour) ? aiCatalog.colour : finalColor,
+    // Prefer LLM descriptions when valid; fall back to heuristic descriptions
+    description_hi: isValidLlmValue(aiCatalog?.description_hi) ? aiCatalog.description_hi : descHi,
+    description_en: isValidLlmValue(aiCatalog?.description_en) ? aiCatalog.description_en : descEn,
+    // Merge LLM keywords with heuristic keywords, preferring LLM as primary source
+    keywords: [...new Set([
+      ...(Array.isArray(aiCatalog?.keywords) && aiCatalog.keywords.length > 0 ? aiCatalog.keywords : keywords)
+    ])],
     estimated_material_cost: cost,
     estimated_labor_hours: hours,
     raw_material_cost: explicitCost !== null ? cost : Number(aiCatalog?.raw_material_cost ?? cost),
@@ -598,6 +776,15 @@ export async function processVoiceAudio({ audioBuffer, mimeType = 'audio/wav', d
     if (bhashiniText) {
       transcript = bhashiniText;
       source = 'bhashini_asr';
+    }
+  }
+
+  // Fallback: OpenRouter STT if Bhashini did not produce a transcript
+  if (!transcript && audioBuffer && audioBuffer.length > 100 && config.openrouter.enabled) {
+    const openRouterText = await transcribeWithOpenRouter(audioBuffer, mimeType);
+    if (openRouterText) {
+      transcript = openRouterText;
+      source = 'openrouter_stt';
     }
   }
 
