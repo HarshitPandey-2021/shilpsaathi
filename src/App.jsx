@@ -15,21 +15,28 @@ import CatalogEditScreen from './screens/06_CatalogEdit';
 import PricingScreen from './screens/07_Pricing';
 import ReviewScreen from './screens/08_Review';
 import FinalListingScreen from './screens/09_FinalListing';
+import CatalogPage from './screens/CatalogPage';
 
 function FlowManager() {
-  const { currentStep } = useCraft();
+  const { currentStep , showCatalog} = useCraft();
 
-  return (
- <main className="p-5 min-h-0 flex-1 flex flex-col justify-start overflow-y-auto scrollbar-hide">
-      {currentStep === 1 && <OnboardingScreen />}
-      {currentStep === 2 && <HomeScreen />}
-      {currentStep === 3 && <CaptureScreen />}
-      {currentStep === 4 && <ImageStudioScreen />}
-      {currentStep === 5 && <VoiceInputScreen />}
-      {currentStep === 6 && <CatalogEditScreen />}
-      {currentStep === 7 && <PricingScreen />}
-      {currentStep === 8 && <ReviewScreen />}
-      {currentStep === 9 && <FinalListingScreen />}
+return (
+    <main className="p-5 min-h-0 flex-1 flex flex-col justify-start overflow-y-auto scrollbar-hide">
+      {showCatalog ? (
+        <CatalogPage />
+      ) : (
+        <>
+          {currentStep === 1 && <OnboardingScreen />}
+          {currentStep === 2 && <HomeScreen />}
+          {currentStep === 3 && <CaptureScreen />}
+          {currentStep === 4 && <ImageStudioScreen />}
+          {currentStep === 5 && <VoiceInputScreen />}
+          {currentStep === 6 && <CatalogEditScreen />}
+          {currentStep === 7 && <PricingScreen />}
+          {currentStep === 8 && <ReviewScreen />}
+          {currentStep === 9 && <FinalListingScreen />}
+        </>
+      )}
     </main>
   );
 }
