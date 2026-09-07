@@ -8,6 +8,16 @@ function positiveInt(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function normalizeUrl(url, fallback) {
+  if (!url || typeof url !== 'string') return fallback;
+  const trimmed = url.trim();
+  if (!trimmed) return fallback;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.replace(/\/+$/, '');
+  }
+  return `https://${trimmed.replace(/\/+$/, '')}`;
+}
+
 export const config = {
   port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -22,7 +32,7 @@ export const config = {
     origin: process.env.CORS_ORIGIN || '*',
   },
   ai: {
-    serviceUrl: process.env.AI_IMAGE_SERVICE_URL || 'http://localhost:8000',
+    serviceUrl: normalizeUrl(process.env.AI_IMAGE_SERVICE_URL, 'http://localhost:8000'),
     timeout: parseInt(process.env.AI_ENHANCE_TIMEOUT || '180000', 10),
   },
   gemini: {

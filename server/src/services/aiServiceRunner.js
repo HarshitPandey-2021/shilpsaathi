@@ -66,14 +66,21 @@ function findPythonExecutable(aiServiceDir) {
 export async function startAiService() {
   const targetUrl = config.ai?.serviceUrl || 'http://localhost:8000';
 
-  // 1. Check if AI service is already running
+  // 1. Check if AI service is already running or reachable
   const alreadyRunning = await isAiServiceRunning(targetUrl);
   if (alreadyRunning) {
     console.log(`[AI-Service] Active and connected at ${targetUrl}`);
     return;
   }
 
-  // 2. Resolve AI service directory
+  // 2. If configured for an external/remote service, do not attempt to spawn locally
+  const isLocal = targetUrl.includes('localhost') || targetUrl.includes('127.0.0.1');
+  if (!isLocal) {
+    console.log(`[AI-Service] Configured to use external AI service at ${targetUrl}`);
+    return;
+  }
+
+  // 3. Resolve AI service directory
   const aiServiceDir = path.resolve(__dirname, '../../../ai-service');
   if (!fs.existsSync(aiServiceDir)) {
     console.warn(`[AI-Service] Directory not found at: ${aiServiceDir}. Skipping auto-start.`);

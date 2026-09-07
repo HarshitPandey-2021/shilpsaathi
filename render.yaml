@@ -1,5 +1,23 @@
 services:
-  # 1. Backend Express API Web Service
+  # ============================================================================
+  # 1. Python AI Image Enhancement Service (FastAPI / Uvicorn / Docker)
+  # ============================================================================
+  - type: web
+    name: shilpsaathi-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    rootDir: ai-service
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  # ============================================================================
+  # 2. Backend Express API Web Service (Node.js)
+  # ============================================================================
   - type: web
     name: shilpsaathi-api
     runtime: node
@@ -12,6 +30,13 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: CORS_ORIGIN
+        value: "https://shilpsaathi.vercel.app,http://localhost:5173,http://localhost:3000"
+      - key: AI_IMAGE_SERVICE_URL
+        fromService:
+          type: web
+          name: shilpsaathi-ai
+          property: host
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -20,8 +45,6 @@ services:
         sync: false
       - key: SUPABASE_STORAGE_BUCKET
         value: product-images
-      - key: CORS_ORIGIN
-        value: "*"
       - key: GEMINI_API_KEY
         sync: false
       - key: BHASHINI_USER_ID
@@ -31,20 +54,4 @@ services:
       - key: BHASHINI_INFERENCE_API_KEY
         sync: false
       - key: BHASHINI_PIPELINE_ID
-        value: "64392f96daac500b55c543cd"
-
-  # 2. Frontend React Vite Static Site
-  - type: web
-    name: shilpsaathi-web
-    runtime: static
-    plan: free
-    region: oregon
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        sync: false
+        value: "64392f96daac500b55c543d6"
