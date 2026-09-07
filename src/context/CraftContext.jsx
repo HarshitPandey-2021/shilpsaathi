@@ -48,11 +48,9 @@ export const TRANSLATIONS = {
     publishedSub: "आपका शिल्प अब डिजिटल बाज़ार में बिकने के लिए तैयार है",
     shareWhatsapp: "व्हाट्सएप पर शेयर करें",
     homeBtn: "होम पेज",
-    navStudio: "डैशबोर्ड", navCatalog: "कैटलॉग", navAdd: "जोड़ें",navProfile: "भाषा",
-beyondTitle: "मेलों से आगे",
-beyondDesc: "अपने पारंपरिक शिल्प को साल भर बेचें। सूरजकुंड मेला, दिल्ली हाट और शिल्प समागम जैसे मौसमी मेलों की सीमाओं से आगे बढ़ें।",
-
-
+    navStudio: "डैशबोर्ड", navCatalog: "कैटलॉग", navAdd: "जोड़ें", navProfile: "भाषा",
+    beyondTitle: "मेलों से आगे",
+    beyondDesc: "अपने पारंपरिक शिल्प को साल भर बेचें। सूरजकुंड मेला, दिल्ली हाट और शिल्प समागम जैसे मौसमी मेलों की सीमाओं से आगे बढ़ें।",
   },
   en: {
     code: "en-IN",
@@ -99,10 +97,9 @@ beyondDesc: "अपने पारंपरिक शिल्प को सा
     publishedSub: "Your craft is now digital and ready to share",
     shareWhatsapp: "Share on WhatsApp",
     homeBtn: "Home",
-    navStudio: "Studio", navCatalog: "Catalog", navAdd: "Add",navProfile: "Language",
-beyondTitle: "Beyond Physical Exhibitions",
-beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits of Surajkund Mela, Dilli Haat, and Shilp Samagam.",
-
+    navStudio: "Studio", navCatalog: "Catalog", navAdd: "Add", navProfile: "Language",
+    beyondTitle: "Beyond Physical Exhibitions",
+    beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits of Surajkund Mela, Dilli Haat, and Shilp Samagam.",
   },
   bn: {
     code: "bn-IN",
@@ -111,7 +108,7 @@ beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits 
     heroText: "গ্রামীণ কারিগর থেকে ডিজিটাল বাজার",
     desc: "টাইপ বা ফটো এডিটিং ছাড়াই আপনার ভাষায় কথা বলে অনলাইন তালিকা তৈরি করুন।",
     f1: "ফটো স্টুডিও", f1_sub: "স্বচ্ছ ছবি",
-    f2: "ভাষিণী ভয়েস", f2_sub: "টাইপিং ছাড়া",
+    f2: "ভাষিণী ভয়েস", f2_sub: "টাইপিং ছাড়া",
     f3: "ন্যায্য মূল্য", f3_sub: "সঠিক দাম",
     startBtn: "শুরু করুন / Launch Studio",
     listen: "শুনুন (Audio)",
@@ -150,9 +147,8 @@ beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits 
     shareWhatsapp: "হোয়াটসঅ্যাপে শেয়ার করুন",
     homeBtn: "হোম",
     navStudio: "স্টুডিও", navCatalog: "ক্যাটালগ", navAdd: "যোগ", navProfile: "ভাষা",
-beyondTitle: "প্রদর্শনীর বাইরেও",
-beyondDesc: "সারা বছর আপনার ঐতিহ্যবাহী পণ্য বিক্রি করুন। সুরজকুণ্ড মেলা, দিল্লি হাট এবং শিল্প সমাগমের মৌসুমি সীমা ছাড়িয়ে যান।",
-
+    beyondTitle: "প্রদর্শনীর বাইরেও",
+    beyondDesc: "সারা বছর আপনার ঐতিহ্যবাহী পণ্য বিক্রি করুন। সুরজকুণ্ড মেলা, দিল্লি হাট এবং শিল্প সমাগমের মৌসুমি সীমা ছাড়িয়ে যান।",
   },
   ta: {
     code: "ta-IN",
@@ -200,10 +196,8 @@ beyondDesc: "সারা বছর আপনার ঐতিহ্যবাহ�
     shareWhatsapp: "வாட்ஸ்அப்பில் பகிரவும்",
     homeBtn: "முகப்பு",
     navStudio: "மையம்", navCatalog: "பட்டியல்", navAdd: "சேர்", navProfile: "மொழி",
-beyondTitle: "கண்காட்சிகளுக்கு அப்பால்",
-beyondDesc: "உங்கள் பாரம்பரிய கைவினைப் பொருட்களை ஆண்டு முழுவதும் விற்கவும். சூரஜ்குண்ட் மேளா, தில்லி ஹாட் போன்ற பருவகால வரம்புகளைத் தாண்டவும்.",
-
-// te block
+    beyondTitle: "கண்காட்சிகளுக்கு அப்பால்",
+    beyondDesc: "உங்கள் பாரம்பரிய கைவினைப் பொருட்களை ஆண்டு முழுவதும் விற்கவும். சூரஜ்குண்ட் மேளா, தில்லி ஹாட் போன்ற பருவகால வரம்புகளைத் தாண்டவும்.",
   },
   te: {
     code: "te-IN",
@@ -250,10 +244,9 @@ beyondDesc: "உங்கள் பாரம்பரிய கைவினை�
     publishedSub: "మీ కళ ఇప్పుడు మార్కెట్లో అమ్మకానికి సిద్ధంగా ఉంది",
     shareWhatsapp: "వాట్సాప్‌లో షేర్ చేయండి",
     homeBtn: "హోమ్",
-    navStudio: "స్టూడియో", navCatalog: "కేటలాగ్", navAdd: "జోడించు",navProfile: "భాష",
-beyondTitle: "ప్రదర్శనలకు మించి",
-beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను ఏడాది పొడవునా అమ్మండి. సూరజ్‌కుండ్ మేళా, దిల్లీ హాట్ వంటి కాలానుగుణ పరిమితులను అధిగమించండి.",
-
+    navStudio: "స్టూడియో", navCatalog: "కేటలాగ్", navAdd: "జోడించు", navProfile: "భాష",
+    beyondTitle: "ప్రదర్శనలకు మించి",
+    beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను ఏడాది పొడవునా అమ్మండి. సూరజ్‌కుండ్ మేళా, దిల్లీ హాట్ వంటి కాలానుగుణ పరిమితులను అధిగమించండి.",
   },
   mr: {
     code: "mr-IN",
@@ -267,7 +260,7 @@ beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను �
     startBtn: "सुरू करा / Launch Studio",
     listen: "ऐका (Audio)",
     speaking: "बोलत आहे...",
-    speechText: "शिल्पसाथीमध्ये आपले स्वागत आहे. आपल्या हस्तकलेचा फोटो घ्या आणि बोलून माहिती नोंदवा.",
+    speechText: "शिल्पसाथीमध्ये आपले स्वागत आहे। आपल्या हस्तकलेचा फोटो घ्या आणि बोलून माहिती नोंदवा.",
     studioTitle: "कारागीर डॅशबोर्ड",
     activeListings: "सक्रिय उत्पादने",
     itemsCount: "३ वस्तू",
@@ -301,10 +294,11 @@ beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను �
     shareWhatsapp: "व्हॉट्सॲपवर शेअर करा",
     homeBtn: "मुख्य पान",
     navStudio: "डॅशबोर्ड", navCatalog: "कॅटलॉग", navAdd: "जोडा", navProfile: "भाषा",
-beyondTitle: "मेळ्यांच्या पलीकडे",
-beyondDesc: "आपली पारंपरिक कला वर्षभर विका. सुरजकुंड मेळा, दिल्ली हाट यांसारख्या हंगामी मर्यादा ओलांडा.",
+    beyondTitle: "मेळ्यांच्या पलीकडे",
+    beyondDesc: "आपली पारंपरिक कला वर्षभर विका. सुरजकुंड मेळा, दिल्ली हाट यांसारख्या हंगामी मर्यादा ओलांडा.",
   }
 };
+
 export function CraftProvider({ children }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [lang, setLang] = useState('hi');
@@ -314,6 +308,26 @@ export function CraftProvider({ children }) {
   const [processingStages, setProcessingStages] = useState([]);
   const [currentStage, setCurrentStage] = useState('');
   const originalPreviewUrlRef = useRef(null);
+
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [listings, setListings] = useState([
+    {
+      id: 'demo-1',
+      name: "Handcrafted Terracotta Earthen Vase",
+      category: "Clay & Ceramic Crafts",
+      image: "https://images.unsplash.com/photo-1590736969955-71cc94801759?w=800&auto=format&fit=crop",
+      final_price: 890,
+      status: 'published',
+      material: "Traditional Riverbed Clay",
+      colour: "Natural Ochre & Terracotta",
+      description_hi: "हाथ से चाक पर तैयार की गई शुद्ध मिट्टी की सुराही। प्राकृतिक रूप से पकाई गई और पर्यावरण के अनुकूल।",
+      description_en: "Handmade wheel-thrown terracotta vase crafted from local riverbed clay. Eco-friendly with natural earthen finish.",
+      keywords: ["pottery", "terracotta", "handmade", "eco-friendly"],
+      price_min: 750,
+      price_max: 1100,
+      price_reasoning: "Material Cost (₹220) + 5 hrs hand-turning + category benchmark markup.",
+    },
+  ]);
 
   const [productData, setProductData] = useState({
     originalImage: null,
@@ -354,6 +368,24 @@ export function CraftProvider({ children }) {
   const prevStep = () => setCurrentStep(prev => Math.max(1, prev - 1));
   const goToStep = (step) => setCurrentStep(step);
 
+  const openListing = (listing) => {
+    setProductData(prev => ({ ...prev, ...listing, originalImage: listing.image, enhancedImage: listing.image }));
+    setShowCatalog(false);
+    goToStep(8);
+  };
+
+  const addListingFromProduct = (status = 'published') => {
+    setListings(prev => [
+      {
+        ...productData,
+        id: `item-${Date.now()}`,
+        image: productData.enhancedImage || productData.originalImage,
+        status,
+      },
+      ...prev,
+    ]);
+  };
+
   return (
     <CraftContext.Provider value={{
       currentStep, nextStep, prevStep, goToStep,
@@ -364,7 +396,9 @@ export function CraftProvider({ children }) {
       loadingMessage, setLoadingMessage,
       showLangModal, setShowLangModal,
       processingStages, setProcessingStages,
-      currentStage, setCurrentStage
+      currentStage, setCurrentStage,
+      showCatalog, setShowCatalog,
+      listings, openListing, addListingFromProduct
     }}>
       {children}
     </CraftContext.Provider>
