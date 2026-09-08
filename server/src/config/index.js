@@ -37,12 +37,12 @@ export const config = {
   },
   gemini: {
     apiKey: (process.env.GEMINI_API_KEY || '').trim(),
-    model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
     enabled: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim().length > 0 : false,
   },
   groq: {
     apiKey: (process.env.GROQ_API_KEY || '').trim(),
-    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+    model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
     enabled: process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim().length > 0 : false,
     timeoutMs: parseInt(process.env.GROQ_TIMEOUT_MS || '30000', 10),
   },

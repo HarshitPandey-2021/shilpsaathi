@@ -42,11 +42,21 @@ export default function ReviewScreen() {
       let imageUrl = productData.image_url;
       const b64 = productData.enhancedImageB64 || productData.originalB64;
       if (!imageUrl && b64) {
-        const store = await api.storePermanentImage(b64, 'image/jpeg');
-        if (store?.success && store.data?.publicUrl) {
-          imageUrl = store.data.publicUrl;
+        try {
+          const store = await api.storePermanentImage(b64, 'image/jpeg');
+          if (store?.success && store.data?.publicUrl) {
+            imageUrl = store.data.publicUrl;
+            updateProduct({ image_url: imageUrl });
+          }
+        } catch (e) {
+          console.warn('[Review] Permanent store fallback:', e.message);
+          // Fallback to enhanced / original preview data URL if permanent bucket is offline
+          imageUrl = productData.enhancedImage || productData.originalImage || `data:image/jpeg;base64,${b64}`;
           updateProduct({ image_url: imageUrl });
         }
+      }
+      if (!imageUrl) {
+        imageUrl = productData.enhancedImage || productData.originalImage;
       }
       if (!imageUrl) throw new Error('No image could be stored. Please re-take the photo.');
 

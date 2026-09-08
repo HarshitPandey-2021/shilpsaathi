@@ -35,10 +35,10 @@ export function classifyError(statusOrErr, message = '', errName = '') {
   if (name === 'AbortError' || /timeout|timed out/i.test(msg)) {
     return { type: 'timeout', label: 'timeout' };
   }
-  if (status === 401 || status === 403 || /unauthorized|forbidden|invalid api key|api key not valid|api_key_invalid|permission_denied/i.test(msg)) {
+  if (status === 401 || status === 403 || /unauthorized|forbidden|invalid api key|api key not valid|api_key_invalid|api key expired|permission_denied|api_key/i.test(msg)) {
     return { type: 'auth/expired_token', label: 'auth/expired_token' };
   }
-  if (status === 429 || status === 402 || /quota|rate limit|resource_exhausted|insufficient/i.test(msg)) {
+  if (status === 429 || status === 402 || /quota|rate limit|rate_limit_exceeded|resource_exhausted|insufficient/i.test(msg)) {
     return { type: 'quota_exceeded', label: 'quota_exceeded' };
   }
   return { type: 'unknown', label: 'provider_error' };
@@ -69,7 +69,7 @@ export function safeExtractJson(rawText) {
 }
 
 /**
- * Invokes Google Gemini API with structured JSON output expectation.
+ * Invokes Google Gemini API with structured JSON output expectation and active model fallback.
  */
 export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 } = {}) {
   const { apiKey, model } = config.gemini;
@@ -80,6 +80,13 @@ export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 25000);
 
+  const candidateModels = [...new Set([
+    model,
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
+  ])].filter(Boolean);
+
   try {
     const contents = [];
     if (systemPrompt) {
@@ -88,24 +95,11 @@ export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 
       contents.push({ parts: [{ text: prompt }] });
     }
 
-    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature,
-          responseMimeType: 'application/json',
-        },
-      }),
-      signal: controller.signal,
-    });
+    let lastError = null;
 
-    if (res.status === 404) {
-      // Retry with modern Gemini model endpoints if initial configured model returns 404
-      const fallbackModels = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'].filter(m => m !== model);
-      for (const fallbackModel of fallbackModels) {
-        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${apiKey}`, {
+    for (const curModel of candidateModels) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${curModel}:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -117,48 +111,57 @@ export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 
           }),
           signal: controller.signal,
         });
-        if (res.ok) break;
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          const classification = classifyError(res.status, errText);
+          const cleanMsg = errText.slice(0, 160).replace(/key=[^&\s]+/gi, 'key=REDACTED');
+          lastError = {
+            success: false,
+            errorType: classification.label,
+            status: res.status,
+            message: cleanMsg || `HTTP ${res.status}`,
+          };
+          // If auth or quota failed, trying another model won't help -> return error immediately
+          if (classification.type === 'auth/expired_token' || classification.type === 'quota_exceeded') {
+            return lastError;
+          }
+          // If 404 / model not found, try next candidate model
+          continue;
+        }
+
+        const data = await res.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawText) {
+          lastError = { success: false, errorType: 'empty_response', message: 'No content in candidates' };
+          continue;
+        }
+
+        const parsed = safeExtractJson(rawText);
+        if (!parsed) {
+          lastError = { success: false, errorType: 'malformed_json', message: 'Invalid JSON returned', rawText };
+          continue;
+        }
+
+        return { success: true, data: parsed, provider: 'gemini', model: curModel };
+      } catch (innerErr) {
+        lastError = {
+          success: false,
+          errorType: classifyError(0, innerErr.message, innerErr.name).label,
+          message: innerErr.message,
+        };
+        if (innerErr.name === 'AbortError') break;
       }
     }
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      const classification = classifyError(res.status, errText);
-      const cleanMsg = errText.slice(0, 160).replace(/key=[^&\s]+/gi, 'key=REDACTED');
-      return {
-        success: false,
-        errorType: classification.label,
-        status: res.status,
-        message: cleanMsg || `HTTP ${res.status}`,
-      };
-    }
-
-    const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) {
-      return { success: false, errorType: 'empty_response', message: 'No content in candidates' };
-    }
-
-    const parsed = safeExtractJson(rawText);
-    if (!parsed) {
-      return { success: false, errorType: 'malformed_json', message: 'Invalid JSON returned', rawText };
-    }
-
-    return { success: true, data: parsed, provider: 'gemini' };
-  } catch (err) {
-    const classification = classifyError(0, err.message, err.name);
-    return {
-      success: false,
-      errorType: classification.label,
-      message: err.message,
-    };
+    return lastError || { success: false, errorType: 'provider_error', message: 'All Gemini models failed' };
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
 /**
- * Invokes Groq API (OpenAI-compatible) with structured JSON output expectation.
+ * Invokes Groq API (OpenAI-compatible) with structured JSON output expectation and active model fallback.
  */
 export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3 } = {}) {
   const { apiKey, model, timeoutMs } = config.groq;
@@ -169,6 +172,15 @@ export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3 } 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs || 30000);
 
+  const candidateModels = [...new Set([
+    model,
+    'llama-3.1-8b-instant',
+    'llama3-8b-8192',
+    'llama3-70b-8192',
+    'gemma2-9b-it',
+    'llama-3.3-70b-versatile',
+  ])].filter(Boolean);
+
   try {
     const messages = [];
     if (systemPrompt) {
@@ -176,52 +188,68 @@ export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3 } 
     }
     messages.push({ role: 'user', content: prompt });
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: model || 'llama-3.3-70b-versatile',
-        messages,
-        temperature,
-        response_format: { type: 'json_object' },
-      }),
-      signal: controller.signal,
-    });
+    let lastError = null;
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      const classification = classifyError(res.status, errText);
-      const cleanMsg = errText.slice(0, 160).replace(/Bearer\s+[^\s]+/gi, 'Bearer REDACTED');
-      return {
-        success: false,
-        errorType: classification.label,
-        status: res.status,
-        message: cleanMsg || `HTTP ${res.status}`,
-      };
+    for (const curModel of candidateModels) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: curModel,
+            messages,
+            temperature,
+            response_format: { type: 'json_object' },
+          }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          const classification = classifyError(res.status, errText);
+          const cleanMsg = errText.slice(0, 160).replace(/Bearer\s+[^\s]+/gi, 'Bearer REDACTED');
+          lastError = {
+            success: false,
+            errorType: classification.label,
+            status: res.status,
+            message: cleanMsg || `HTTP ${res.status}`,
+          };
+          // If auth or quota failed, trying another model won't help -> return error immediately
+          if (classification.type === 'auth/expired_token' || classification.type === 'quota_exceeded') {
+            return lastError;
+          }
+          // If 404 / model not found, try next candidate model
+          continue;
+        }
+
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) {
+          lastError = { success: false, errorType: 'empty_response', message: 'No content in choices' };
+          continue;
+        }
+
+        const parsed = safeExtractJson(content);
+        if (!parsed) {
+          lastError = { success: false, errorType: 'malformed_json', message: 'Invalid JSON returned', rawText: content };
+          continue;
+        }
+
+        return { success: true, data: parsed, provider: 'groq', model: curModel };
+      } catch (innerErr) {
+        lastError = {
+          success: false,
+          errorType: classifyError(0, innerErr.message, innerErr.name).label,
+          message: innerErr.message,
+        };
+        if (innerErr.name === 'AbortError') break;
+      }
     }
 
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) {
-      return { success: false, errorType: 'empty_response', message: 'No content in choices' };
-    }
-
-    const parsed = safeExtractJson(content);
-    if (!parsed) {
-      return { success: false, errorType: 'malformed_json', message: 'Invalid JSON returned', rawText: content };
-    }
-
-    return { success: true, data: parsed, provider: 'groq' };
-  } catch (err) {
-    const classification = classifyError(0, err.message, err.name);
-    return {
-      success: false,
-      errorType: classification.label,
-      message: err.message,
-    };
+    return lastError || { success: false, errorType: 'provider_error', message: 'All Groq models failed' };
   } finally {
     clearTimeout(timeoutId);
   }
