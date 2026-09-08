@@ -26,7 +26,7 @@ const STAGE_ORDER = [
 
 export default function LoadingOverlay() {
   const { isLoading, loadingMessage, processingStages, currentStage } = useCraft();
-  const hasStages = processingStages.length > 0;
+   const hasStages = false; // image stages now render inline on the Capture screen
   const currentIndex = Math.max(0, STAGE_ORDER.indexOf(currentStage || processingStages.at(-1)?.stage));
 
   if (!isLoading && !hasStages) return null;

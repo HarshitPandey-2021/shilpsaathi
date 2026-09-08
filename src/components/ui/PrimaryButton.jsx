@@ -1,17 +1,58 @@
 import React from 'react';
-export default function PrimaryButton({ children, onClick, disabled, variant = 'primary', icon: Icon }) {
-  const styles = {
-    primary: 'bg-terracotta hover:bg-[#8e3e29] text-white shadow-terracotta/20',
-    success: 'bg-forest hover:bg-[#326647] text-white shadow-forest/25',
-    ghost: 'bg-stone-200 hover:bg-stone-300 text-charcoal shadow-none',
-  };
+
+const VARIANTS = {
+  primary:   'bg-craft text-white shadow-lift hover:brightness-110',
+  success:   'bg-leaf text-white shadow-lift hover:brightness-110',
+  gold:      'bg-gold text-charcoal shadow-lift hover:brightness-105',
+  secondary: 'bg-white text-terracotta border border-terracotta-200 shadow-card hover:bg-terracotta-50',
+  ghost:     'bg-stone-100 text-stone-700 hover:bg-stone-200',
+};
+
+export default function PrimaryButton({
+  children,
+  onClick,
+  disabled = false,
+  loading = false,
+  variant = 'primary',
+  icon: Icon,
+  iconRight: IconRight,
+  full = true,
+  className = '',
+  type = 'button',
+  ...rest
+}) {
+  const isOff = disabled || loading;
+
   return (
     <button
+      type={type}
       onClick={onClick}
-      disabled={disabled}
-      className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg transition active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none ${styles[variant]}`}
+      disabled={isOff}
+      className={[
+        'relative overflow-hidden touch rounded-3xl px-5 py-4',
+        'font-bold text-sm tracking-tight',
+        'inline-flex items-center justify-center gap-2',
+        'transition-all duration-200 active:scale-[0.98]',
+        full ? 'w-full' : '',
+        isOff
+          ? 'bg-stone-200 text-stone-400 shadow-none cursor-not-allowed active:scale-100'
+          : VARIANTS[variant] || VARIANTS.primary,
+        className,
+      ].join(' ')}
+      {...rest}
     >
-      {Icon && <Icon size={18} />} {children}
+      {loading ? (
+        <>
+          <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+          <span>{children}</span>
+        </>
+      ) : (
+        <>
+          {Icon && <Icon size={18} strokeWidth={2.4} className="shrink-0" />}
+          <span className="min-w-0 truncate">{children}</span>
+          {IconRight && <IconRight size={18} strokeWidth={2.4} className="shrink-0" />}
+        </>
+      )}
     </button>
   );
 }
