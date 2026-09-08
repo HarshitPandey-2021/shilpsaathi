@@ -56,6 +56,7 @@ export async function processVoice(req, res, next) {
     };
 
     return successResponse(res, {
+      ...enrichedCatalog,
       transcript: result.transcript,
       catalog: enrichedCatalog,
       pricing: pricingData,
