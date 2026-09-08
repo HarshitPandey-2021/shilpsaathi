@@ -211,17 +211,20 @@ export default function VoiceInputScreen() {
     const cleanItem = title.replace(/^Handcrafted\s+/i, '').toLowerCase();
 
     return {
-      name: title, category: 'Handmade Home Decor', material, craft_type: '', colour: color,
-      description_hi: raw.length > 5 ? `कारीगर द्वारा पारंपरिक तकनीक से तैयार किया गया हस्तशिल्प। ${raw}` : `कारीगर द्वारा शुद्ध प्राकृतिक सामग्री से निर्मित उत्कृष्ट कलाकृति। 100% हस्तनिर्मित।`,
-      description_en: parts.length ? `A ${cleanItem} ${parts.join(', ')}.` : 'Product details were not clearly specified.',
+      name: title, category: 'Handmade Home Decor', material, craft_type: 'handmade', colour: color,
+      description_hi: raw.length > 5 ? `पारंपरिक तकनीक और कुशल हस्तशिल्प से तैयार किया गया प्रामाणिक ${cleanItem || 'शिल्प'}। 100% हस्तनिर्मित व टिकाऊ।` : `कारीगर द्वारा शुद्ध प्राकृतिक सामग्री से निर्मित उत्कृष्ट कलाकृति। 100% हस्तनिर्मित।`,
+      description_en: parts.length ? `An authentic handcrafted ${cleanItem || 'heritage item'}, carefully made ${parts.join(', ')}.` : 'Authentic handcrafted heritage item made by traditional artisans.',
       keywords: [...new Set(['handmade', cleanItem, material !== 'Not clearly identifiable' ? material.toLowerCase() : null].filter(Boolean))],
       raw_material_cost: cost, hours_spent: hours,
+      extracted_facts: { labor_hours: hours, material_cost_inr: cost, explicit_price: explicitCost },
       price_min: explicitCost ?? Math.round(cost * 1.5 + hours * 100),
       price_max: explicitCost ?? Math.round(cost * 2.2 + hours * 150),
       final_price: explicitCost ?? Math.round(cost * 1.8 + hours * 125),
       explicit_price: explicitCost,
       price_reasoning: explicitCost !== null ? `Price provided by artisan: INR ${explicitCost}.` : `₹${cost} materials + ${hours} hrs labour + 25% fair margin.`,
       spoken_transcript: raw,
+      is_ai_generated: false,
+      pricing_method: 'heuristic',
     };
   };
 
@@ -229,14 +232,48 @@ export default function VoiceInputScreen() {
     setLoadingMessage(t.genCatalog);
     setIsLoading(true);
     const tr = liveTranscript.trim();
+    const sourceLanguage = speechLang.split('-')[0] || lang || 'hi';
+    const targetLanguage = lang === 'hi' ? 'en' : lang;
+
     try {
-      const result = await api.processVoice({ audioBlob: blobRef.current, transcript: tr || null, language: speechLang.split('-')[0] });
+      const result = await api.processVoice({
+        audioBlob: blobRef.current,
+        transcript: tr || null,
+        language: sourceLanguage,
+        targetLanguage,
+      });
       if (!result?.success || !result.data) throw new Error('no structured data');
-      updateProduct({ ...result.data, spoken_transcript: tr, description_hi: result.data.description_hi || tr });
+
+      const serverCatalog = result.data.catalog || {};
+      const facts = result.data.extracted_facts || serverCatalog.extracted_facts || {};
+      const labHours = Number(facts.labor_hours ?? facts.laborHours ?? serverCatalog.hours_spent ?? 4);
+      const matCost = Number(facts.material_cost_inr ?? facts.materialCostINR ?? serverCatalog.raw_material_cost ?? 150);
+
+      updateProduct({
+        ...serverCatalog,
+        raw_material_cost: matCost,
+        hours_spent: labHours,
+        extracted_facts: facts,
+        spoken_transcript: tr || result.data.transcript || serverCatalog.spoken_transcript,
+        is_ai_generated: result.data.is_ai_generated ?? serverCatalog.is_ai_generated ?? false,
+        llm_provider: result.data.llm_provider ?? serverCatalog.llm_provider ?? 'none',
+        ai_pricing: result.data.ai_pricing || null,
+        heuristic_pricing: result.data.heuristic_pricing || result.data.pricing || null,
+        pricing_method: result.data.ai_pricing?.is_ai_available ? 'ai' : 'heuristic',
+        final_price: serverCatalog.final_price || result.data.ai_pricing?.suggested_price || result.data.heuristic_pricing?.suggested_price || 0,
+        price_min: serverCatalog.price_min || result.data.ai_pricing?.price_min || result.data.heuristic_pricing?.price_min || 0,
+        price_max: serverCatalog.price_max || result.data.ai_pricing?.price_max || result.data.heuristic_pricing?.price_max || 0,
+        price_reasoning: serverCatalog.price_reasoning || result.data.ai_pricing?.reasoning || result.data.heuristic_pricing?.reasoning || '',
+      });
     } catch (err) {
       console.warn('[Voice] fallback extractor:', err.message);
       const ex = parseClientSideTranscript(tr);
-      updateProduct({ ...ex, description_hi: tr || ex.description_hi, spoken_transcript: tr });
+      updateProduct({
+        ...ex,
+        spoken_transcript: tr,
+        is_ai_generated: false,
+        llm_provider: 'none',
+      });
     } finally {
       setIsLoading(false);
       nextStep();

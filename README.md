@@ -285,11 +285,12 @@ BHASHINI_API_KEY=your-api-key
 BHASHINI_INFERENCE_API_KEY=your-inference-key
 BHASHINI_PIPELINE_ID=your-pipeline-id
 GEMINI_API_KEY=your-gemini-key
+GEMINI_MODEL=gemini-2.5-flash
+GROQ_API_KEY=your-groq-key
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-Bhashini and Gemini variables are optional for fallback operation. Keep service-role
-and inference credentials server-side. The repository has no separate
-`server/.env.example`.
+Bhashini, Gemini, and Groq variables enable real-time AI auto-cataloging and dynamic pricing assistance with automatic graceful fallback: **Gemini (Primary) -> Groq (Secondary) -> Heuristic Layer (Local Fallback)**. If API keys expire or rate limits occur, the server classifies the error (`auth/expired_token`, `quota_exceeded`, `timeout`) and falls back without leaking keys or failing user requests. Keep service-role and inference credentials server-side.
 
 ## Local Setup
 

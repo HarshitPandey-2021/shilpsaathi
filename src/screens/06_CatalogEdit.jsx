@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sparkles, Tag, X, Check } from 'lucide-react';
+import { ArrowRight, Sparkles, Tag, X, Check, AlertCircle, Bot } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import PrimaryButton from '../components/ui/PrimaryButton';
@@ -30,6 +30,33 @@ export default function CatalogEditScreen() {
   return (
     <div className="space-y-4 animate-fade-in-up">
       <ScreenHeader title={t.catalogTitle} subtitle={t.catalogSub} icon={Sparkles} step={4} totalSteps={6} />
+
+      {/* AI vs Heuristic Generation Banner */}
+      <div className={`flex items-center justify-between rounded-2xl border px-3.5 py-2 text-2xs font-bold ${
+        productData.is_ai_generated !== false
+          ? 'border-forest-200 bg-forest-50 text-forest-700'
+          : 'border-amber-200 bg-amber-50 text-amber-800'
+      }`}>
+        <span className="flex items-center gap-1.5">
+          {productData.is_ai_generated !== false ? (
+            <>
+              <Sparkles size={13} className="text-forest" />
+              {t.aiVerified || 'AI Verified Catalog'}
+            </>
+          ) : (
+            <>
+              <AlertCircle size={13} className="text-amber-600" />
+              {t.autoFilledReview || 'Auto-filled, please review details'}
+            </>
+          )}
+        </span>
+        {productData.llm_provider && (
+          <span className="text-[10px] opacity-75 font-mono uppercase">
+            via {productData.llm_provider}
+          </span>
+        )}
+      </div>
+
       {productData.spoken_transcript && (
         <div className="space-y-2 rounded-3xl border border-mustard-200 bg-mustard-50 p-4 animate-scale-in">
           <p className="flex items-center gap-1.5 text-2xs font-black uppercase tracking-wide text-mustard-700">
@@ -57,25 +84,25 @@ export default function CatalogEditScreen() {
           className="h-20 w-20 shrink-0 rounded-2xl border border-stone-200 object-cover"
         />
         <div className="min-w-0 flex-1 self-center">
-          <p className="truncate text-sm font-black text-charcoal">{productData.name || '—'}</p>
-          <p className="mt-0.5 truncate text-2xs text-stone-500">{productData.material || '—'}</p>
+          <p className="truncate text-sm font-black text-charcoal">{productData.name || t.untitled || 'Handcrafted Product'}</p>
+          <p className="mt-0.5 truncate text-2xs text-stone-500">{productData.material || productData.category || ''}</p>
           {productData.isEnhanced && (
             <span className="chip mt-1.5 border-forest-200 bg-forest-50 text-forest">
-              <Sparkles size={11} /> AI
+              <Sparkles size={11} /> AI Enhanced
             </span>
           )}
         </div>
       </div>
 
       <div className="space-y-3.5 rounded-3xl border border-stone-200 bg-white p-4 shadow-card">
-        <Field label={t.fTitle}    value={productData.name}     onChange={(v) => updateProduct({ name: v })} />
+        <Field label={t.fTitle}    value={productData.name}     placeholder={t.untitled} onChange={(v) => updateProduct({ name: v })} />
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t.fCategory} value={productData.category} onChange={(v) => updateProduct({ category: v })} />
-          <Field label={t.fColour}   value={productData.colour}   onChange={(v) => updateProduct({ colour: v })} />
+          <Field label={t.fCategory} value={productData.category} placeholder="Category" onChange={(v) => updateProduct({ category: v })} />
+          <Field label={t.fColour}   value={productData.colour}   placeholder="Colour" onChange={(v) => updateProduct({ colour: v })} />
         </div>
-        <Field label={t.fMaterial}   value={productData.material} onChange={(v) => updateProduct({ material: v })} />
-        <Field label={t.fDescNative} value={productData.description_hi} rows={3} onChange={(v) => updateProduct({ description_hi: v })} />
-        <Field label={t.fDescEn}     value={productData.description_en} rows={3} onChange={(v) => updateProduct({ description_en: v })} />
+        <Field label={t.fMaterial}   value={productData.material} placeholder="Material" onChange={(v) => updateProduct({ material: v })} />
+        <Field label={t.fDescNative} value={productData.description_hi} rows={3} placeholder={t.fDescNative} onChange={(v) => updateProduct({ description_hi: v })} />
+        <Field label={t.fDescEn}     value={productData.description_en} rows={3} placeholder={t.fDescEn} onChange={(v) => updateProduct({ description_en: v })} />
 
         {keywords.length > 0 && (
           <div className="space-y-1.5">

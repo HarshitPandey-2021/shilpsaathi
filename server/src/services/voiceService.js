@@ -165,7 +165,7 @@ function extractQuantity(text, contextKeywords = []) {
 export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mimeType = 'audio/webm') {
   const bhashini = getBhashiniConfig();
   if (!bhashini.userId || !bhashini.apiKey) {
-    console.warn('[Bhashini] Bhashini credentials are missing (set BHASHINI_USER_ID and BHASHINI_API_KEY). Skipping Bhashini ASR and using fallback processing.');
+    console.warn('[Bhashini] Credentials not configured. Skipping Bhashini ASR and proceeding to fallback.');
     return null;
   }
 
@@ -215,7 +215,8 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
 
     if (!configRes.ok) {
       const errText = await configRes.text().catch(() => '');
-      console.warn(`[Bhashini] Pipeline config failed with status ${configRes.status}:`, errText);
+      const classification = classifyError(configRes.status, errText);
+      console.error(`[Bhashini] ${classification.label} — pipeline config failed (HTTP ${configRes.status}). Falling back to STT fallback.`);
       return null;
     }
 
@@ -226,12 +227,12 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
     const serviceId = configData?.pipelineResponseConfig?.[0]?.config?.[0]?.serviceId;
 
     if (!asrCallbackUrl || !serviceId) {
-      console.warn('[Bhashini] Incomplete pipeline endpoints from Bhashini ULCA response.');
+      console.warn('[Bhashini] Incomplete pipeline endpoints from Bhashini ULCA response. Falling back to STT fallback.');
       return null;
     }
 
     if (!asrInferenceKey) {
-      console.warn('[Bhashini] Bhashini inference API key is not available (not returned by the pipeline config and BHASHINI_INFERENCE_API_KEY is not set). Skipping Bhashini ASR.');
+      console.warn('[Bhashini] Bhashini inference API key is missing. Skipping Bhashini ASR.');
       return null;
     }
 
@@ -266,7 +267,8 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
 
     if (!computeRes.ok) {
       const errText = await computeRes.text().catch(() => '');
-      console.warn(`[Bhashini] Inference API returned error status ${computeRes.status}:`, errText);
+      const classification = classifyError(computeRes.status, errText);
+      console.error(`[Bhashini] ${classification.label} — inference failed (HTTP ${computeRes.status}). Falling back.`);
       return null;
     }
 
@@ -277,243 +279,145 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
       return transcript.trim();
     }
   } catch (err) {
-    console.error('[Bhashini] Error communicating with Bhashini API:', err.message);
+    const classification = classifyError(0, err.message, err.name);
+    console.error(`[Bhashini] ${classification.label} — error: ${err.message}. Falling back.`);
   }
 
   return null;
 }
 
-/**
- * Classifies whether a provider failure is recoverable and worth falling back.
- */
-function isRecoverableProviderError(status, message) {
-  if (status === 401) return false;
-  if (status === 429 || status === 402) return true;  // rate limit / quota / insufficient balance
-  if (status >= 500) return true;                      // provider-side error
-  if (/timeout|timed out|socket|network|fetch failed|econnreset/i.test(message || '')) return true;
-  return false;
-}
+import { callLlmWithFallback, classifyError } from './llmService.js';
 
 /**
  * Builds the structured-catalog extraction prompt shared across LLM providers.
  */
-function buildCatalogPrompt(text, sourceLanguage) {
-  return `You are a fact-grounded product analyst for ShilpSaathi, a platform for Indian traditional artisans.
+export function buildCatalogPrompt(text, sourceLanguage = 'hi', targetLanguage = 'en') {
+  const langNames = {
+    hi: 'Hindi',
+    en: 'English',
+    bn: 'Bengali',
+    ta: 'Tamil',
+    te: 'Telugu',
+    mr: 'Marathi',
+  };
+  const sourceLangCode = (sourceLanguage || 'hi').split('-')[0].toLowerCase();
+  const targetLangCode = (targetLanguage || 'en').split('-')[0].toLowerCase();
+  const sourceLangName = langNames[sourceLangCode] || 'Hindi';
+  const targetLangName = langNames[targetLangCode] || 'English';
 
-Your job is to extract ONLY the facts explicitly stated by the artisan. If a fact is not stated, do NOT invent it.
+  return `You are an expert AI e-commerce cataloger and copywriter for ShilpSaathi, an initiative supporting marginalized traditional Indian artisans.
 
-CRITICAL RULES:
-1. NEVER invent or assume materials. If the artisan does not mention a material, use "Not clearly identifiable".
-2. NEVER claim "leather", "genuine leather", "vegetable-tanned", "synthetic leather", or any leather type unless the artisan explicitly says so.
-3. NEVER invent marketing language like "premium", "natural", "sustainable", "heritage", "traditional", "eco-friendly", "genuine".
-4. The colour field must contain ONLY a colour (e.g. Black, Brown, Blue, Red, Green, White, Grey, Beige). If no colour is mentioned, use "Not clearly identifiable".
-5. If the artisan says "bag" or "बैग", the product type is a bag. Do NOT assume leather.
-6. Return ONLY valid JSON. Do not include markdown, code blocks, or extra text.
+An artisan has described their handcrafted item using voice.
+Your task is to transform their spoken note into a professional, high-converting e-commerce product listing while strictly preserving their stated facts.
 
-Allowed categories: Clay & Terracotta, Textiles & Handloom, Woodcraft, Metalcraft, Folk Art & Paintings, Leather Craft, Stone Carving, Handmade Home Decor, Bags & Accessories
+Artisan Spoken Note: "${text}"
+Artisan's Spoken Language: ${sourceLangName} (${sourceLangCode})
+Secondary Marketing Language: ${targetLangName} (${targetLangCode})
 
-Spoken Voice Description: "${text}"
-Detected Language: "${sourceLanguage}"
+Allowed Product Categories:
+- Clay & Terracotta
+- Textiles & Handloom
+- Woodcraft
+- Metalcraft
+- Folk Art & Paintings
+- Leather Craft
+- Stone Carving
+- Handmade Home Decor
+- Bags & Accessories
+
+TASK & REQUIREMENTS:
+1. "productName": A short, authentic, marketable product title in ${sourceLangName} (e.g. "हस्तनिर्मित पीतल का दीया", "हाथ से बना टेराकोटा फूलदान", "Handcrafted Sheesham Wood Box").
+2. "category": Pick the single most accurate category from Allowed Product Categories (infer from material/noun context, do not leave blank).
+3. "colour": The primary colour(s). If no specific color is mentioned, infer an authentic tone like "Natural", "Terracotta Red", "Natural Ochre", or "Golden Brass" (never output "—" or "Not clearly identifiable").
+4. "material": The craft material (e.g. "Natural Clay", "Pure Brass", "Sheesham Wood", "Organic Cotton", "Bamboo Fiber").
+5. "craft_type": The traditional technique (e.g. "Dhokra Metal Casting", "Potter's Wheel", "Handloom Weaving", "Wood Inlay", "Handmade Paper Craft").
+6. "descriptionLocal": A polished, captivating e-commerce marketing description in ${sourceLangName}. Do NOT paste the raw transcript verbatim. Highlight authentic handcrafted quality, cultural value, and any stated facts (time, materials, craft method) in a natural marketing style.
+7. "descriptionEnglish": An equally polished, high-converting e-commerce marketing description in ${targetLangName}.
+8. "keywords": An array of 5-8 SEO keywords in English (e.g. ["handmade brass diya", "traditional home decor", "indian handicraft"]).
+9. "extractedFacts": Extract time and cost numbers from the speech:
+   - "laborHours": Number of labor hours (parse digit or spelled-out words like "do ghante" -> 2, "char ghante" -> 4). Default 4 if unstated.
+   - "materialCostINR": Raw material cost in ₹ INR (parse "do sau rupaye" -> 200, "₹350" -> 350). Default 150 if unstated.
+   - "explicitPrice": Selling price explicitly stated by artisan in ₹ INR, or null if none stated.
 
 Return ONLY a valid JSON object matching this exact schema:
 {
-  "name": "A concise factual product title based on what the artisan said",
-  "category": "One of the allowed categories above",
-  "craft_type": "Traditional craft technique if explicitly mentioned, otherwise empty string",
-  "material": "Material explicitly stated by the artisan, or 'Not clearly identifiable'",
-  "colour": "Colour explicitly mentioned, or 'Not clearly identifiable'",
-  "description_hi": "Factual description in Hindi reflecting the artisan's exact words",
-  "description_en": "Factual description in English reflecting the artisan's exact words",
-  "keywords": ["relevant", "tags", "from", "description"],
-  "estimated_material_cost": 250,
-  "estimated_labor_hours": 5
+  "productName": "string",
+  "category": "string",
+  "colour": "string",
+  "material": "string",
+  "craft_type": "string",
+  "descriptionLocal": "string",
+  "descriptionEnglish": "string",
+  "keywords": ["string"],
+  "extractedFacts": {
+    "laborHours": 4,
+    "materialCostINR": 200,
+    "explicitPrice": null
+  }
 }`;
 }
 
 /**
- * Normalizes a parsed LLM catalog response into the schema the app expects.
+ * Normalizes a parsed LLM catalog response into the standard schema.
  */
-function normalizeCatalog(parsed) {
+function normalizeCatalog(parsed, rawText = '') {
   if (!parsed || typeof parsed !== 'object') return null;
-  const catalog = { ...parsed };
-  catalog.raw_material_cost = Number(catalog.raw_material_cost ?? catalog.estimated_material_cost ?? 150);
-  catalog.hours_spent = Number(catalog.hours_spent ?? catalog.estimated_labor_hours ?? 4);
-  catalog.estimated_material_cost = catalog.raw_material_cost;
-  catalog.estimated_labor_hours = catalog.hours_spent;
-  return catalog;
-}
 
-/**
- * Gemini catalog generation. Returns a normalized catalog or null on any failure.
- */
-async function generateCatalogWithGemini(prompt) {
-  const { apiKey, model } = config.gemini;
-  if (!apiKey) return null;
+  const facts = parsed.extractedFacts || {};
+  const laborHours = Number(facts.laborHours ?? parsed.hours_spent ?? parsed.estimated_labor_hours ?? 4);
+  const matCost = Number(facts.materialCostINR ?? parsed.raw_material_cost ?? parsed.estimated_material_cost ?? 150);
+  const explicitPrice = facts.explicitPrice !== undefined && facts.explicitPrice !== null ? Number(facts.explicitPrice) : (parsed.explicit_price ?? null);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), config.openrouter.timeoutMs);
+  const title = (parsed.productName || parsed.name || '').trim();
+  const cat = (parsed.category || '').trim();
+  const mat = (parsed.material && parsed.material !== 'Not clearly identifiable' ? parsed.material : '').trim();
+  const col = (parsed.colour && parsed.colour !== 'Not clearly identifiable' ? parsed.colour : '').trim();
+  const descLoc = (parsed.descriptionLocal || parsed.description_hi || '').trim();
+  const descEn = (parsed.descriptionEnglish || parsed.description_en || '').trim();
+  const keywords = Array.isArray(parsed.keywords) ? parsed.keywords.filter(Boolean) : [];
 
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      console.warn(`[AI Catalog] Gemini responded with status ${res.status}.`, isRecoverableProviderError(res.status, errText) ? 'Attempting fallback.' : '');
-      return null;
-    }
-
-    const data = await res.json();
-    const jsonStr = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!jsonStr) {
-      console.warn('[AI Catalog] Gemini returned no parseable content.');
-      return null;
-    }
-
-    const parsed = JSON.parse(jsonStr);
-    return normalizeCatalog(parsed);
-  } catch (err) {
-    console.warn('[AI Catalog] Gemini request failed:', err.name === 'AbortError' ? 'timeout' : err.message);
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
- * OpenRouter LLM catalog generation (fallback). Returns a normalized catalog or null.
- */
-async function generateCatalogWithOpenRouter(prompt) {
-  const { apiKey, llmModel, referer, title, timeoutMs } = config.openrouter;
-  if (!apiKey) return null;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': referer,
-        'X-Title': title,
-      },
-      body: JSON.stringify({
-        model: llmModel,
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-      }),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      console.warn(`[AI Catalog] OpenRouter responded with status ${res.status}.`);
-      return null;
-    }
-
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) {
-      console.warn('[AI Catalog] OpenRouter returned no content.');
-      return null;
-    }
-
-    const parsed = JSON.parse(content);
-    return normalizeCatalog(parsed);
-  } catch (err) {
-    console.warn('[AI Catalog] OpenRouter request failed:', err.name === 'AbortError' ? 'timeout' : err.message);
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
- * OpenRouter Speech-to-Text transcription (fallback for Bhashini ASR).
- * Returns a transcript string or null on any failure.
- */
-async function transcribeWithOpenRouter(audioBuffer, mimeType = 'audio/wav') {
-  const { apiKey, sttModel, referer, title, timeoutMs } = config.openrouter;
-  if (!apiKey || !audioBuffer || audioBuffer.length === 0) return null;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const form = new FormData();
-    const blob = new Blob([audioBuffer], { type: mimeType });
-    form.append('file', blob, 'audio.wav');
-    form.append('model', sttModel);
-
-    const res = await fetch('https://openrouter.ai/api/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': referer,
-        'X-Title': title,
-      },
-      body: form,
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      console.warn(`[OpenRouter STT] responded with status ${res.status}.`);
-      return null;
-    }
-
-    const data = await res.json();
-    const transcript = (data?.text || '').trim();
-    if (transcript) {
-      console.log('[OpenRouter STT] Transcription successful.');
-      return transcript;
-    }
-    return null;
-  } catch (err) {
-    console.warn('[OpenRouter STT] request failed:', err.name === 'AbortError' ? 'timeout' : err.message);
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  return {
+    name: title,
+    category: cat || 'Handmade Home Decor',
+    material: mat || 'Natural Craft Material',
+    colour: col || 'Natural',
+    craft_type: parsed.craft_type || '',
+    description_hi: descLoc,
+    description_en: descEn,
+    description_local: descLoc,
+    keywords: keywords.length ? keywords : ['handmade', 'handicraft'],
+    extracted_facts: {
+      labor_hours: laborHours,
+      material_cost_inr: matCost,
+      explicit_price: explicitPrice,
+    },
+    raw_material_cost: matCost,
+    estimated_material_cost: matCost,
+    hours_spent: laborHours,
+    estimated_labor_hours: laborHours,
+    explicit_price: explicitPrice,
+    spoken_transcript: rawText,
+  };
 }
 
 /**
  * Extract structured catalog from raw spoken description using AI / NLP heuristics
  */
-export async function extractCatalogFromText(rawText, sourceLanguage = 'hi') {
+export async function extractCatalogFromText(rawText, sourceLanguage = 'hi', targetLanguage = 'en') {
   const text = (rawText || '').trim();
-  const bhashini = getBhashiniConfig();
   let aiCatalog = null;
+  let llmProvider = 'none';
 
-  // Try LLM providers if configured: Gemini -> OpenRouter -> (heuristic below)
+  // 1. Try Resilient Multi-Provider LLM: Gemini -> Groq
   if (text.length > 3) {
-    const prompt = buildCatalogPrompt(text, sourceLanguage);
-
-    // Provider 1: Gemini
-    if (config.gemini.enabled) {
-      console.log('[AI Catalog] Invoking Gemini LLM for structured catalog extraction...');
-      const geminiCatalog = await generateCatalogWithGemini(prompt);
-      if (geminiCatalog) {
-        console.log('[AI Catalog] Gemini structured catalog successfully generated.');
-        aiCatalog = geminiCatalog;
-      }
-    }
-
-    // Provider 2: OpenRouter (fallback if Gemini did not produce a catalog)
-    if (!aiCatalog && config.openrouter.enabled) {
-      console.log('[AI Catalog] Gemini unavailable/failed. Falling back to OpenRouter LLM...');
-      const orCatalog = await generateCatalogWithOpenRouter(prompt);
-      if (orCatalog) {
-        console.log('[AI Catalog] OpenRouter structured catalog successfully generated.');
-        aiCatalog = orCatalog;
-      }
+    const prompt = buildCatalogPrompt(text, sourceLanguage, targetLanguage);
+    console.log('[AI Catalog] Invoking LLM extraction with Gemini -> Groq fallback chain...');
+    
+    const llmRes = await callLlmWithFallback(prompt, { temperature: 0.3 });
+    if (llmRes.success && llmRes.data) {
+      aiCatalog = normalizeCatalog(llmRes.data, text);
+      llmProvider = llmRes.provider;
+      console.log(`[AI Catalog] ✅ Structured catalog successfully generated by ${llmProvider}.`);
     }
   }
 
@@ -706,58 +610,74 @@ export async function extractCatalogFromText(rawText, sourceLanguage = 'hi') {
     ? Math.min(10000, Math.max(0, cost))
     : Math.min(10000, Math.max(10, cost));
 
-  // 8. Bilingual Descriptions reflecting exact spoken words and item
-  const descHi = text.length > 5 ? text : 'विवरण उपलब्ध नहीं है।';
+  // 8. Bilingual Descriptions reflecting handcrafted value
+  const cleanItemName = finalTitle.replace(/^Handcrafted\s+/i, '').trim();
+  const descHi = text.length > 5
+    ? `पारंपरिक तकनीक और कुशल हस्तशिल्प से तैयार किया गया प्रामाणिक ${cleanItemName || 'कलाकृति'}। 100% हस्तनिर्मित व टिकाऊ।`
+    : 'कारीगर द्वारा शुद्ध पारंपरिक शिल्प विधि से निर्मित उत्कृष्ट कलाकृति। 100% हस्तनिर्मित।';
+
   const factParts = [
-    finalMaterial !== 'Not clearly identifiable' ? `made from ${finalMaterial.toLowerCase()}` : null,
-    matchedTechnique && (wordMatch('कुम्हार') || wordMatch('kumhar')) ? 'made by a potter using traditional methods' : matchedTechnique && (wordMatch('traditional') || wordMatch('paramparik')) ? `made using ${matchedTechnique.en.toLowerCase()}` : null,
-    finalColor !== 'Not clearly identifiable' ? `${finalColor.toLowerCase()} in colour` : null,
-    explicitCost !== null ? `priced at INR ${explicitCost}` : null
+    finalMaterial !== 'Not clearly identifiable' ? `crafted from ${finalMaterial.toLowerCase()}` : null,
+    matchedTechnique ? `using traditional ${matchedTechnique.en.toLowerCase()}` : 'by skilled artisans',
+    finalColor !== 'Not clearly identifiable' ? `${finalColor.toLowerCase()} finish` : null,
+    explicitCost !== null ? `with direct artisan valuation` : null,
   ].filter(Boolean);
 
-  const cleanItemName = finalTitle.replace(/^Handcrafted\s+/i, '').toLowerCase();
   const descEn = factParts.length > 0
-    ? `A ${cleanItemName} ${factParts.join(', ')}.`
-    : (aiCatalog?.description_en || 'Product details were not clearly specified.');
+    ? `An authentic handcrafted ${cleanItemName || 'craft item'}, carefully made ${factParts.join(', ')}.`
+    : (aiCatalog?.description_en || 'Authentic handcrafted heritage item made by traditional artisans.');
 
   const keywords = [
     'handmade',
     finalCategory.toLowerCase(),
-    cleanItemName,
-    finalMaterial !== 'Not clearly identifiable' ? finalMaterial.toLowerCase() : null
+    cleanItemName.toLowerCase(),
+    finalMaterial !== 'Not clearly identifiable' ? finalMaterial.toLowerCase() : null,
+    'indian handicraft',
+    'authentic craft',
   ].filter(Boolean);
 
   // Helper: treat "Craft Item", "Handcrafted Craft Item", empty, null as invalid LLM name
-  const isValidLlmName = (n) => n && n.trim() && !['craft item', 'handcrafted craft item'].includes(n.trim().toLowerCase());
-  const isValidLlmValue = (v) => v !== null && v !== undefined && String(v).trim() !== '';
+  const isValidLlmName = (n) => n && n.trim() && !['craft item', 'handcrafted craft item', 'item', '—'].includes(n.trim().toLowerCase());
+  const isValidLlmValue = (v) => v !== null && v !== undefined && String(v).trim() !== '' && String(v).trim() !== '—' && String(v).trim() !== 'Not clearly identifiable';
+
+  const isAi = Boolean(aiCatalog && (aiCatalog.name || aiCatalog.description_hi || aiCatalog.description_en));
 
   const catalog = {
     ...aiCatalog,
     // Prefer LLM name when valid; fall back to heuristic title
-    name: isValidLlmName(aiCatalog?.name) ? aiCatalog.name : finalTitle,
+    name: isValidLlmName(aiCatalog?.name) ? aiCatalog.name : (cleanItemName ? `Handcrafted ${cleanItemName}` : 'Handcrafted Heritage Craft'),
     // Prefer LLM category when valid; fall back to heuristic category
-    category: isValidLlmValue(aiCatalog?.category) ? aiCatalog.category : finalCategory,
+    category: isValidLlmValue(aiCatalog?.category) ? aiCatalog.category : (finalCategory || 'Handmade Home Decor'),
     // Prefer LLM craft_type when valid; fall back to heuristic
     craft_type: isValidLlmValue(aiCatalog?.craft_type) ? aiCatalog.craft_type : finalCraftType,
     // Prefer LLM material when valid; fall back to heuristic material
-    material: isValidLlmValue(aiCatalog?.material) ? aiCatalog.material : finalMaterial,
+    material: isValidLlmValue(aiCatalog?.material) ? aiCatalog.material : (finalMaterial !== 'Not clearly identifiable' ? finalMaterial : 'Natural Craft Material'),
     // Prefer LLM colour when valid; fall back to heuristic colour
-    colour: isValidLlmValue(aiCatalog?.colour) ? aiCatalog.colour : finalColor,
+    colour: isValidLlmValue(aiCatalog?.colour) ? aiCatalog.colour : (finalColor !== 'Not clearly identifiable' ? finalColor : 'Natural Tone'),
     // Prefer LLM descriptions when valid; fall back to heuristic descriptions
     description_hi: isValidLlmValue(aiCatalog?.description_hi) ? aiCatalog.description_hi : descHi,
     description_en: isValidLlmValue(aiCatalog?.description_en) ? aiCatalog.description_en : descEn,
+    description_local: isValidLlmValue(aiCatalog?.description_local || aiCatalog?.description_hi) ? (aiCatalog.description_local || aiCatalog.description_hi) : descHi,
     // Merge LLM keywords with heuristic keywords, preferring LLM as primary source
     keywords: [...new Set([
-      ...(Array.isArray(aiCatalog?.keywords) && aiCatalog.keywords.length > 0 ? aiCatalog.keywords : keywords)
+      ...(Array.isArray(aiCatalog?.keywords) && aiCatalog.keywords.length > 0 ? aiCatalog.keywords : keywords),
     ])],
-    estimated_material_cost: cost,
-    estimated_labor_hours: hours,
+    extracted_facts: aiCatalog?.extracted_facts || {
+      labor_hours: hours,
+      material_cost_inr: cost,
+      explicit_price: explicitCost,
+    },
     raw_material_cost: explicitCost !== null ? cost : Number(aiCatalog?.raw_material_cost ?? cost),
     hours_spent: Number(aiCatalog?.hours_spent ?? hours),
+    estimated_material_cost: Number(aiCatalog?.raw_material_cost ?? cost),
+    estimated_labor_hours: Number(aiCatalog?.hours_spent ?? hours),
     explicit_price: explicitCost,
     final_price: explicitCost !== null ? explicitCost : (aiCatalog?.final_price ?? cost),
     price_min: explicitCost !== null ? explicitCost : (aiCatalog?.price_min ?? cost),
-    price_max: explicitCost !== null ? explicitCost : (aiCatalog?.price_max ?? cost)
+    price_max: explicitCost !== null ? explicitCost : (aiCatalog?.price_max ?? cost),
+    is_ai_generated: isAi,
+    llm_provider: llmProvider || (isAi ? 'gemini' : 'none'),
+    spoken_transcript: text,
   };
 
   return catalog;
@@ -766,7 +686,7 @@ export async function extractCatalogFromText(rawText, sourceLanguage = 'hi') {
 /**
  * End-to-end voice processing: Takes audio buffer or transcript and produces full catalog
  */
-export async function processVoiceAudio({ audioBuffer, mimeType = 'audio/wav', directTranscript = null, language = 'hi' }) {
+export async function processVoiceAudio({ audioBuffer, mimeType = 'audio/wav', directTranscript = null, language = 'hi', targetLanguage = 'en' }) {
   let transcript = (directTranscript || '').trim();
   let source = directTranscript ? 'direct_speech_api' : 'unknown';
 
@@ -789,7 +709,7 @@ export async function processVoiceAudio({ audioBuffer, mimeType = 'audio/wav', d
   }
 
   // Generate structured catalog
-  const catalog = await extractCatalogFromText(transcript || 'हस्तनिर्मित पारंपरिक भारतीय कलाकृति', language);
+  const catalog = await extractCatalogFromText(transcript || 'हस्तनिर्मित पारंपरिक भारतीय कलाकृति', language, targetLanguage);
 
   return {
     transcript,

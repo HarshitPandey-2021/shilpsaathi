@@ -116,17 +116,43 @@ export default function ReviewScreen() {
       <div className="overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-card">
         <img src={productData.enhancedImage || productData.originalImage} alt="" className="h-48 w-full object-cover" />
         <div className="space-y-2.5 p-4">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-wide text-mustard-500">{productData.category}</span>
-            <h3 className="font-display text-lg font-black leading-tight text-charcoal">
-              {productData.name || t.untitled}
-            </h3>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wide text-mustard-500">{productData.category || 'Handicraft'}</span>
+              <h3 className="font-display text-lg font-black leading-tight text-charcoal">
+                {productData.name || t.untitled}
+              </h3>
+            </div>
+            {productData.pricing_method && (
+              <span className={`chip shrink-0 text-[10px] font-bold ${
+                productData.pricing_method === 'ai'
+                  ? 'border-forest-200 bg-forest-50 text-forest-700'
+                  : 'border-mustard-200 bg-mustard-50 text-mustard-700'
+              }`}>
+                {productData.pricing_method === 'ai' ? '🤖 AI Advisor' : productData.pricing_method === 'heuristic' ? '📊 Fair Cost' : '✍️ Custom'}
+              </span>
+            )}
           </div>
+
+          <div className="flex flex-wrap gap-1">
+            {productData.material && productData.material !== 'Not clearly identifiable' && (
+              <span className="chip border-stone-200 bg-stone-50 text-[10px] text-stone-600">{productData.material}</span>
+            )}
+            {productData.colour && productData.colour !== 'Not clearly identifiable' && (
+              <span className="chip border-stone-200 bg-stone-50 text-[10px] text-stone-600">{productData.colour}</span>
+            )}
+          </div>
+
           {productData.description_en && (
             <p className="text-xs leading-relaxed text-stone-600">{productData.description_en}</p>
           )}
           <div className="flex items-end justify-between border-t border-stone-100 pt-3">
-            <span className="text-2xs font-black uppercase tracking-wide text-stone-400">{t.yourPrice}</span>
+            <div>
+              <span className="text-2xs font-black uppercase tracking-wide text-stone-400">{t.yourPrice}</span>
+              {productData.price_reasoning && (
+                <p className="text-[10px] text-stone-400 max-w-[200px] truncate">{productData.price_reasoning}</p>
+              )}
+            </div>
             <span className="font-display text-3xl font-black leading-none text-terracotta">₹{productData.final_price}</span>
           </div>
         </div>

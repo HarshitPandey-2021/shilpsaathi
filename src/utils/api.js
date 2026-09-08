@@ -92,10 +92,10 @@ export const api = {
 
   getProductListing: (id) => fetchJSON(`${API_BASE_URL}/products/${id}/listing`),
 
-  calculatePrice: (optionsOrCost = 250, hours = 6) => {
+  calculatePrice: (optionsOrCost = 250, hours = 6, product = null, language = 'hi') => {
     const body = typeof optionsOrCost === 'object'
       ? optionsOrCost
-      : { rawMaterialCost: optionsOrCost, hoursSpent: hours };
+      : { rawMaterialCost: optionsOrCost, hoursSpent: hours, product, language };
 
     return fetchJSON(`${API_BASE_URL}/calculate-price`, {
       method: 'POST',
@@ -109,18 +109,19 @@ export const api = {
       body: JSON.stringify({ image }),
     }),
 
-  processVoice: ({ audioBlob = null, transcript = null, language = 'hi' } = {}) => {
+  processVoice: ({ audioBlob = null, transcript = null, language = 'hi', targetLanguage = 'en' } = {}) => {
     if (audioBlob) {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       if (transcript) formData.append('transcript', transcript);
       formData.append('language', language);
+      formData.append('targetLanguage', targetLanguage);
       return fetchJSON(`${API_BASE_URL}/process-voice`, { method: 'POST', body: formData });
     }
 
     return fetchJSON(`${API_BASE_URL}/process-voice`, {
       method: 'POST',
-      body: JSON.stringify({ transcript, language }),
+      body: JSON.stringify({ transcript, language, targetLanguage }),
     });
   },
 
@@ -134,13 +135,13 @@ export const api = {
     return fetchJSON(url, { method: 'POST', body: formData });
   },
 
-  generateCatalog: (productId, transcript, language = 'hi') => {
+  generateCatalog: (productId, transcript, language = 'hi', targetLanguage = 'en') => {
     const url = productId
       ? `${API_BASE_URL}/products/${productId}/generate-catalog`
       : `${API_BASE_URL}/process-voice`;
     return fetchJSON(url, {
       method: 'POST',
-      body: JSON.stringify({ transcript, language }),
+      body: JSON.stringify({ transcript, language, targetLanguage }),
     });
   },
 };

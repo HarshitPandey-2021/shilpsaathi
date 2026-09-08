@@ -48,11 +48,9 @@ export const TRANSLATIONS = {
     publishedSub: "आपका शिल्प अब डिजिटल बाज़ार में बिकने के लिए तैयार है",
     shareWhatsapp: "व्हाट्सएप पर शेयर करें",
     homeBtn: "होम पेज",
-    navStudio: "डैशबोर्ड", navCatalog: "कैटलॉग", navAdd: "जोड़ें",navProfile: "भाषा",
-beyondTitle: "मेलों से आगे",
-beyondDesc: "अपने पारंपरिक शिल्प को साल भर बेचें। सूरजकुंड मेला, दिल्ली हाट और शिल्प समागम जैसे मौसमी मेलों की सीमाओं से आगे बढ़ें।",
-
-
+    navStudio: "डैशबोर्ड", navCatalog: "कैटलॉग", navAdd: "जोड़ें", navProfile: "भाषा",
+    beyondTitle: "मेलों से आगे",
+    beyondDesc: "अपने पारंपरिक शिल्प को साल भर बेचें। सूरजकुंड मेला, दिल्ली हाट और शिल्प समागम जैसे मौसमी मेलों की सीमाओं से आगे बढ़ें।",
   },
   en: {
     code: "en-IN",
@@ -99,10 +97,9 @@ beyondDesc: "अपने पारंपरिक शिल्प को सा
     publishedSub: "Your craft is now digital and ready to share",
     shareWhatsapp: "Share on WhatsApp",
     homeBtn: "Home",
-    navStudio: "Studio", navCatalog: "Catalog", navAdd: "Add",navProfile: "Language",
-beyondTitle: "Beyond Physical Exhibitions",
-beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits of Surajkund Mela, Dilli Haat, and Shilp Samagam.",
-
+    navStudio: "Studio", navCatalog: "Catalog", navAdd: "Add", navProfile: "Language",
+    beyondTitle: "Beyond Physical Exhibitions",
+    beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits of Surajkund Mela, Dilli Haat, and Shilp Samagam.",
   },
   bn: {
     code: "bn-IN",
@@ -150,25 +147,24 @@ beyondDesc: "Sell your heritage crafts year-round. Overcome the seasonal limits 
     shareWhatsapp: "হোয়াটসঅ্যাপে শেয়ার করুন",
     homeBtn: "হোম",
     navStudio: "স্টুডিও", navCatalog: "ক্যাটালগ", navAdd: "যোগ", navProfile: "ভাষা",
-beyondTitle: "প্রদর্শনীর বাইরেও",
-beyondDesc: "সারা বছর আপনার ঐতিহ্যবাহী পণ্য বিক্রি করুন। সুরজকুণ্ড মেলা, দিল্লি হাট এবং শিল্প সমাগমের মৌসুমি সীমা ছাড়িয়ে যান।",
-
+    beyondTitle: "মেলার বাইরে",
+    beyondDesc: "সারা বছর নিজের হস্তশিল্প বিক্রি করুন। মেলা বা প্রদর্শনীর অপেক্ষায় বসে থাকতে হবে না।",
   },
   ta: {
     code: "ta-IN",
     name: "தமிழ்",
     tagline: "உங்கள் கைவினை • உங்கள் கதை • உங்கள் சந்தை",
-    heroText: "பாரம்பரிய கைவினைஞர்களுக்கான டிஜிட்டல் தளம்",
-    desc: "எழுதாமல் அல்லது திருத்தாமல் உங்கள் குரல் மூலம் தொழில்முறை பட்டியலை உருவாக்கவும்.",
-    f1: "AI ஸ்டுடியோ", f1_sub: "ஒளி சீரமைப்பு",
-    f2: "பாஷிணி குரல்", f2_sub: "டைப்பிங் இல்லை",
-    f3: "நியாயமான விலை", f3_sub: "நேர்மையான லாபம்",
-    startBtn: "தொடங்குங்கள் / Launch Studio",
-    listen: "கேளுங்கள் (Audio)",
+    heroText: "கிராமப்புற கைவினைஞர் முதல் உலகளாவிய சந்தை வரை",
+    desc: "எழுதுவதோ படம் திருத்துவதோ இன்றி, பேசுவதன் மூலமே உங்கள் தொழில்முறை தயாரிப்பு பட்டியலை உருவாக்குங்கள்.",
+    f1: "புகைப்பட மையம்", f1_sub: "தெளிவான பின்னணி",
+    f2: "பாஷிணி குரல்", f2_sub: "தட்டச்சு இல்லை",
+    f3: "நியாயமான விலை", f3_sub: "உழைப்பிற்கேற்ற விலை",
+    startBtn: "தொடங்கவும் / Launch Studio",
+    listen: "கேட்கவும் (Audio)",
     speaking: "பேசுகிறது...",
-    speechText: "சில்ப்சாதிக்கு நல்வரவு. உங்கள் கைவினைப் பொருளைப் படம் பிடித்து குரல் மூலம் பேசுங்கள்.",
-    studioTitle: "கைவினைஞர் மையம்",
-    activeListings: "செயலில் உள்ளவை",
+    speechText: "சில்பசாதிக்கு நல்வரவு. உங்கள் கைவினைப்பொருளைப் படம் பிடித்துப் பேசி விவரங்களைப் பதிவு செய்யுங்கள்.",
+    studioTitle: "கைவினைஞர் அரங்கம்",
+    activeListings: "செயலில் உள்ள பொருட்கள்",
     itemsCount: "3 பொருட்கள்",
     benchmarkPrice: "சந்தை சராசரி விலை",
     assistantReady: "உதவியாளர் தயார்",
@@ -200,10 +196,8 @@ beyondDesc: "সারা বছর আপনার ঐতিহ্যবাহ�
     shareWhatsapp: "வாட்ஸ்அப்பில் பகிரவும்",
     homeBtn: "முகப்பு",
     navStudio: "மையம்", navCatalog: "பட்டியல்", navAdd: "சேர்", navProfile: "மொழி",
-beyondTitle: "கண்காட்சிகளுக்கு அப்பால்",
-beyondDesc: "உங்கள் பாரம்பரிய கைவினைப் பொருட்களை ஆண்டு முழுவதும் விற்கவும். சூரஜ்குண்ட் மேளா, தில்லி ஹாட் போன்ற பருவகால வரம்புகளைத் தாண்டவும்.",
-
-// te block
+    beyondTitle: "கண்காட்சிகளுக்கு அப்பால்",
+    beyondDesc: "உங்கள் பாரம்பரிய கைவினைப் பொருட்களை ஆண்டு முழுவதும் விற்கவும். சூரஜ்குண்ட் மேளா, தில்லி ஹாட் போன்ற பருவகால வரம்புகளைத் தாண்டவும்.",
   },
   te: {
     code: "te-IN",
@@ -250,10 +244,9 @@ beyondDesc: "உங்கள் பாரம்பரிய கைவினை�
     publishedSub: "మీ కళ ఇప్పుడు మార్కెట్లో అమ్మకానికి సిద్ధంగా ఉంది",
     shareWhatsapp: "వాట్సాప్‌లో షేర్ చేయండి",
     homeBtn: "హోమ్",
-    navStudio: "స్టూడియో", navCatalog: "కేటలాగ్", navAdd: "జోడించు",navProfile: "భాష",
-beyondTitle: "ప్రదర్శనలకు మించి",
-beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను ఏడాది పొడవునా అమ్మండి. సూరజ్‌కుండ్ మేళా, దిల్లీ హాట్ వంటి కాలానుగుణ పరిమితులను అధిగమించండి.",
-
+    navStudio: "స్టూడియో", navCatalog: "కేటలాగ్", navAdd: "జోడించు", navProfile: "భాష",
+    beyondTitle: "ప్రదర్శనలకు మించి",
+    beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను ఏడాది పొడవునా అమ్మండి. సూరజ్‌కుండ్ మేళా, దిల్లీ హాట్ వంటి కాలానుగుణ పరిమితులను అధిగమించండి.",
   },
   mr: {
     code: "mr-IN",
@@ -301,11 +294,12 @@ beyondDesc: "మీ సాంప్రదాయ కళాఖండాలను �
     shareWhatsapp: "व्हॉट्सॲपवर शेअर करा",
     homeBtn: "मुख्य पान",
     navStudio: "डॅशबोर्ड", navCatalog: "कॅटलॉग", navAdd: "जोडा", navProfile: "भाषा",
-beyondTitle: "मेळ्यांच्या पलीकडे",
-beyondDesc: "आपली पारंपरिक कला वर्षभर विका. सुरजकुंड मेळा, दिल्ली हाट यांसारख्या हंगामी मर्यादा ओलांडा.",
-  }
+    beyondTitle: "मेळ्यांच्या पलीकडे",
+    beyondDesc: "आपली पारंपरिक कला वर्षभर विका. सुरजकुंड मेळा, दिल्ली हाट यांसारख्या हंगामी मर्यादा ओलांडा.",
+  },
 };
-/* ---- UI strings added for the new shell/screens ---- */
+
+/* ---- UI strings for shell/screens ---- */
 const UI = {
   hi: {
     appSub: "आपका डिजिटल साथी", navHome: "घर", navShop: "मेरी दुकान", navNew: "नया",
@@ -446,33 +440,52 @@ const UI = {
     viewList: "माझे दुकान पहा", publishedToast: "यादी प्रकाशित झाली!", copied: "कॉपी झाले!",
   },
 };
-const UI2 = {
-  hi: { before:"पहले", after:"बाद में", aiWorking:"AI आपकी फोटो सुधार रहा है", enhanceFail:"AI सुधार नहीं हो सका", enhanceFailSub:"आपकी असली फोटो इस्तेमाल होगी", continueAnyway:"इसी फोटो से आगे बढ़ें", retry:"दोबारा कोशिश करें", dragCompare:"तुलना करने के लिए खिसकाएं",
-        fTitle:"उत्पाद का नाम", fCategory:"श्रेणी", fMaterial:"सामग्री", fColour:"रंग", fDescNative:"विवरण (आपकी भाषा)", fDescEn:"English Description", fKeywords:"खोज शब्द",
-        yourPrice:"आपकी कीमत", belowRange:"सुझाई गई कीमत से कम", inRange:"अच्छी कीमत है", aboveRange:"सुझाई गई कीमत से ज़्यादा", costBreakdown:"कीमत कैसे बनी",        savePhoneTitle:"अपनी दुकान सुरक्षित करें", savePhoneSub:"नंबर डालें ताकि आपकी लिस्टिंग कभी न खोए", savePhoneBtn:"सेव करें", skipForNow:"अभी नहीं",aiHeard:"AI ने यह सुना",        matCost:"सामग्री लागत", hoursWorked:"कितने घंटे लगे", labourCost:"मेहनत", overhead:"अन्य खर्च (12%)", margin:"आपका मुनाफ़ा (25%)", totalCost:"सुझाई कीमत", perHour:"प्रति घंटा",
-        askInputs:"जांचें — गलत हो तो बदलें", publishToast:"आपकी दुकान में प्रकाशित!", phoneLinked:"दुकान आपके नंबर से जुड़ गई", phoneFail:"नहीं जुड़ सका, दोबारा करें", restoreShop:"मेरी दुकान वापस पाएं",sayMore:"थोड़ा और बताएं — क्या है, किस चीज़ का, क्या रंग, कितने घंटे लगे?", needName:"पहले उत्पाद का नाम भरें", untitled:"हस्तनिर्मित शिल्प",catalogValue:"कुल कीमत", },
 
-  en: { before:"Before", after:"After", catalogValue:"Catalog value",aiWorking:"AI is improving your photo", enhanceFail:"AI enhancement unavailable", enhanceFailSub:"Your original photo will be used", continueAnyway:"Continue with this photo", retry:"Try again", dragCompare:"Drag to compare",  sayMore:"Tell me more — what is it, what material, what colour, how many hours?",       savePhoneTitle:"Save your shop", savePhoneSub:"Add your number so your listings are never lost", savePhoneBtn:"Save", skipForNow:"Skip for now",aiHeard:"AI heard this",        matCost:"Material cost", hoursWorked:"Hours worked", labourCost:"Labour", overhead:"Overhead (12%)", margin:"Your profit (25%)", totalCost:"Suggested price", perHour:"per hour",
-        askInputs:"Check these — change if wrong", publishToast:"Published to your shop!", phoneLinked:"Shop linked to your number", phoneFail:"Could not link, try again", restoreShop:"Restore my shop", needName:"Please add a product name first", untitled:"Handmade Craft",
-        fTitle:"Product name", fCategory:"Category", fMaterial:"Material", fColour:"Colour", fDescNative:"Description (your language)", fDescEn:"English Description", fKeywords:"Search keywords",
-        yourPrice:"Your price", belowRange:"Below suggested range", inRange:"Good price", aboveRange:"Above suggested range", costBreakdown:"How this price was made" },
-  bn: { before:"আগে", after:"পরে", aiWorking:"AI আপনার ছবি উন্নত করছে", enhanceFail:"AI উন্নতি সম্ভব হয়নি", enhanceFailSub:"আপনার আসল ছবি ব্যবহার হবে", continueAnyway:"এই ছবি নিয়েই এগোন", retry:"আবার চেষ্টা করুন", dragCompare:"তুলনা করতে টানুন",
-        fTitle:"পণ্যের নাম", fCategory:"বিভাগ", fMaterial:"উপাদান", fColour:"রং", fDescNative:"বিবরণ (আপনার ভাষায়)", fDescEn:"English Description", fKeywords:"সার্চ শব্দ",
-        yourPrice:"আপনার দাম", belowRange:"প্রস্তাবিত দামের কম", inRange:"ভালো দাম", aboveRange:"প্রস্তাবিত দামের বেশি", costBreakdown:"দাম কীভাবে হলো" },
-  ta: { before:"முன்", after:"பின்", aiWorking:"AI உங்கள் படத்தை மேம்படுத்துகிறது", enhanceFail:"AI மேம்பாடு கிடைக்கவில்லை", enhanceFailSub:"உங்கள் அசல் படம் பயன்படும்", continueAnyway:"இதே படத்துடன் தொடரவும்", retry:"மீண்டும் முயற்சி", dragCompare:"ஒப்பிட இழுக்கவும்",
-        fTitle:"பொருளின் பெயர்", fCategory:"வகை", fMaterial:"பொருள்", fColour:"நிறம்", fDescNative:"விவரம் (உங்கள் மொழி)", fDescEn:"English Description", fKeywords:"தேடல் சொற்கள்",
-        yourPrice:"உங்கள் விலை", belowRange:"பரிந்துரைக்கப்பட்ட விலைக்குக் குறைவு", inRange:"நல்ல விலை", aboveRange:"பரிந்துரைக்கப்பட்ட விலைக்கு அதிகம்", costBreakdown:"விலை எப்படி வந்தது" },
-  te: { before:"ముందు", after:"తర్వాత", aiWorking:"AI మీ ఫోటోను మెరుగుపరుస్తోంది", enhanceFail:"AI మెరుగుదల అందుబాటులో లేదు", enhanceFailSub:"మీ అసలు ఫోటో ఉపయోగించబడుతుంది", continueAnyway:"ఈ ఫోటోతోనే కొనసాగండి", retry:"మళ్లీ ప్రయత్నించండి", dragCompare:"పోల్చడానికి లాగండి",
-        fTitle:"ఉత్పత్తి పేరు", fCategory:"వర్గం", fMaterial:"పదార్థం", fColour:"రంగు", fDescNative:"వివరణ (మీ భాషలో)", fDescEn:"English Description", fKeywords:"శోధన పదాలు",
-        yourPrice:"మీ ధర", belowRange:"సూచించిన ధర కంటే తక్కువ", inRange:"మంచి ధర", aboveRange:"సూచించిన ధర కంటే ఎక్కువ", costBreakdown:"ధర ఎలా వచ్చింది" },
-  mr: { before:"आधी", after:"नंतर", aiWorking:"AI तुमचा फोटो सुधारत आहे", enhanceFail:"AI सुधारणा उपलब्ध नाही", enhanceFailSub:"तुमचा मूळ फोटो वापरला जाईल", continueAnyway:"याच फोटोसह पुढे जा", retry:"पुन्हा प्रयत्न करा", dragCompare:"तुलना करण्यासाठी सरकवा",
-        fTitle:"उत्पादनाचे नाव", fCategory:"श्रेणी", fMaterial:"साहित्य", fColour:"रंग", fDescNative:"वर्णन (तुमच्या भाषेत)", fDescEn:"English Description", fKeywords:"शोध शब्द",
-        yourPrice:"तुमची किंमत", belowRange:"सुचवलेल्या किमतीपेक्षा कमी", inRange:"चांगली किंमत", aboveRange:"सुचवलेल्या किमतीपेक्षा जास्त", costBreakdown:"किंमत कशी ठरली" },
+const UI2 = {
+  hi: {
+    before:"पहले", after:"बाद में", aiWorking:"AI आपकी फोटो सुधार रहा है", enhanceFail:"AI सुधार नहीं हो सका", enhanceFailSub:"आपकी असली फोटो इस्तेमाल होगी", continueAnyway:"इसी फोटो से आगे बढ़ें", retry:"दोबारा कोशिश करें", dragCompare:"तुलना करने के लिए खिसकाएं",
+    fTitle:"उत्पाद का नाम", fCategory:"श्रेणी", fMaterial:"सामग्री", fColour:"रंग", fDescNative:"विवरण (आपकी भाषा)", fDescEn:"English Description", fKeywords:"खोज शब्द",
+    yourPrice:"आपकी कीमत", belowRange:"सुझाई गई कीमत से कम", inRange:"अच्छी कीमत है", aboveRange:"सुझाई गई कीमत से ज़्यादा", costBreakdown:"लागत विवरण", savePhoneTitle:"अपनी दुकान सुरक्षित करें", savePhoneSub:"नंबर डालें ताकि आपकी लिस्टिंग कभी न खोए", savePhoneBtn:"सेव करें", skipForNow:"अभी नहीं", aiHeard:"AI ने यह सुना", matCost:"सामग्री लागत", hoursWorked:"कितने घंटे लगे", labourCost:"मेहनत", overhead:"अन्य खर्च (12%)", margin:"आपका मुनाफ़ा (25%)", totalCost:"लागत आधारित मूल्य", perHour:"प्रति घंटा",
+    askInputs:"जांचें — गलत हो तो बदलें", publishToast:"आपकी दुकान में प्रकाशित!", phoneLinked:"दुकान आपके नंबर से जुड़ गई", phoneFail:"नहीं जुड़ सका, दोबारा करें", restoreShop:"मेरी दुकान वापस पाएं", sayMore:"थोड़ा और बताएं — क्या है, किस चीज़ का, क्या रंग, कितने घंटे लगे?", needName:"पहले उत्पाद का नाम भरें", untitled:"हस्तनिर्मित शिल्प", catalogValue:"कुल कीमत",
+    heuristicPriceTitle:"लागत अनुसार मूल्य", heuristicPriceSub:"सामग्री, समय व 25% लाभ", aiAdvisorTitle:"AI बाज़ार व लाभ सलाहकार", aiAdvisorSub:"मांग व स्थिति अनुसार सुझाव", pickPriceHint:"इनमें से एक चुनें या नीचे अपनी कीमत तय करें", aiAdvisorBadge:"AI अनुशंसित", heuristicBadge:"पारदर्शी लागत", customBadge:"कस्टम", aiUnavailableNotice:"AI बाज़ार सलाहकार अस्थायी रूप से अनुपलब्ध है।", autoFilledNote:"आवाज़ से स्वतः भरा गया — कृपया जांच लें", aiVerifiedNote:"AI द्वारा पेशेवर विवरण तैयार किया गया",
+  },
+  en: {
+    before:"Before", after:"After", catalogValue:"Catalog value", aiWorking:"AI is improving your photo", enhanceFail:"AI enhancement unavailable", enhanceFailSub:"Your original photo will be used", continueAnyway:"Continue with this photo", retry:"Try again", dragCompare:"Drag to compare", sayMore:"Tell me more — what is it, what material, what colour, how many hours?", savePhoneTitle:"Save your shop", savePhoneSub:"Add your number so your listings are never lost", savePhoneBtn:"Save", skipForNow:"Skip for now", aiHeard:"AI heard this", matCost:"Material cost", hoursWorked:"Hours worked", labourCost:"Labour", overhead:"Overhead (12%)", margin:"Your profit (25%)", totalCost:"Cost-based price", perHour:"per hour",
+    askInputs:"Check these — change if wrong", publishToast:"Published to your shop!", phoneLinked:"Shop linked to your number", phoneFail:"Could not link, try again", restoreShop:"Restore my shop", needName:"Please add a product name first", untitled:"Handmade Craft",
+    fTitle:"Product name", fCategory:"Category", fMaterial:"Material", fColour:"Colour", fDescNative:"Description (your language)", fDescEn:"English Description", fKeywords:"Search keywords",
+    yourPrice:"Your price", belowRange:"Below suggested range", inRange:"Good price", aboveRange:"Above suggested range", costBreakdown:"Cost breakdown",
+    heuristicPriceTitle:"Heuristic Fair Price", heuristicPriceSub:"Materials, labor & 25% margin", aiAdvisorTitle:"AI Market & Profit Advisor", aiAdvisorSub:"Demand & positioning recommendation", pickPriceHint:"Pick a pricing strategy or set your own below", aiAdvisorBadge:"AI Recommended", heuristicBadge:"Transparent Cost", customBadge:"Custom", aiUnavailableNotice:"AI pricing advisor is temporarily offline.", autoFilledNote:"Auto-filled from voice — please review", aiVerifiedNote:"AI-generated marketing listing",
+  },
+  bn: {
+    before:"আগে", after:"পরে", aiWorking:"AI আপনার ছবি উন্নত করছে", enhanceFail:"AI উন্নতি সম্ভব হয়নি", enhanceFailSub:"আপনার আসল ছবি ব্যবহার হবে", continueAnyway:"এই ছবি নিয়েই এগোন", retry:"আবার চেষ্টা করুন", dragCompare:"তুলনা করতে টানুন",
+    fTitle:"পণ্যের নাম", fCategory:"বিভাগ", fMaterial:"উপাদান", fColour:"রং", fDescNative:"বিবরণ (আপনার ভাষায়)", fDescEn:"English Description", fKeywords:"সার্চ শব্দ",
+    yourPrice:"আপনার দাম", belowRange:"প্রস্তাবিত দামের কম", inRange:"ভালো দাম", aboveRange:"প্রস্তাবিত দামের বেশি", costBreakdown:"দাম কীভাবে হলো",
+    heuristicPriceTitle:"ন্যায্য মূল্য", heuristicPriceSub:"উপাদান ও শ্রমের হিসাব", aiAdvisorTitle:"AI বাজার ও লাভ উপদেষ্টা", aiAdvisorSub:"চাহিদা ও মানের বিশ্লেষণ", pickPriceHint:"একটি দাম বাছুন বা নিজে লিখুন", aiAdvisorBadge:"AI প্রস্তাবিত", heuristicBadge:"স্বচ্ছ হিসাব", customBadge:"কাস্টম", aiUnavailableNotice:"AI উপদেষ্টা সাময়িক বন্ধ রয়েছে।", autoFilledNote:"ভয়েস থেকে তৈরি — যাচাই করুন", aiVerifiedNote:"AI দ্বারা পেশাদার ক্যাটালগ তৈরি",
+  },
+  ta: {
+    before:"முன்", after:"பின்", aiWorking:"AI உங்கள் படத்தை மேம்படுத்துகிறது", enhanceFail:"AI மேம்பாடு கிடைக்கவில்லை", enhanceFailSub:"உங்கள் அசல் படம் பயன்படும்", continueAnyway:"இதே படத்துடன் தொடரவும்", retry:"மீண்டும் முயற்சி", dragCompare:"ஒப்பிட இழுக்கவும்",
+    fTitle:"பொருளின் பெயர்", fCategory:"வகை", fMaterial:"பொருள்", fColour:"நிறம்", fDescNative:"விவரம் (உங்கள் மொழி)", fDescEn:"English Description", fKeywords:"தேடல் சொற்கள்",
+    yourPrice:"உங்கள் விலை", belowRange:"பரிந்துரைக்கப்பட்ட விலைக்குக் குறைவு", inRange:"நல்ல விலை", aboveRange:"பரிந்துரைக்கப்பட்ட விலைக்கு அதிகம்", costBreakdown:"விலை எப்படி வந்தது",
+    heuristicPriceTitle:"நியாயமான விலை", heuristicPriceSub:"பொருட்கள் மற்றும் உழைப்பு", aiAdvisorTitle:"AI சந்தை வழிகாட்டி", aiAdvisorSub:"சந்தை நிலை பரிந்துரை", pickPriceHint:"ஒரு விலையைத் தேர்வுசெய்யவும்", aiAdvisorBadge:"AI பரிந்துரை", heuristicBadge:"செலவு அடிப்படை", customBadge:"தனிப்பயன்", aiUnavailableNotice:"AI வழிகாட்டி தற்காலிகமாக இல்லை.", autoFilledNote:"குரல் மூலம் நிரப்பப்பட்டது", aiVerifiedNote:"AI உருவாக்கிய தொழில்முறை பட்டியல்",
+  },
+  te: {
+    before:"ముందు", after:"తర్వాత", aiWorking:"AI మీ ఫోటోను మెరుగుపరుస్తోంది", enhanceFail:"AI మెరుగుదల అందుబాటులో లేదు", enhanceFailSub:"మీ అసలు ఫోటో ఉపయోగించబడుతుంది", continueAnyway:"ఈ ఫోటోతోనే కొనసాగండి", retry:"మళ్లీ ప్రయత్నించండి", dragCompare:"పోల్చడానికి లాగండి",
+    fTitle:"ఉత్పత్తి పేరు", fCategory:"వర్గం", fMaterial:"పదార్థం", fColour:"రంగు", fDescNative:"వివరణ (మీ భాషలో)", fDescEn:"English Description", fKeywords:"శోధన పదాలు",
+    yourPrice:"మీ ధర", belowRange:"సూచించిన ధర కంటే తక్కువ", inRange:"మంచి ధర", aboveRange:"సూచించిన ధర కంటే ఎక్కువ", costBreakdown:"ధర ఎలా వచ్చింది",
+    heuristicPriceTitle:"సహేతుక ధర", heuristicPriceSub:"ఖర్చు & శ్రమ ఆధారితం", aiAdvisorTitle:"AI మార్కెట్ సలహాదారు", aiAdvisorSub:"డిమాండ్ & లాభ విశ్లేషణ", pickPriceHint:"ఒక ధరను ఎంచుకోండి", aiAdvisorBadge:"AI సూచన", heuristicBadge:"పారదర్శక వ్యయం", customBadge:"అనుకూల", aiUnavailableNotice:"AI సలహాదారు ప్రస్తుతం అందుబాటులో లేదు.", autoFilledNote:"వాయిస్ నుండి ఆటో-ఫిల్ చేయబడింది", aiVerifiedNote:"AI సృష్టించిన కేటలాగ్",
+  },
+  mr: {
+    before:"आधी", after:"नंतर", aiWorking:"AI तुमचा फोटो सुधारत आहे", enhanceFail:"AI सुधारणा उपलब्ध नाही", enhanceFailSub:"तुमचा मूळ फोटो वापरला जाईल", continueAnyway:"याच फोटोसह पुढे जा", retry:"पुन्हा प्रयत्न करा", dragCompare:"तुलना करण्यासाठी सरकवा",
+    fTitle:"उत्पादनाचे नाव", fCategory:"श्रेणी", fMaterial:"साहित्य", fColour:"रंग", fDescNative:"वर्णन (तुमच्या भाषेत)", fDescEn:"English Description", fKeywords:"शोध शब्द",
+    yourPrice:"तुमची किंमत", belowRange:"सुचवलेल्या किमतीपेक्षा कमी", inRange:"चांगली किंमत", aboveRange:"सुचवलेल्या किमतीपेक्षा जास्त", costBreakdown:"किंमत कशी ठरली",
+    heuristicPriceTitle:"लागतीनुसार किंमत", heuristicPriceSub:"साहित्य व वेळ हिशोब", aiAdvisorTitle:"AI बाजार व नफा सल्लागार", aiAdvisorSub:"मागणीनुसार किंमत", pickPriceHint:"किंमत निवडा किंवा खाली ठरवा", aiAdvisorBadge:"AI शिफारस", heuristicBadge:"पारदर्शक हिशोब", customBadge:"सानुकूल", aiUnavailableNotice:"AI सल्लागार तात्पुरता अनुपलब्ध आहे.", autoFilledNote:"आवाजावरून भरले गेले — तपासा", aiVerifiedNote:"AI द्वारे तयार व्यावसायिक कॅटलॉग",
+  },
 };
 
 Object.keys(TRANSLATIONS).forEach((k) => {
   Object.assign(TRANSLATIONS[k], UI[k] || UI.en, UI2[k] || UI2.en);
 });
+
 export function CraftProvider({ children }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [lang, setLang] = useState('hi');
@@ -500,10 +513,16 @@ export function CraftProvider({ children }) {
     spoken_transcript: "",
     hours_spent: null,
     raw_material_cost: null,
+    extracted_facts: null,
     price_min: 0,
     price_max: 0,
     final_price: 0,
     price_reasoning: "",
+    pricing_method: "heuristic", // 'heuristic' | 'ai' | 'custom'
+    ai_pricing: null,
+    heuristic_pricing: null,
+    is_ai_generated: false,
+    llm_provider: "none",
     savedProductId: null,
   };
 
@@ -514,8 +533,6 @@ export function CraftProvider({ children }) {
   const API = RAW_API.endsWith('/api') ? RAW_API : `${RAW_API}/api`;
   const [artisanId, setArtisanId] = useState(localStorage.getItem('shilpsaathi_artisan_uuid') || null);
   const [confirmedPhone, setConfirmedPhone] = useState(localStorage.getItem('shilpsaathi_artisan_phone') || null);
-
-
 
   const getDeviceHandle = () => {
     let h = localStorage.getItem('shilpsaathi_device_id');
@@ -573,7 +590,6 @@ export function CraftProvider({ children }) {
   useEffect(() => { if (!artisanId) resolveArtisan(); }, []);
 
   const getArtisanId = () => artisanId;
-// add getArtisanId to the provider value
   const updateProduct = (fields) => setProductData(prev => ({ ...prev, ...fields }));
   const setOriginalPreview = (file) => {
     if (originalPreviewUrlRef.current) {
@@ -591,7 +607,7 @@ export function CraftProvider({ children }) {
     }
   };
   useEffect(() => clearOriginalPreview, []);
-    const startNewProduct = () => {
+  const startNewProduct = () => {
     clearOriginalPreview();
     setProductData({ ...BLANK_PRODUCT });
     setCurrentStep(3);
@@ -601,20 +617,47 @@ export function CraftProvider({ children }) {
   const goToStep = (step) => setCurrentStep(step);
 
   return (
-    <CraftContext.Provider value={{
-      currentStep, nextStep, prevStep, goToStep,startNewProduct,
-      lang, setLang, t,
-      productData, updateProduct,
-      setOriginalPreview, clearOriginalPreview,
-      isLoading, setIsLoading,
-      loadingMessage, setLoadingMessage,
-      showLangModal, setShowLangModal,
-      processingStages, setProcessingStages,
-          currentStage, setCurrentStage, getArtisanId, linkPhone, resolveArtisan, confirmedPhone
-    }}>
+    <CraftContext.Provider
+      value={{
+        currentStep,
+        setCurrentStep,
+        nextStep,
+        prevStep,
+        goToStep,
+        lang,
+        setLang,
+        t,
+        productData,
+        updateProduct,
+        startNewProduct,
+        setOriginalPreview,
+        clearOriginalPreview,
+        isLoading,
+        setIsLoading,
+        loadingMessage,
+        setLoadingMessage,
+        showLangModal,
+        setShowLangModal,
+        processingStages,
+        setProcessingStages,
+        currentStage,
+        setCurrentStage,
+        artisanId,
+        getArtisanId,
+        resolveArtisan,
+        linkPhone,
+        confirmedPhone,
+      }}
+    >
       {children}
     </CraftContext.Provider>
   );
 }
 
-export const useCraft = () => useContext(CraftContext);
+export function useCraft() {
+  const context = useContext(CraftContext);
+  if (!context) {
+    throw new Error('useCraft must be used within a CraftProvider');
+  }
+  return context;
+}

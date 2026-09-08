@@ -20,46 +20,67 @@ export async function processVoice(req, res, next) {
     const mimeType = req.file?.mimetype || req.body?.mimeType || 'audio/webm';
     const directTranscript = req.body?.transcript || null;
     const language = req.body?.language || 'hi';
+    const targetLanguage = req.body?.targetLanguage || 'en';
 
-    console.log('[AI Controller] Processing voice input. Buffer present:', Boolean(audioBuffer), 'Direct transcript:', Boolean(directTranscript));
+    console.log('[AI Controller] Processing voice input. Buffer present:', Boolean(audioBuffer), 'Direct transcript:', Boolean(directTranscript), 'Language:', language, 'TargetLanguage:', targetLanguage);
 
     const result = await voiceService.processVoiceAudio({
       audioBuffer,
       mimeType,
       directTranscript,
-      language
+      language,
+      targetLanguage,
     });
 
-    // Also calculate initial fair price suggestion based on extracted catalog estimates
-    const matCost = Number(result.catalog?.raw_material_cost ?? result.catalog?.estimated_material_cost ?? 150);
-    const labHours = Number(result.catalog?.hours_spent ?? result.catalog?.estimated_labor_hours ?? 4);
+    const catalog = result.catalog || {};
+    const matCost = Number(catalog.raw_material_cost ?? catalog.estimated_material_cost ?? 150);
+    const labHours = Number(catalog.hours_spent ?? catalog.estimated_labor_hours ?? 4);
 
-    const pricingData = pricingService.calculateFairPrice({
+    // 1. Calculate transparent heuristic pricing
+    const heuristicData = pricingService.calculateFairPrice({
       rawMaterialCost: matCost,
       hoursSpent: labHours,
-      category: result.catalog?.category
+      category: catalog.category,
     });
 
-    const rawExpPrice = result.catalog?.explicit_price;
+    // 2. Calculate dynamic AI pricing in parallel
+    const aiPricingData = await pricingService.calculateAiPricing({
+      product: catalog,
+      heuristicPricing: heuristicData,
+      language,
+    });
+
+    const rawExpPrice = catalog.explicit_price;
     const hasExplicitPrice = rawExpPrice !== null && rawExpPrice !== undefined && Number.isFinite(Number(rawExpPrice)) && Number(rawExpPrice) > 0;
     const explicitPrice = hasExplicitPrice ? Number(rawExpPrice) : null;
+
     const enrichedCatalog = {
-      ...result.catalog,
+      ...catalog,
       raw_material_cost: matCost,
       estimated_material_cost: matCost,
       hours_spent: labHours,
       estimated_labor_hours: labHours,
-      price_min: hasExplicitPrice ? explicitPrice : pricingData.price_min,
-      price_max: hasExplicitPrice ? explicitPrice : pricingData.price_max,
-      final_price: hasExplicitPrice ? explicitPrice : pricingData.suggested_price,
-      price_reasoning: hasExplicitPrice ? `Price explicitly provided by artisan: INR ${explicitPrice}.` : pricingData.reasoning
+      price_min: hasExplicitPrice ? explicitPrice : (aiPricingData.is_ai_available ? aiPricingData.price_min : heuristicData.price_min),
+      price_max: hasExplicitPrice ? explicitPrice : (aiPricingData.is_ai_available ? aiPricingData.price_max : heuristicData.price_max),
+      final_price: hasExplicitPrice ? explicitPrice : (aiPricingData.is_ai_available ? aiPricingData.suggested_price : heuristicData.suggested_price),
+      pricing_method: aiPricingData.is_ai_available ? 'ai' : 'heuristic',
+      price_reasoning: hasExplicitPrice ? `Price explicitly provided by artisan: INR ${explicitPrice}.` : (aiPricingData.is_ai_available ? aiPricingData.reasoning : heuristicData.reasoning),
     };
 
     return successResponse(res, {
       transcript: result.transcript,
       catalog: enrichedCatalog,
-      pricing: pricingData,
-      source: result.source
+      pricing: heuristicData,
+      heuristic_pricing: heuristicData,
+      ai_pricing: aiPricingData,
+      source: result.source,
+      is_ai_generated: catalog.is_ai_generated ?? false,
+      llm_provider: catalog.llm_provider ?? 'none',
+      extracted_facts: catalog.extracted_facts || {
+        labor_hours: labHours,
+        material_cost_inr: matCost,
+        explicit_price: explicitPrice,
+      },
     }, 'Voice processed and catalog structured successfully');
   } catch (err) {
     console.error('[AI Controller] processVoice error:', err);
@@ -69,15 +90,25 @@ export async function processVoice(req, res, next) {
 
 export async function calculatePrice(req, res, next) {
   try {
-    const { rawMaterialCost, hoursSpent, skillLevel, category } = req.body;
-    const result = pricingService.calculateFairPrice({
+    const { rawMaterialCost, hoursSpent, skillLevel, category, product, language = 'hi' } = req.body;
+    const heuristicResult = pricingService.calculateFairPrice({
       rawMaterialCost,
       hoursSpent,
       skillLevel,
-      category
+      category,
     });
 
-    return successResponse(res, result, 'Fair price calculation complete');
+    const aiResult = await pricingService.calculateAiPricing({
+      product: product || { category, raw_material_cost: rawMaterialCost, hours_spent: hoursSpent },
+      heuristicPricing: heuristicResult,
+      language,
+    });
+
+    return successResponse(res, {
+      ...heuristicResult,
+      heuristic: heuristicResult,
+      ai: aiResult,
+    }, 'Fair price and AI market calculation complete');
   } catch (err) {
     next(err);
   }
@@ -100,7 +131,7 @@ export async function transcribe(req, res, next) {
 
     return successResponse(res, {
       transcript,
-      language
+      language,
     }, 'Transcription complete');
   } catch (err) {
     next(err);
@@ -109,12 +140,15 @@ export async function transcribe(req, res, next) {
 
 export async function generateCatalog(req, res, next) {
   try {
-    const { transcript, language = 'hi' } = req.body;
-    const catalog = await voiceService.extractCatalogFromText(transcript, language);
+    const { transcript, language = 'hi', targetLanguage = 'en' } = req.body;
+    const catalog = await voiceService.extractCatalogFromText(transcript, language, targetLanguage);
 
     return successResponse(res, {
       catalog,
-      source: 'ai_extraction'
+      source: catalog.is_ai_generated ? 'ai_extraction' : 'heuristic_fallback',
+      is_ai_generated: catalog.is_ai_generated ?? false,
+      llm_provider: catalog.llm_provider ?? 'none',
+      extracted_facts: catalog.extracted_facts,
     }, 'Catalog generated successfully');
   } catch (err) {
     next(err);
@@ -123,15 +157,25 @@ export async function generateCatalog(req, res, next) {
 
 export async function pricing(req, res, next) {
   try {
-    const { rawMaterialCost, hoursSpent, skillLevel, category } = req.body;
-    const result = pricingService.calculateFairPrice({
+    const { rawMaterialCost, hoursSpent, skillLevel, category, product, language = 'hi' } = req.body;
+    const heuristicResult = pricingService.calculateFairPrice({
       rawMaterialCost,
       hoursSpent,
       skillLevel,
-      category
+      category,
     });
 
-    return successResponse(res, result, 'Pricing intelligence generated');
+    const aiResult = await pricingService.calculateAiPricing({
+      product: product || { category, raw_material_cost: rawMaterialCost, hours_spent: hoursSpent },
+      heuristicPricing: heuristicResult,
+      language,
+    });
+
+    return successResponse(res, {
+      ...heuristicResult,
+      heuristic: heuristicResult,
+      ai: aiResult,
+    }, 'Pricing intelligence generated');
   } catch (err) {
     next(err);
   }
@@ -150,4 +194,3 @@ export async function enhance(req, res, next) {
     next(err);
   }
 }
-
