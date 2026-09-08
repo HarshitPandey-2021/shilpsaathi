@@ -30,7 +30,7 @@ def _get_upsampler():
             scale=4,
             model_path="weights/RealESRGAN_x4plus.pth",
             model=model,
-            tile=256,
+            tile=512,
             tile_pad=10,
             pre_pad=0,
             half=False,
