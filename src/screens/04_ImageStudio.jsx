@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Check, Info } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import PrimaryButton from '../components/ui/PrimaryButton';
@@ -8,37 +8,65 @@ export default function ImageStudioScreen() {
   const { productData, nextStep, t } = useCraft();
   const [showOriginal, setShowOriginal] = useState(false);
 
+  const enhanced = Boolean(productData.isEnhanced && productData.enhancedImage);
+
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <div className="flex items-center justify-between">
-        <ScreenHeader title={t.f1} subtitle={t.f1_sub} icon={Sparkles} step={2} totalSteps={7} />
-        <span className="text-[10px] bg-forest/10 text-forest border border-forest/30 font-bold px-2 py-0.5 rounded-full h-fit">
-          Enhanced ✓
-        </span>
-      </div>
+      <ScreenHeader title={t.f1} subtitle={t.f1_sub} icon={Sparkles} step={2} totalSteps={6} />
 
-      <div className="relative rounded-2xl overflow-hidden border border-stone-300 shadow-md bg-white">
-        <img
-          src={showOriginal ? productData.originalImage : (productData.enhancedImage || productData.originalImage)}
-          alt={showOriginal ? "Original" : "Enhanced Craft"}
-          className="w-full h-64 object-cover transition-opacity duration-300"
-        />
-        <div className="absolute top-3 left-3 bg-forest text-white text-[10px] px-2.5 py-1 rounded-full font-bold shadow">
-          {showOriginal ? "Original" : t.studioCleaned}
-        </div>
-        <button
-          onClick={() => setShowOriginal(s => !s)}
-          className="absolute bottom-3 right-3 bg-white/90 text-charcoal text-[10px] font-bold px-3 py-1.5 rounded-full shadow border border-stone-200 active:scale-95"
-        >
-          {showOriginal ? "Show Enhanced →" : "← Show Original"}
-        </button>
-      </div>
+      {enhanced ? (
+        <>
+          <div className="overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-card">
+            <img
+              src={showOriginal ? productData.originalImage : productData.enhancedImage}
+              alt=""
+              className="h-72 w-full object-cover transition-opacity duration-300"
+            />
+          </div>
 
-      <div className="bg-stone-100 p-3 rounded-xl text-center">
-        <p className="text-xs text-stone-600 font-medium">✨ {t.photoSub}</p>
-      </div>
+          <div className="flex gap-2 rounded-3xl bg-stone-100 p-1.5">
+            <button
+              onClick={() => setShowOriginal(true)}
+              className={`touch flex-1 rounded-2xl text-sm font-black transition ${
+                showOriginal ? 'bg-white text-charcoal shadow-card' : 'text-stone-500'
+              }`}
+            >
+              {t.before}
+            </button>
+            <button
+              onClick={() => setShowOriginal(false)}
+              className={`touch flex-1 rounded-2xl text-sm font-black transition ${
+                !showOriginal ? 'bg-forest text-white shadow-card' : 'text-stone-500'
+              }`}
+            >
+              {t.after}
+            </button>
+          </div>
 
-      <PrimaryButton onClick={nextStep} icon={ArrowRight}>{t.continueVoice}</PrimaryButton>
+          <div className="flex gap-2.5 rounded-3xl border border-forest-200 bg-forest-50 p-3.5">
+            <Check size={17} className="mt-0.5 shrink-0 text-forest" strokeWidth={3} />
+            <div className="min-w-0">
+              <p className="text-xs font-black text-forest-600">{t.studioCleaned}</p>
+              <p className="mt-0.5 text-2xs leading-relaxed text-forest-600/80">{t.photoSub}</p>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-card">
+            <img src={productData.originalImage} alt="" className="h-72 w-full object-cover" />
+          </div>
+          <div className="flex gap-2.5 rounded-3xl border border-amber-200 bg-amber-50 p-3.5">
+            <Info size={17} className="mt-0.5 shrink-0 text-amber-600" />
+            <div className="min-w-0">
+              <p className="text-xs font-black text-amber-900">{t.enhanceFail}</p>
+              <p className="mt-0.5 text-2xs leading-relaxed text-amber-800/80">{t.enhanceFailSub}</p>
+            </div>
+          </div>
+        </>
+      )}
+
+      <PrimaryButton onClick={nextStep} iconRight={ArrowRight}>{t.continueVoice}</PrimaryButton>
     </div>
   );
 }

@@ -305,6 +305,174 @@ beyondTitle: "मेळ्यांच्या पलीकडे",
 beyondDesc: "आपली पारंपरिक कला वर्षभर विका. सुरजकुंड मेळा, दिल्ली हाट यांसारख्या हंगामी मर्यादा ओलांडा.",
   }
 };
+/* ---- UI strings added for the new shell/screens ---- */
+const UI = {
+  hi: {
+    appSub: "आपका डिजिटल साथी", navHome: "घर", navShop: "मेरी दुकान", navNew: "नया",
+    back: "पीछे", close: "बंद करें",
+    wPhoto: "फोटो", wStudio: "AI स्टूडियो", wVoice: "आवाज़", wDetails: "विवरण", wPrice: "कीमत", wPublish: "प्रकाशित",
+    greeting: "नमस्ते, कारीगर", greetingSub: "आज क्या बनाया आपने?",
+    quickSteps: "3 आसान कदम · सिर्फ़ 2 मिनट",
+    stepPhoto: "फोटो", stepVoice: "आवाज़", stepPrice: "कीमत",
+    myListings: "मेरी लिस्टिंग", view: "देखें",
+    alwaysOpen: "बाज़ार खुला", noWaiting: "मेले का इंतज़ार नहीं",
+    chooseLang: "अपनी भाषा चुनें", chooseLangSub: "शुरू करने के लिए भाषा चुनें",
+    noAccount: "कोई खाता नहीं · कोई पासवर्ड नहीं · सीधे शुरू करें",
+    viewWelcome: "स्वागत स्क्रीन देखें", govInit: "भारत सरकार की पहल",
+    retakePhoto: "दूसरी फोटो चुनें", continueBtn: "आगे बढ़ें",
+    listeningNow: "सुन रहा है... अब बोलें", stopRec: "रोकें",
+    transcribing: "आवाज़ पहचानी जा रही है...", yourVoice: "आपकी आवाज़",
+    editHint: "सीधे एडिट करें", quickTests: "त्वरित उदाहरण", genCatalog: "कैटलॉग बनाएं",
+    micError: "माइक्रोफ़ोन चालू नहीं हो सका। कृपया परमिशन जांचें या नीचे लिखें।",
+    listTitle: "मेरी दुकान", listSub: "आपके सभी प्रकाशित उत्पाद",
+    noListings: "अभी कोई लिस्टिंग नहीं", noListingsHint: "नया शिल्प जोड़कर शुरू करें",
+    addFirst: "पहला शिल्प जोड़ें", loadError: "लिस्टिंग लोड नहीं हो सकी। दोबारा कोशिश करें।", live: "लाइव",
+    publishing: "प्रकाशित हो रहा है...", saveFailed: "सेव नहीं हो सका",
+    viewList: "मेरी दुकान देखें", publishedToast: "लिस्टिंग प्रकाशित हुई!", copied: "कॉपी हो गया!",
+  },
+  en: {
+    appSub: "Your digital companion", navHome: "Home", navShop: "My Shop", navNew: "New",
+    back: "Back", close: "Close",
+    wPhoto: "Photo", wStudio: "AI Studio", wVoice: "Voice", wDetails: "Details", wPrice: "Price", wPublish: "Publish",
+    greeting: "Namaste, Artisan", greetingSub: "What did you make today?",
+    quickSteps: "3 easy steps · just 2 minutes",
+    stepPhoto: "Photo", stepVoice: "Voice", stepPrice: "Price",
+    myListings: "My Listings", view: "View",
+    alwaysOpen: "Market open", noWaiting: "No waiting for melas",
+    chooseLang: "Choose your language", chooseLangSub: "Select a language to begin",
+    noAccount: "No account · No password · Start right away",
+    viewWelcome: "View welcome screen", govInit: "Government of India Initiative",
+    retakePhoto: "Choose another photo", continueBtn: "Continue",
+    listeningNow: "Listening... speak now", stopRec: "Stop",
+    transcribing: "Recognising your voice...", yourVoice: "Your voice",
+    editHint: "Tap to edit", quickTests: "Quick examples", genCatalog: "Generate Catalog",
+    micError: "Microphone could not start. Check permission or type below.",
+    listTitle: "My Shop", listSub: "All your published products",
+    noListings: "No listings yet", noListingsHint: "Add a new craft to get started",
+    addFirst: "Add your first craft", loadError: "Could not load listings. Please retry.", live: "Live",
+    publishing: "Publishing...", saveFailed: "Could not save",
+    viewList: "View My Shop", publishedToast: "Listing published!", copied: "Copied!",
+  },
+  bn: {
+    appSub: "আপনার ডিজিটাল সাথী", navHome: "হোম", navShop: "আমার দোকান", navNew: "নতুন",
+    back: "পিছনে", close: "বন্ধ করুন",
+    wPhoto: "ছবি", wStudio: "AI স্টুডিও", wVoice: "কণ্ঠ", wDetails: "বিবরণ", wPrice: "দাম", wPublish: "প্রকাশ",
+    greeting: "নমস্কার, কারিগর", greetingSub: "আজ কী বানালেন?",
+    quickSteps: "৩টি সহজ ধাপ · মাত্র ২ মিনিট",
+    stepPhoto: "ছবি", stepVoice: "কণ্ঠ", stepPrice: "দাম",
+    myListings: "আমার তালিকা", view: "দেখুন",
+    alwaysOpen: "বাজার খোলা", noWaiting: "মেলার অপেক্ষা নেই",
+    chooseLang: "আপনার ভাষা বাছুন", chooseLangSub: "শুরু করতে ভাষা নির্বাচন করুন",
+    noAccount: "কোনো অ্যাকাউন্ট নেই · পাসওয়ার্ড নেই · সরাসরি শুরু করুন",
+    viewWelcome: "স্বাগত স্ক্রিন দেখুন", govInit: "ভারত সরকারের উদ্যোগ",
+    retakePhoto: "অন্য ছবি বাছুন", continueBtn: "এগিয়ে যান",
+    listeningNow: "শুনছি... এখন বলুন", stopRec: "থামান",
+    transcribing: "কণ্ঠ শনাক্ত করা হচ্ছে...", yourVoice: "আপনার কণ্ঠ",
+    editHint: "সম্পাদনা করুন", quickTests: "দ্রুত উদাহরণ", genCatalog: "ক্যাটালগ তৈরি করুন",
+    micError: "মাইক্রোফোন চালু হয়নি। অনুমতি দেখুন বা নিচে লিখুন।",
+    listTitle: "আমার দোকান", listSub: "আপনার সব প্রকাশিত পণ্য",
+    noListings: "এখনও কোনো তালিকা নেই", noListingsHint: "নতুন পণ্য যোগ করে শুরু করুন",
+    addFirst: "প্রথম পণ্য যোগ করুন", loadError: "তালিকা লোড হয়নি। আবার চেষ্টা করুন।", live: "লাইভ",
+    publishing: "প্রকাশ হচ্ছে...", saveFailed: "সেভ হয়নি",
+    viewList: "আমার দোকান দেখুন", publishedToast: "তালিকা প্রকাশিত হয়েছে!", copied: "কপি হয়েছে!",
+  },
+  ta: {
+    appSub: "உங்கள் டிஜிட்டல் துணை", navHome: "முகப்பு", navShop: "என் கடை", navNew: "புதிது",
+    back: "பின்", close: "மூடு",
+    wPhoto: "படம்", wStudio: "AI ஸ்டுடியோ", wVoice: "குரல்", wDetails: "விவரம்", wPrice: "விலை", wPublish: "வெளியிடு",
+    greeting: "வணக்கம், கைவினைஞரே", greetingSub: "இன்று என்ன செய்தீர்கள்?",
+    quickSteps: "3 எளிய படிகள் · 2 நிமிடம் மட்டும்",
+    stepPhoto: "படம்", stepVoice: "குரல்", stepPrice: "விலை",
+    myListings: "என் பட்டியல்", view: "பார்",
+    alwaysOpen: "சந்தை திறந்துள்ளது", noWaiting: "கண்காட்சிக்குக் காத்திருக்க வேண்டாம்",
+    chooseLang: "உங்கள் மொழியைத் தேர்வுசெய்க", chooseLangSub: "தொடங்க மொழியைத் தேர்வுசெய்க",
+    noAccount: "கணக்கு இல்லை · கடவுச்சொல் இல்லை · உடனே தொடங்குங்கள்",
+    viewWelcome: "வரவேற்புத் திரையைப் பார்", govInit: "இந்திய அரசின் முயற்சி",
+    retakePhoto: "வேறு படம் தேர்வுசெய்க", continueBtn: "தொடரவும்",
+    listeningNow: "கேட்கிறது... இப்போது பேசுங்கள்", stopRec: "நிறுத்து",
+    transcribing: "குரல் அடையாளம் காணப்படுகிறது...", yourVoice: "உங்கள் குரல்",
+    editHint: "திருத்தவும்", quickTests: "விரைவு எடுத்துக்காட்டுகள்", genCatalog: "பட்டியலை உருவாக்கு",
+    micError: "மைக்ரோஃபோன் இயங்கவில்லை. அனுமதியைச் சரிபார்க்கவும் அல்லது கீழே தட்டச்சு செய்க.",
+    listTitle: "என் கடை", listSub: "உங்கள் வெளியிடப்பட்ட பொருட்கள்",
+    noListings: "இன்னும் பட்டியல் இல்லை", noListingsHint: "புதிய கைவினையைச் சேர்த்துத் தொடங்குங்கள்",
+    addFirst: "முதல் கைவினையைச் சேர்", loadError: "பட்டியலை ஏற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.", live: "லைவ்",
+    publishing: "வெளியிடப்படுகிறது...", saveFailed: "சேமிக்க முடியவில்லை",
+    viewList: "என் கடையைப் பார்", publishedToast: "பட்டியல் வெளியிடப்பட்டது!", copied: "நகலெடுக்கப்பட்டது!",
+  },
+  te: {
+    appSub: "మీ డిజిటల్ తోడు", navHome: "హోమ్", navShop: "నా దుకాణం", navNew: "కొత్తది",
+    back: "వెనుకకు", close: "మూసివేయి",
+    wPhoto: "ఫోటో", wStudio: "AI స్టూడియో", wVoice: "వాయిస్", wDetails: "వివరాలు", wPrice: "ధర", wPublish: "ప్రచురణ",
+    greeting: "నమస్తే, కళాకారుడా", greetingSub: "ఈరోజు ఏం తయారు చేశారు?",
+    quickSteps: "3 సులభ దశలు · కేవలం 2 నిమిషాలు",
+    stepPhoto: "ఫోటో", stepVoice: "వాయిస్", stepPrice: "ధర",
+    myListings: "నా జాబితా", view: "చూడండి",
+    alwaysOpen: "మార్కెట్ తెరిచి ఉంది", noWaiting: "మేళా కోసం వేచి ఉండనవసరం లేదు",
+    chooseLang: "మీ భాషను ఎంచుకోండి", chooseLangSub: "ప్రారంభించడానికి భాషను ఎంచుకోండి",
+    noAccount: "ఖాతా లేదు · పాస్‌వర్డ్ లేదు · వెంటనే ప్రారంభించండి",
+    viewWelcome: "స్వాగత స్క్రీన్ చూడండి", govInit: "భారత ప్రభుత్వ చొరవ",
+    retakePhoto: "వేరే ఫోటో ఎంచుకోండి", continueBtn: "కొనసాగించు",
+    listeningNow: "వింటోంది... ఇప్పుడు మాట్లాడండి", stopRec: "ఆపు",
+    transcribing: "వాయిస్ గుర్తించబడుతోంది...", yourVoice: "మీ వాయిస్",
+    editHint: "సవరించండి", quickTests: "త్వరిత ఉదాహరణలు", genCatalog: "కేటలాగ్ తయారు చేయి",
+    micError: "మైక్రోఫోన్ ప్రారంభం కాలేదు. అనుమతిని తనిఖీ చేయండి లేదా క్రింద టైప్ చేయండి.",
+    listTitle: "నా దుకాణం", listSub: "మీ ప్రచురించిన అన్ని ఉత్పత్తులు",
+    noListings: "ఇంకా జాబితా లేదు", noListingsHint: "కొత్త వస్తువును జోడించి ప్రారంభించండి",
+    addFirst: "మొదటి వస్తువును జోడించండి", loadError: "జాబితా లోడ్ కాలేదు. మళ్లీ ప్రయత్నించండి.", live: "లైవ్",
+    publishing: "ప్రచురిస్తోంది...", saveFailed: "సేవ్ కాలేదు",
+    viewList: "నా దుకాణం చూడండి", publishedToast: "జాబితా ప్రచురించబడింది!", copied: "కాపీ అయ్యింది!",
+  },
+  mr: {
+    appSub: "तुमचा डिजिटल साथी", navHome: "घर", navShop: "माझे दुकान", navNew: "नवीन",
+    back: "मागे", close: "बंद करा",
+    wPhoto: "फोटो", wStudio: "AI स्टुडिओ", wVoice: "आवाज", wDetails: "तपशील", wPrice: "किंमत", wPublish: "प्रकाशित",
+    greeting: "नमस्कार, कारागीर", greetingSub: "आज काय बनवले?",
+    quickSteps: "३ सोपे टप्पे · फक्त २ मिनिटे",
+    stepPhoto: "फोटो", stepVoice: "आवाज", stepPrice: "किंमत",
+    myListings: "माझी यादी", view: "पहा",
+    alwaysOpen: "बाजार खुला", noWaiting: "मेळ्याची वाट नाही",
+    chooseLang: "तुमची भाषा निवडा", chooseLangSub: "सुरू करण्यासाठी भाषा निवडा",
+    noAccount: "खाते नाही · पासवर्ड नाही · थेट सुरू करा",
+    viewWelcome: "स्वागत स्क्रीन पहा", govInit: "भारत सरकारचा उपक्रम",
+    retakePhoto: "दुसरा फोटो निवडा", continueBtn: "पुढे जा",
+    listeningNow: "ऐकत आहे... आता बोला", stopRec: "थांबा",
+    transcribing: "आवाज ओळखला जात आहे...", yourVoice: "तुमचा आवाज",
+    editHint: "संपादित करा", quickTests: "जलद उदाहरणे", genCatalog: "कॅटलॉग तयार करा",
+    micError: "मायक्रोफोन सुरू झाला नाही. परवानगी तपासा किंवा खाली लिहा.",
+    listTitle: "माझे दुकान", listSub: "तुमची सर्व प्रकाशित उत्पादने",
+    noListings: "अद्याप यादी नाही", noListingsHint: "नवीन हस्तकला जोडून सुरुवात करा",
+    addFirst: "पहिली हस्तकला जोडा", loadError: "यादी लोड झाली नाही. पुन्हा प्रयत्न करा.", live: "लाइव्ह",
+    publishing: "प्रकाशित होत आहे...", saveFailed: "सेव्ह झाले नाही",
+    viewList: "माझे दुकान पहा", publishedToast: "यादी प्रकाशित झाली!", copied: "कॉपी झाले!",
+  },
+};
+const UI2 = {
+  hi: { before:"पहले", after:"बाद में", aiWorking:"AI आपकी फोटो सुधार रहा है", enhanceFail:"AI सुधार नहीं हो सका", enhanceFailSub:"आपकी असली फोटो इस्तेमाल होगी", continueAnyway:"इसी फोटो से आगे बढ़ें", retry:"दोबारा कोशिश करें", dragCompare:"तुलना करने के लिए खिसकाएं",
+        fTitle:"उत्पाद का नाम", fCategory:"श्रेणी", fMaterial:"सामग्री", fColour:"रंग", fDescNative:"विवरण (आपकी भाषा)", fDescEn:"English Description", fKeywords:"खोज शब्द",
+        yourPrice:"आपकी कीमत", belowRange:"सुझाई गई कीमत से कम", inRange:"अच्छी कीमत है", aboveRange:"सुझाई गई कीमत से ज़्यादा", costBreakdown:"कीमत कैसे बनी",        savePhoneTitle:"अपनी दुकान सुरक्षित करें", savePhoneSub:"नंबर डालें ताकि आपकी लिस्टिंग कभी न खोए", savePhoneBtn:"सेव करें", skipForNow:"अभी नहीं",aiHeard:"AI ने यह सुना",        matCost:"सामग्री लागत", hoursWorked:"कितने घंटे लगे", labourCost:"मेहनत", overhead:"अन्य खर्च (12%)", margin:"आपका मुनाफ़ा (25%)", totalCost:"सुझाई कीमत", perHour:"प्रति घंटा",
+        askInputs:"जांचें — गलत हो तो बदलें", publishToast:"आपकी दुकान में प्रकाशित!", phoneLinked:"दुकान आपके नंबर से जुड़ गई", phoneFail:"नहीं जुड़ सका, दोबारा करें", restoreShop:"मेरी दुकान वापस पाएं",sayMore:"थोड़ा और बताएं — क्या है, किस चीज़ का, क्या रंग, कितने घंटे लगे?", needName:"पहले उत्पाद का नाम भरें", untitled:"हस्तनिर्मित शिल्प",catalogValue:"कुल कीमत", },
+
+  en: { before:"Before", after:"After", catalogValue:"Catalog value",aiWorking:"AI is improving your photo", enhanceFail:"AI enhancement unavailable", enhanceFailSub:"Your original photo will be used", continueAnyway:"Continue with this photo", retry:"Try again", dragCompare:"Drag to compare",  sayMore:"Tell me more — what is it, what material, what colour, how many hours?",       savePhoneTitle:"Save your shop", savePhoneSub:"Add your number so your listings are never lost", savePhoneBtn:"Save", skipForNow:"Skip for now",aiHeard:"AI heard this",        matCost:"Material cost", hoursWorked:"Hours worked", labourCost:"Labour", overhead:"Overhead (12%)", margin:"Your profit (25%)", totalCost:"Suggested price", perHour:"per hour",
+        askInputs:"Check these — change if wrong", publishToast:"Published to your shop!", phoneLinked:"Shop linked to your number", phoneFail:"Could not link, try again", restoreShop:"Restore my shop", needName:"Please add a product name first", untitled:"Handmade Craft",
+        fTitle:"Product name", fCategory:"Category", fMaterial:"Material", fColour:"Colour", fDescNative:"Description (your language)", fDescEn:"English Description", fKeywords:"Search keywords",
+        yourPrice:"Your price", belowRange:"Below suggested range", inRange:"Good price", aboveRange:"Above suggested range", costBreakdown:"How this price was made" },
+  bn: { before:"আগে", after:"পরে", aiWorking:"AI আপনার ছবি উন্নত করছে", enhanceFail:"AI উন্নতি সম্ভব হয়নি", enhanceFailSub:"আপনার আসল ছবি ব্যবহার হবে", continueAnyway:"এই ছবি নিয়েই এগোন", retry:"আবার চেষ্টা করুন", dragCompare:"তুলনা করতে টানুন",
+        fTitle:"পণ্যের নাম", fCategory:"বিভাগ", fMaterial:"উপাদান", fColour:"রং", fDescNative:"বিবরণ (আপনার ভাষায়)", fDescEn:"English Description", fKeywords:"সার্চ শব্দ",
+        yourPrice:"আপনার দাম", belowRange:"প্রস্তাবিত দামের কম", inRange:"ভালো দাম", aboveRange:"প্রস্তাবিত দামের বেশি", costBreakdown:"দাম কীভাবে হলো" },
+  ta: { before:"முன்", after:"பின்", aiWorking:"AI உங்கள் படத்தை மேம்படுத்துகிறது", enhanceFail:"AI மேம்பாடு கிடைக்கவில்லை", enhanceFailSub:"உங்கள் அசல் படம் பயன்படும்", continueAnyway:"இதே படத்துடன் தொடரவும்", retry:"மீண்டும் முயற்சி", dragCompare:"ஒப்பிட இழுக்கவும்",
+        fTitle:"பொருளின் பெயர்", fCategory:"வகை", fMaterial:"பொருள்", fColour:"நிறம்", fDescNative:"விவரம் (உங்கள் மொழி)", fDescEn:"English Description", fKeywords:"தேடல் சொற்கள்",
+        yourPrice:"உங்கள் விலை", belowRange:"பரிந்துரைக்கப்பட்ட விலைக்குக் குறைவு", inRange:"நல்ல விலை", aboveRange:"பரிந்துரைக்கப்பட்ட விலைக்கு அதிகம்", costBreakdown:"விலை எப்படி வந்தது" },
+  te: { before:"ముందు", after:"తర్వాత", aiWorking:"AI మీ ఫోటోను మెరుగుపరుస్తోంది", enhanceFail:"AI మెరుగుదల అందుబాటులో లేదు", enhanceFailSub:"మీ అసలు ఫోటో ఉపయోగించబడుతుంది", continueAnyway:"ఈ ఫోటోతోనే కొనసాగండి", retry:"మళ్లీ ప్రయత్నించండి", dragCompare:"పోల్చడానికి లాగండి",
+        fTitle:"ఉత్పత్తి పేరు", fCategory:"వర్గం", fMaterial:"పదార్థం", fColour:"రంగు", fDescNative:"వివరణ (మీ భాషలో)", fDescEn:"English Description", fKeywords:"శోధన పదాలు",
+        yourPrice:"మీ ధర", belowRange:"సూచించిన ధర కంటే తక్కువ", inRange:"మంచి ధర", aboveRange:"సూచించిన ధర కంటే ఎక్కువ", costBreakdown:"ధర ఎలా వచ్చింది" },
+  mr: { before:"आधी", after:"नंतर", aiWorking:"AI तुमचा फोटो सुधारत आहे", enhanceFail:"AI सुधारणा उपलब्ध नाही", enhanceFailSub:"तुमचा मूळ फोटो वापरला जाईल", continueAnyway:"याच फोटोसह पुढे जा", retry:"पुन्हा प्रयत्न करा", dragCompare:"तुलना करण्यासाठी सरकवा",
+        fTitle:"उत्पादनाचे नाव", fCategory:"श्रेणी", fMaterial:"साहित्य", fColour:"रंग", fDescNative:"वर्णन (तुमच्या भाषेत)", fDescEn:"English Description", fKeywords:"शोध शब्द",
+        yourPrice:"तुमची किंमत", belowRange:"सुचवलेल्या किमतीपेक्षा कमी", inRange:"चांगली किंमत", aboveRange:"सुचवलेल्या किमतीपेक्षा जास्त", costBreakdown:"किंमत कशी ठरली" },
+};
+
+Object.keys(TRANSLATIONS).forEach((k) => {
+  Object.assign(TRANSLATIONS[k], UI[k] || UI.en, UI2[k] || UI2.en);
+});
 export function CraftProvider({ children }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [lang, setLang] = useState('hi');
@@ -314,25 +482,88 @@ export function CraftProvider({ children }) {
   const [processingStages, setProcessingStages] = useState([]);
   const [currentStage, setCurrentStage] = useState('');
   const originalPreviewUrlRef = useRef(null);
-
-  const [productData, setProductData] = useState({
+  const BLANK_PRODUCT = {
     originalImage: null,
-    enhancedImage: "https://images.unsplash.com/photo-1590736969955-71cc94801759?w=800&auto=format&fit=crop",
-    name: "Handcrafted Terracotta Earthen Vase",
-    category: "Clay & Ceramic Crafts",
-    material: "Traditional Riverbed Clay",
-    colour: "Natural Ochre & Terracotta",
-    description_hi: "हाथ से चाक पर तैयार की गई शुद्ध मिट्टी की सुराही। प्राकृतिक रूप से पकाई गई और पर्यावरण के अनुकूल।",
-    description_en: "Handmade wheel-thrown terracotta vase crafted from local riverbed clay. Eco-friendly with natural earthen finish.",
-    keywords: ["pottery", "terracotta", "handmade", "eco-friendly"],
-    price_min: 750,
-    price_max: 1100,
-    final_price: 890,
-    price_reasoning: "Material Cost (₹220) + 5 hrs hand-turning + category benchmark markup."
-  });
+    enhancedImage: null,
+    enhancedImageB64: null,
+    isEnhanced: false,
+    image_url: null,
+    original_image_url: null,
+    name: "",
+    category: "",
+    material: "",
+    colour: "",
+    craft_type: "",
+    description_hi: "",
+    description_en: "",
+    keywords: [],
+    spoken_transcript: "",
+    hours_spent: null,
+    raw_material_cost: null,
+    price_min: 0,
+    price_max: 0,
+    final_price: 0,
+    price_reasoning: "",
+    savedProductId: null,
+  };
+
+  const [productData, setProductData] = useState({ ...BLANK_PRODUCT });
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.hi;
-const getArtisanId = () => localStorage.getItem('shilpsaathi_artisan_phone') || 'guest';
+  const RAW_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
+  const API = RAW_API.endsWith('/api') ? RAW_API : `${RAW_API}/api`;
+  const [artisanId, setArtisanId] = useState(localStorage.getItem('shilpsaathi_artisan_uuid') || null);
+
+  const getDeviceHandle = () => {
+    let h = localStorage.getItem('shilpsaathi_device_id');
+    if (!h) {
+      h = 'g-' + Math.random().toString(16).slice(2, 10);
+      localStorage.setItem('shilpsaathi_device_id', h);
+    }
+    return h;
+  };
+
+  const resolveArtisan = async () => {
+    const handle = localStorage.getItem('shilpsaathi_artisan_phone') || getDeviceHandle();
+    try {
+      const res = await fetch(`${API}/artisans/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle, preferred_language: lang }),
+      });
+      const json = await res.json();
+      if (json?.data?.id) {
+        localStorage.setItem('shilpsaathi_artisan_uuid', json.data.id);
+        setArtisanId(json.data.id);
+        return json.data.id;
+      }
+    } catch (e) { console.warn('[Artisan] resolve failed:', e.message); }
+    return null;
+  };
+
+  const linkPhone = async (phone) => {
+    const id = artisanId || (await resolveArtisan());
+    if (!id) return false;
+    try {
+      const res = await fetch(`${API}/artisans/link-phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artisan_id: id, phone }),
+      });
+      const json = await res.json();
+      if (json?.data?.id) {
+        localStorage.setItem('shilpsaathi_artisan_phone', phone);
+        localStorage.setItem('shilpsaathi_artisan_uuid', json.data.id);
+        setArtisanId(json.data.id);
+        return true;
+      }
+    } catch (e) { console.warn('[Artisan] link failed:', e.message); }
+    return false;
+  };
+
+  useEffect(() => { if (!artisanId) resolveArtisan(); }, []);
+
+  const getArtisanId = () => artisanId;
 // add getArtisanId to the provider value
   const updateProduct = (fields) => setProductData(prev => ({ ...prev, ...fields }));
   const setOriginalPreview = (file) => {
@@ -351,13 +582,18 @@ const getArtisanId = () => localStorage.getItem('shilpsaathi_artisan_phone') || 
     }
   };
   useEffect(() => clearOriginalPreview, []);
+    const startNewProduct = () => {
+    clearOriginalPreview();
+    setProductData({ ...BLANK_PRODUCT });
+    setCurrentStep(3);
+  };
   const nextStep = () => setCurrentStep(prev => prev + 1);
   const prevStep = () => setCurrentStep(prev => Math.max(1, prev - 1));
   const goToStep = (step) => setCurrentStep(step);
 
   return (
     <CraftContext.Provider value={{
-      currentStep, nextStep, prevStep, goToStep,
+      currentStep, nextStep, prevStep, goToStep,startNewProduct,
       lang, setLang, t,
       productData, updateProduct,
       setOriginalPreview, clearOriginalPreview,
@@ -365,7 +601,7 @@ const getArtisanId = () => localStorage.getItem('shilpsaathi_artisan_phone') || 
       loadingMessage, setLoadingMessage,
       showLangModal, setShowLangModal,
       processingStages, setProcessingStages,
-      currentStage, setCurrentStage, getArtisanId
+          currentStage, setCurrentStage, getArtisanId, linkPhone, resolveArtisan
     }}>
       {children}
     </CraftContext.Provider>

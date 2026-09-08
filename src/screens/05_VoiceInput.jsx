@@ -1,489 +1,360 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Mic, Square, Play, RotateCcw, ArrowRight, Sparkles, Volume2, Edit3, CheckCircle2, AlertCircle, Radio } from 'lucide-react';
+import { Mic, Square, Play, RotateCcw, ArrowRight, Sparkles, Volume2, Edit3, AlertCircle } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
 import ScreenHeader from '../components/ui/ScreenHeader';
-const SPEECH_LANG_OPTIONS = [
-  { code: 'hi-IN', label: '🇮🇳 हिंदी (Hindi)' },
-  { code: 'en-IN', label: '🇬🇧 English' },
-  { code: 'bn-IN', label: '🇮🇳 বাংলা (Bengali)' },
-  { code: 'ta-IN', label: '🇮🇳 தமிழ் (Tamil)' },
-  { code: 'te-IN', label: '🇮🇳 తెలుగు (Telugu)' },
-  { code: 'mr-IN', label: '🇮🇳 मराठी (Marathi)' },
-];
 
-const QUICK_VOICE_SAMPLES = [
-  { label: '🪔 पीतल का दीया (Brass Diya)', text: 'यह एक हाथ से बना हुआ पीतल का दीया है जिसमें सुनहरा रंग है, 4 घंटे लगे और ₹200 कच्चा माल खर्च हुआ।' },
-  { label: '🏺 मिट्टी का फूलदान (Clay Vase)', text: 'यह एक हस्तनिर्मित टेराकोटा मिट्टी का फूलदान है जिसे चाक पर प्राकृतिक गेरुआ रंग से बनाया गया है, 5 घंटे लगे।' },
-  { label: '🪵 लकड़ी का डिब्बा (Wood Box)', text: 'यह शीशम की लकड़ी का हाथ से नक्काशी किया हुआ संदूक है, 7 घंटे लगे और ₹350 लागत आई।' },
-  { label: '🧵 हथकरघा साड़ी (Handloom Saree)', text: 'यह शुद्ध सूती हथकरघा बुनी हुई साड़ी है जिसमें प्राकृतिक नीला और लाल रंग है, 12 घंटे लगे।' },
-  { label: '🎨 मधुबनी पेंटिंग (Folk Art)', text: 'यह हस्तनिर्मित प्राकृतिक रंगों से बनी मधुबनी लोक कला पेंटिंग है, 6 घंटे लगे।' }
+const SPEECH_LANG_OPTIONS = [
+  { code: 'hi-IN', label: 'हिंदी' }, { code: 'en-IN', label: 'English' },
+  { code: 'bn-IN', label: 'বাংলা' }, { code: 'ta-IN', label: 'தமிழ்' },
+  { code: 'te-IN', label: 'తెలుగు' }, { code: 'mr-IN', label: 'मराठी' },
 ];
+const VOICE_SAMPLES = {
+  'hi-IN': [
+    { label: '🪔 पीतल का दीया', text: 'यह एक हाथ से बना हुआ पीतल का दीया है जिसमें सुनहरा रंग है, 4 घंटे लगे और ₹200 कच्चा माल खर्च हुआ।' },
+    { label: '🏺 मिट्टी का फूलदान', text: 'यह एक हस्तनिर्मित टेराकोटा मिट्टी का फूलदान है जिसे चाक पर प्राकृतिक गेरुआ रंग से बनाया गया है, 5 घंटे लगे।' },
+    { label: '🪵 लकड़ी का डिब्बा', text: 'यह शीशम की लकड़ी का हाथ से नक्काशी किया हुआ संदूक है, 7 घंटे लगे और ₹350 लागत आई।' },
+    { label: '🧵 हथकरघा साड़ी', text: 'यह शुद्ध सूती हथकरघा बुनी हुई साड़ी है जिसमें प्राकृतिक नीला रंग है, 12 घंटे लगे।' },
+  ],
+  'en-IN': [
+    { label: '🪔 Brass Diya', text: 'This is a handmade brass diya in golden colour, took 4 hours and ₹200 of raw material.' },
+    { label: '🏺 Clay Vase', text: 'This is a handcrafted terracotta clay vase made on the wheel in natural ochre colour, took 5 hours.' },
+    { label: '🪵 Wooden Box', text: 'This is a hand-carved sheesham wood box, took 7 hours and cost ₹350.' },
+    { label: '🧵 Handloom Saree', text: 'This is a pure cotton handloom saree in natural blue colour, took 12 hours.' },
+  ],
+  'bn-IN': [
+    { label: '🏺 মাটির ফুলদানি', text: 'এটি হাতে তৈরি টেরাকোটা মাটির ফুলদানি, প্রাকৃতিক গেরুয়া রঙের, ৫ ঘণ্টা লেগেছে।' },
+    { label: '🧵 তাঁতের শাড়ি', text: 'এটি খাঁটি সুতির তাঁতের শাড়ি, নীল রঙের, ১২ ঘণ্টা লেগেছে।' },
+  ],
+  'ta-IN': [
+    { label: '🏺 களிமண் ஜாடி', text: 'இது கையால் செய்யப்பட்ட களிமண் பூச்சாடி, இயற்கை மஞ்சள் நிறம், 5 மணி நேரம் ஆனது.' },
+    { label: '🧵 கைத்தறி புடவை', text: 'இது தூய பருத்தி கைத்தறி புடவை, நீல நிறம், 12 மணி நேரம் ஆனது.' },
+  ],
+  'te-IN': [
+    { label: '🏺 మట్టి కుండ', text: 'ఇది చేతితో తయారు చేసిన మట్టి కుండ, సహజ గోధుమ రంగు, 5 గంటలు పట్టింది.' },
+    { label: '🧵 చేనేత చీర', text: 'ఇది స్వచ్ఛమైన పత్తి చేనేత చీర, నీలం రంగు, 12 గంటలు పట్టింది.' },
+  ],
+  'mr-IN': [
+    { label: '🏺 मातीचे फुलदाणी', text: 'ही हाताने बनवलेली मातीची फुलदाणी आहे, नैसर्गिक गेरू रंगाची, ५ तास लागले.' },
+    { label: '🧵 हातमाग साडी', text: 'ही शुद्ध सुती हातमाग साडी आहे, निळ्या रंगाची, १२ तास लागले.' },
+  ],
+};
 
 export default function VoiceInputScreen() {
   const { updateProduct, nextStep, setIsLoading, setLoadingMessage, lang, t } = useCraft();
-  const [speechLang, setSpeechLang] = useState(lang === 'en' ? 'en-IN' : 'hi-IN');
-  const [status, setStatus] = useState('idle'); // 'idle' | 'recording' | 'recorded' | 'error'
+  const [speechLang, setSpeechLang] = useState(lang === 'en' ? 'en-IN' : `${lang}-IN`);
+  const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [audioBlob, setAudioBlob] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [audioVolume, setAudioVolume] = useState(0);
+  const [vol, setVol] = useState(0);
 
-  const wavRecorderRef = useRef(null);
+  const recorderRef = useRef(null);
   const recognitionRef = useRef(null);
-  const audioPlayerRef = useRef(null);
-  const animFrameRef = useRef(null);
-  const transcriptBufferRef = useRef('');
+  const playerRef = useRef(null);
+  const bufferRef = useRef('');
+  const blobRef = useRef(null);          // FIX: ref, not state — no stale closure
+  const audioCtxRef = useRef(null);
+  const rafRef = useRef(null);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch (e) { /* ignore */ }
-      }
-      if (wavRecorderRef.current && wavRecorderRef.current.isRecording) {
-        wavRecorderRef.current.stop();
-      }
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
-      if (audioURL) {
-        URL.revokeObjectURL(audioURL);
-      }
-    };
+  useEffect(() => () => {
+    try { recognitionRef.current?.abort(); } catch {}
+    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    audioCtxRef.current?.close().catch(() => {});
+    if (audioURL) URL.revokeObjectURL(audioURL);
   }, [audioURL]);
 
   const startRecording = async () => {
     setStatus('recording');
     setErrorMessage('');
-    transcriptBufferRef.current = liveTranscript.trim() ? liveTranscript.trim() + ' ' : '';
+    bufferRef.current = liveTranscript.trim() ? liveTranscript.trim() + ' ' : '';
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    // 1. Initialize Browser Speech Recognition (Live instant feedback)
-    if (SpeechRecognition) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
       try {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = speechLang;
-        recognition.maxAlternatives = 1;
-
-        recognition.onresult = (event) => {
-          let interimTranscript = '';
-          let finalTranscript = '';
-
-          for (let i = 0; i < event.results.length; ++i) {
-            const result = event.results[i];
-            if (result.isFinal) {
-              finalTranscript += result[0].transcript + ' ';
-            } else {
-              interimTranscript += result[0].transcript;
-            }
+        const r = new SR();
+               r.continuous = true; r.interimResults = true; r.lang = speechLang; r.maxAlternatives = 3;
+        r.onresult = (e) => {
+          let fin = '', int = '';
+          for (let i = 0; i < e.results.length; i++) {
+            const res = e.results[i];
+            if (res.isFinal) fin += res[0].transcript + ' '; else int += res[0].transcript;
           }
-
-          const combined = (transcriptBufferRef.current + finalTranscript + interimTranscript).trim();
-          if (combined) {
-            setLiveTranscript(combined);
-          }
+          const combined = (bufferRef.current + fin + int).trim();
+          if (combined) setLiveTranscript(combined);
         };
-
-        recognition.onerror = (event) => {
-          console.warn('[Voice] SpeechRecognition notice:', event.error);
-        };
-
-        recognition.start();
-        recognitionRef.current = recognition;
-      } catch (recErr) {
-        console.warn('[Voice] SpeechRecognition start notice:', recErr);
-      }
+        r.onerror = (e) => console.warn('[Voice] SR:', e.error);
+        r.start();
+        recognitionRef.current = r;
+      } catch (e) { console.warn('[Voice] SR start:', e); }
     }
 
-   // 2. Capture audio using standard browser MediaRecorder
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const audioChunks = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunks.push(event.data);
+      const rec = new MediaRecorder(stream);
+      const chunks = [];
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      rec.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        blobRef.current = blob;
+        setAudioURL(URL.createObjectURL(blob));
+        stream.getTracks().forEach((tr) => tr.stop());
       };
+      rec.start();
+      recorderRef.current = rec;
 
-      mediaRecorder.onstop = () => {
-        const recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        setAudioBlob(recordedBlob);
-        setAudioURL(URL.createObjectURL(recordedBlob));
-        stream.getTracks().forEach((track) => track.stop());
+      // FIX: real level meter instead of Math.random()
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtxRef.current = ctx;
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (const v of data) sum += (v - 128) ** 2;
+        setVol(Math.min(100, Math.sqrt(sum / data.length) * 4));
+        rafRef.current = requestAnimationFrame(tick);
       };
-
-      mediaRecorder.start();
-      wavRecorderRef.current = mediaRecorder;
-
-      const meterInterval = setInterval(() => {
-        if (wavRecorderRef.current && wavRecorderRef.current.state === 'recording') {
-          setAudioVolume(Math.floor(Math.random() * 60) + 30);
-        } else {
-          clearInterval(meterInterval);
-          setAudioVolume(0);
-        }
-      }, 100);
-    } catch (micErr) {
-      console.warn('[Voice] Microphone stream error:', micErr.message);
-      setErrorMessage('माइक्रोफ़ोन चालू नहीं हो सका। कृपया ब्राउज़र में परमिशन चेक करें या नीचे दिए गए बॉक्स में सीधे लिखें।');
+      tick();
+    } catch (err) {
+      console.warn('[Voice] mic:', err.message);
+      setErrorMessage(t.micError);
+      setStatus('idle');
     }
   };
 
   const stopRecording = async () => {
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
-    }
-
-    if (wavRecorderRef.current && wavRecorderRef.current.state === 'recording') {
-      wavRecorderRef.current.stop();
-    }
-
-    setAudioVolume(0);
+    try { recognitionRef.current?.stop(); } catch {}
+    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    audioCtxRef.current?.close().catch(() => {});
+    setVol(0);
     setStatus('recorded');
 
-    // If live transcript is empty, auto-transcribe via backend ASR
-    if (!liveTranscript.trim() && audioBlob && audioBlob.size > 100) {
+    await new Promise((r) => setTimeout(r, 250));   // let onstop populate blobRef
+
+    if (!liveTranscript.trim() && blobRef.current?.size > 100) {
       setIsTranscribing(true);
       try {
-        console.log('[Voice] Transcribing 16kHz WAV with Bhashini Conformer ASR...');
-        const res = await api.processVoice({
-          audioBlob: wavBlob,
-          language: speechLang.split('-')[0],
-        });
-        if (res?.data?.transcript && res.data.transcript.trim()) {
-          setLiveTranscript(res.data.transcript.trim());
-        }
-      } catch (err) {
-        console.warn('[Voice] Bhashini transcribe fallback:', err.message);
-      } finally {
-        setIsTranscribing(false);
-      }
+        const res = await api.processVoice({ audioBlob: blobRef.current, language: speechLang.split('-')[0] });
+        if (res?.data?.transcript?.trim()) setLiveTranscript(res.data.transcript.trim());
+      } catch (e) { console.warn('[Voice] ASR fallback:', e.message); }
+      finally { setIsTranscribing(false); }
     }
   };
 
   const retake = () => {
     if (audioURL) URL.revokeObjectURL(audioURL);
-    setAudioURL(null);
-    setAudioBlob(null);
-    setLiveTranscript('');
-    setErrorMessage('');
-    setAudioVolume(0);
-    setStatus('idle');
+    setAudioURL(null); blobRef.current = null;
+    setLiveTranscript(''); setErrorMessage(''); setVol(0); setStatus('idle');
   };
 
   const playAudio = () => {
     if (!audioURL) return;
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-    }
-    const player = new Audio(audioURL);
-    player.onended = () => setIsPlaying(false);
-    audioPlayerRef.current = player;
-    player.play();
-    setIsPlaying(true);
+    playerRef.current?.pause();
+    const p = new Audio(audioURL);
+    p.onended = () => setIsPlaying(false);
+    playerRef.current = p; p.play(); setIsPlaying(true);
   };
 
-  // Safe minimal client-side entity extractor fallback (zero product-specific branches)
+  // ---- keep your existing extractor exactly as-is ----
   const parseClientSideTranscript = (text) => {
     const raw = (text || '').trim();
-    const cleanPhrase = (str) => (!str ? '' : str.replace(/^[^\w\u0900-\u097F]+|[^\w\u0900-\u097F]+$/g, '').trim());
-    const toTitleCase = (str) => (!str ? '' : str.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '));
-
-    // Number word mappings in Hindi & English
-    const numWords = {
-      'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'पाँच': 5, 'छह': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10,
-      'पंद्रह': 15, 'बीस': 20, 'पच्चीस': 25, 'तीस': 30, 'चालीस': 40, 'पचास': 50, 'साठ': 60, 'सौ': 100, 'दो सौ': 200,
-      'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'twenty': 20, 'fifty': 50, 'hundred': 100
-    };
+    const cleanPhrase = (s) => (!s ? '' : s.replace(/^[^\w\u0900-\u097F]+|[^\w\u0900-\u097F]+$/g, '').trim());
+    const toTitleCase = (s) => (!s ? '' : s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '));
+    const numWords = { 'एक':1,'दो':2,'तीन':3,'चार':4,'पांच':5,'पाँच':5,'छह':6,'सात':7,'आठ':8,'नौ':9,'दस':10,'पंद्रह':15,'बीस':20,'पच्चीस':25,'तीस':30,'चालीस':40,'पचास':50,'साठ':60,'सौ':100,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'twenty':20,'fifty':50,'hundred':100 };
 
     let hours = 4;
-    const hoursDigitMatch = raw.match(/(\d+)\s*(?:hour|hr|ghante|घंटे|घंटा|दिन|day)/i);
-    if (hoursDigitMatch) {
-      hours = parseInt(hoursDigitMatch[1], 10);
-    } else {
-      for (const [w, n] of Object.entries(numWords)) {
-        if (raw.includes(`${w} घंटे`) || raw.includes(`${w} घंटा`) || raw.includes(`${w} hours`)) {
-          hours = n;
-          break;
-        }
-      }
-    }
+    const hm = raw.match(/(\d+)\s*(?:hour|hr|ghante|घंटे|घंटा|दिन|day)/i);
+    if (hm) hours = parseInt(hm[1], 10);
+    else for (const [w, n] of Object.entries(numWords)) if (raw.includes(`${w} घंटे`) || raw.includes(`${w} घंटा`) || raw.includes(`${w} hours`)) { hours = n; break; }
 
     let explicitCost = null;
-    const costDigitMatch = raw.match(/(?:₹|rs\.?|inr|rupee|rupaye|रुपये|रुपया|लागत|कीमत|keemat|cost)\s*[:=]?\s*(\d+)/i) || raw.match(/(\d+)\s*(?:₹|rs\.?|inr|rupee|rupaye|रुपये|रुपया)/i);
-    if (costDigitMatch) {
-      explicitCost = parseInt(costDigitMatch[1], 10);
-    } else {
-      for (const [w, n] of Object.entries(numWords)) {
-        if (raw.includes(`${w} रुपये`) || raw.includes(`${w} रुपया`) || raw.includes(`${w} rupees`)) {
-          explicitCost = n;
-          break;
-        }
-      }
-    }
+    const cm = raw.match(/(?:₹|rs\.?|inr|rupee|rupaye|रुपये|रुपया|लागत|कीमत|keemat|cost)\s*[:=]?\s*(\d+)/i) || raw.match(/(\d+)\s*(?:₹|rs\.?|inr|rupee|rupaye|रुपये|रुपया)/i);
+    if (cm) explicitCost = parseInt(cm[1], 10);
+    else for (const [w, n] of Object.entries(numWords)) if (raw.includes(`${w} रुपये`) || raw.includes(`${w} रुपया`) || raw.includes(`${w} rupees`)) { explicitCost = n; break; }
 
-    // Generic material pattern (no product-specific branches)
     let material = 'Not clearly identifiable';
-    const matMatch = raw.match(/(?:ise\s+|ye\s+|yeh\s+|यह\s+|इसे\s+)?([a-z0-9\u0900-\u097F\s]{2,30}?)\s+(?:se\s+(?:haath\s+se\s+)?ban(?:a|i|e)|से\s+बन(?:ा|ी|े)|made\s+of|made\s+from)/i);
-    if (matMatch) {
-      let cand = cleanPhrase(matMatch[1]).replace(/^(?:ek|ye|yeh|ise|kisi|एक|यह|इसे)\s+/i, '').trim();
-      const stopWords = ['haath', 'haath se', 'ek', 'yeh', 'ye', 'kisi', 'हाथ', 'एक', 'यह'];
-      if (cand && !stopWords.includes(cand.toLowerCase())) {
-        material = toTitleCase(cand);
-      }
+    const mm = raw.match(/(?:ise\s+|ye\s+|yeh\s+|यह\s+|इसे\s+)?([a-z0-9\u0900-\u097F\s]{2,30}?)\s+(?:se\s+(?:haath\s+se\s+)?ban(?:a|i|e)|से\s+बन(?:ा|ी|े)|made\s+of|made\s+from)/i);
+    if (mm) {
+      const c = cleanPhrase(mm[1]).replace(/^(?:ek|ye|yeh|ise|kisi|एक|यह|इसे)\s+/i, '').trim();
+      if (c && !['haath','haath se','ek','yeh','ye','kisi','हाथ','एक','यह'].includes(c.toLowerCase())) material = toTitleCase(c);
     }
 
-    // Generic item noun extraction
     let item = '';
-    const itemMatch = raw.match(/(?:se\s+ban(?:a|i|e)(?:ya\s+gaya|\s+hua|\s+hui|\s+hue)?|से\s+बन(?:ा|ी|े))\s+([a-z0-9\u0900-\u097F\s]{2,25}?)(?:\s+hai|\s+है|\s*,|\s*\.|\s+iska|\s+iski|\s+aur)/i)
+    const im = raw.match(/(?:se\s+ban(?:a|i|e)(?:ya\s+gaya|\s+hua|\s+hui|\s+hue)?|से\s+बन(?:ा|ी|े))\s+([a-z0-9\u0900-\u097F\s]{2,25}?)(?:\s+hai|\s+है|\s*,|\s*\.|\s+iska|\s+iski|\s+aur)/i)
       || raw.match(/(?:ye\s+ek\s+|yeh\s+ek\s+|यह\s+एक\s+)([a-z0-9\u0900-\u097F\s]{2,25}?)(?:\s+hai|\s+है|\s*,|\s*\.|\s+jise|\s+ise)/i);
-    if (itemMatch) {
-      let cand = cleanPhrase(itemMatch[1]).replace(/^(?:ek|ye|yeh|ise|handmade|handcrafted|हस्तनिर्मित)\s+/i, '').trim();
-      const stopWords = ['hua', 'hui', 'hue', 'gaya', 'hai', 'item', 'हुआ', 'हुई', 'हुए', 'गया', 'है'];
-      if (cand && !stopWords.includes(cand.toLowerCase()) && cand.toLowerCase() !== material.toLowerCase()) {
-        item = toTitleCase(cand);
-      }
+    if (im) {
+      const c = cleanPhrase(im[1]).replace(/^(?:ek|ye|yeh|ise|handmade|handcrafted|हस्तनिर्मित)\s+/i, '').trim();
+      if (c && !['hua','hui','hue','gaya','hai','item','हुआ','हुई','हुए','गया','है'].includes(c.toLowerCase()) && c.toLowerCase() !== material.toLowerCase()) item = toTitleCase(c);
     }
 
-    // Generic color extraction
     let color = 'Not clearly identifiable';
-    const colMatch = raw.match(/(?:iska\s+rang|rang|color|colour|रंग)\s*(?:hai\s+)?[:=]?\s*([a-z0-9\u0900-\u097F\s]{2,20}?)(?:\s+hai|\s+है|\s+aur|\s+और|\s*,|\s*\.|\s*$|\s+iski|\s+iska)/i)
+    const colm = raw.match(/(?:iska\s+rang|rang|color|colour|रंग)\s*(?:hai\s+)?[:=]?\s*([a-z0-9\u0900-\u097F\s]{2,20}?)(?:\s+hai|\s+है|\s+aur|\s+और|\s*,|\s*\.|\s*$|\s+iski|\s+iska)/i)
       || raw.match(/(?:^|\s)([a-z0-9\u0900-\u097F]+)\s+(?:rang\s+me|rang\s+mein|रंग\s+में|color\s+me|colour\s+me)/i);
-    if (colMatch) {
-      color = toTitleCase(cleanPhrase(colMatch[1]));
-    }
+    if (colm) color = toTitleCase(cleanPhrase(colm[1]));
 
     const title = item
       ? (material !== 'Not clearly identifiable' && !item.toLowerCase().includes(material.toLowerCase()) ? `Handcrafted ${material} ${item}` : `Handcrafted ${item}`)
       : 'Handcrafted Artisan Craft';
-
     const cost = explicitCost !== null ? explicitCost : 150;
-    const finalPrice = explicitCost !== null ? explicitCost : Math.round(cost * 1.8 + hours * 125);
-    const priceMin = explicitCost !== null ? explicitCost : Math.round(cost * 1.5 + hours * 100);
-    const priceMax = explicitCost !== null ? explicitCost : Math.round(cost * 2.2 + hours * 150);
-
-    const factParts = [
+    const parts = [
       material !== 'Not clearly identifiable' ? `made from ${material.toLowerCase()}` : null,
       color !== 'Not clearly identifiable' ? `${color.toLowerCase()} in colour` : null,
-      explicitCost !== null ? `priced at INR ${explicitCost}` : null
+      explicitCost !== null ? `priced at INR ${explicitCost}` : null,
     ].filter(Boolean);
-
-    const cleanItemName = title.replace(/^Handcrafted\s+/i, '').toLowerCase();
-    const descriptionEn = factParts.length > 0 ? `A ${cleanItemName} ${factParts.join(', ')}.` : 'Product details were not clearly specified.';
+    const cleanItem = title.replace(/^Handcrafted\s+/i, '').toLowerCase();
 
     return {
-      name: title,
-      category: 'Handmade Home Decor',
-      material: material,
-      craft_type: '',
-      colour: color,
+      name: title, category: 'Handmade Home Decor', material, craft_type: '', colour: color,
       description_hi: raw.length > 5 ? `कारीगर द्वारा पारंपरिक तकनीक से तैयार किया गया हस्तशिल्प। ${raw}` : `कारीगर द्वारा शुद्ध प्राकृतिक सामग्री से निर्मित उत्कृष्ट कलाकृति। 100% हस्तनिर्मित।`,
-      description_en: descriptionEn,
-      keywords: [...new Set(['handmade', cleanItemName, material !== 'Not clearly identifiable' ? material.toLowerCase() : null].filter(Boolean))],
-      raw_material_cost: cost,
-      hours_spent: hours,
-      price_min: priceMin,
-      price_max: priceMax,
-      final_price: finalPrice,
+      description_en: parts.length ? `A ${cleanItem} ${parts.join(', ')}.` : 'Product details were not clearly specified.',
+      keywords: [...new Set(['handmade', cleanItem, material !== 'Not clearly identifiable' ? material.toLowerCase() : null].filter(Boolean))],
+      raw_material_cost: cost, hours_spent: hours,
+      price_min: explicitCost ?? Math.round(cost * 1.5 + hours * 100),
+      price_max: explicitCost ?? Math.round(cost * 2.2 + hours * 150),
+      final_price: explicitCost ?? Math.round(cost * 1.8 + hours * 125),
       explicit_price: explicitCost,
-      price_reasoning: explicitCost !== null ? `Price explicitly provided by artisan: INR ${explicitCost}.` : `Calculated from ₹${cost} materials + ${hours} hrs labor + 25% fair artisan margin.`,
-      spoken_transcript: raw
+      price_reasoning: explicitCost !== null ? `Price provided by artisan: INR ${explicitCost}.` : `₹${cost} materials + ${hours} hrs labour + 25% fair margin.`,
+      spoken_transcript: raw,
     };
   };
-// 05_VoiceInput.jsx — replace submitVoice entirely
-const submitVoice = async () => {
-  setLoadingMessage("कैटलॉग तैयार हो रहा है... (Generating Catalog)");
-  setIsLoading(true);
-  
-  const currentTranscript = liveTranscript.trim();
 
-  try {
-    const result = await api.processVoice({
-      audioBlob: audioBlob,
-      transcript: currentTranscript || null,
-      language: speechLang.split('-')[0],
-    });
-
-    if (result?.success && result.data) {
-      // Keep user's exact words in description if backend returned generic fallback
-      const payload = {
-        ...result.data,
-        spoken_transcript: currentTranscript,
-        description_hi: result.data.description_hi || currentTranscript,
-      };
-      updateProduct(payload);
-    } else {
-      throw new Error('Backend did not return structured catalog data');
+  const submitVoice = async () => {
+    setLoadingMessage(t.genCatalog);
+    setIsLoading(true);
+    const tr = liveTranscript.trim();
+    try {
+      const result = await api.processVoice({ audioBlob: blobRef.current, transcript: tr || null, language: speechLang.split('-')[0] });
+      if (!result?.success || !result.data) throw new Error('no structured data');
+      updateProduct({ ...result.data, spoken_transcript: tr, description_hi: result.data.description_hi || tr });
+    } catch (err) {
+      console.warn('[Voice] fallback extractor:', err.message);
+      const ex = parseClientSideTranscript(tr);
+      updateProduct({ ...ex, description_hi: tr || ex.description_hi, spoken_transcript: tr });
+    } finally {
+      setIsLoading(false);
+      nextStep();
     }
-  } catch (err) {
-    console.warn('[Voice] Backend catalog fallback active:', err.message);
-    const extracted = parseClientSideTranscript(currentTranscript);
-    updateProduct({
-      ...extracted,
-      description_hi: currentTranscript || extracted.description_hi,
-      spoken_transcript: currentTranscript
-    });
-  } finally {
-    setIsLoading(false);
-    nextStep();
-  }
-};
-  return (
-    <div className="text-center space-y-4 animate-fade-in-up">
-      <ScreenHeader title={t.voiceTitle} subtitle={t.voiceSub} step={3} totalSteps={7} />
+  };
 
-      {/* Language Selection Pill for Speech */}
-      <div className="flex items-center justify-center gap-1.5 flex-wrap">
-        {SPEECH_LANG_OPTIONS.map((opt) => (
+  return (
+    <div className="space-y-4 animate-fade-in-up">
+      <ScreenHeader title={t.voiceTitle} subtitle={t.voiceSub} step={3} totalSteps={6} speak={t.voiceExample} />
+
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {SPEECH_LANG_OPTIONS.map((o) => (
           <button
-            key={opt.code}
-            type="button"
-            onClick={() => setSpeechLang(opt.code)}
-            className={`text-[11px] px-2.5 py-1 rounded-full border transition font-bold ${
-              speechLang === opt.code
-                ? 'bg-terracotta text-white border-terracotta shadow-xs'
-                : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200'
-            }`}
+            key={o.code}
+            onClick={() => setSpeechLang(o.code)}
+            className={`chip ${speechLang === o.code ? 'border-terracotta bg-terracotta text-white' : 'border-stone-200 bg-white text-stone-600'}`}
           >
-            {opt.label}
+            {o.label}
           </button>
         ))}
       </div>
 
-      {/* Mic Button Area */}
-      <div className="my-2 flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-3 py-2">
         {status !== 'recorded' && (
           <button
             onClick={status === 'recording' ? stopRecording : startRecording}
-            aria-label={status === 'recording' ? 'Stop recording' : 'Start recording'}
-            className={`w-32 h-32 rounded-full border-4 mx-auto flex flex-col items-center justify-center transition shadow-xl active:scale-95 relative ${
-              status === 'recording'
-                ? 'border-red-600 bg-red-50 text-red-600 animate-pulse ring-8 ring-red-100'
-                : 'border-terracotta bg-terracotta/10 text-terracotta hover:scale-105 hover:bg-terracotta/20'
+            className={`relative flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-full border-4 shadow-lift transition active:scale-95 ${
+              status === 'recording' ? 'border-red-500 bg-red-50 text-red-600' : 'border-terracotta bg-terracotta-50 text-terracotta'
             }`}
           >
-            {status === 'recording' ? <Square size={38} /> : <Mic size={42} />}
-            <span className="text-[11px] font-bold mt-2 uppercase tracking-wider">
-              {status === 'recording' ? 'रोकें (Stop Recording)' : t.tapSpeak}
+            {status === 'recording' && (
+              <span
+                className="pointer-events-none absolute inset-0 rounded-full bg-red-400/25 transition-transform duration-75"
+                style={{ transform: `scale(${1 + vol / 130})` }}
+              />
+            )}
+            {status === 'recording' ? <Square size={36} /> : <Mic size={42} strokeWidth={2.2} />}
+            <span className="text-[11px] font-black uppercase tracking-wider">
+              {status === 'recording' ? t.stopRec : t.tapSpeak}
             </span>
           </button>
         )}
 
         {status === 'recording' && (
-          <div className="space-y-1.5 w-full max-w-xs">
-            <div className="flex items-center justify-center gap-1.5 text-xs text-red-600 font-bold">
-              <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
-              🎙️ सुन रहा है... अपनी भाषा में बोलें (Listening... Speak now)
-            </div>
-
-            {/* Real-time Voice Wave Meter */}
-            <div className="flex items-center justify-center gap-1 h-5 px-4">
-              {[40, 70, 100, 60, 90, 50, 80, 45, 95, 65, 85].map((factor, i) => {
-                const heightPercent = Math.max(15, Math.min(100, Math.round((audioVolume * factor) / 60)));
-                return (
-                  <span
-                    key={i}
-                    style={{ height: `${heightPercent}%` }}
-                    className="w-1 bg-red-500 rounded-full transition-all duration-75"
-                  ></span>
-                );
-              })}
-            </div>
-          </div>
+          <p className="flex items-center gap-2 text-xs font-bold text-red-600">
+            <span className="h-2 w-2 animate-ping rounded-full bg-red-600" /> {t.listeningNow}
+          </p>
         )}
 
         {isTranscribing && (
-          <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3.5 py-1.5 rounded-full animate-pulse font-medium">
-            <span className="w-2.5 h-2.5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></span>
-            ✨ Bhashini & AI आवाज़ पहचान रहे हैं... (Transcribing audio...)
-          </div>
+          <p className="chip animate-breathe border-mustard-200 bg-mustard-50 text-mustard-700">
+            <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-mustard-500 border-t-transparent" />
+            {t.transcribing}
+          </p>
         )}
 
         {errorMessage && (
-          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 flex items-start gap-2">
-            <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">सूचना (Note): {errorMessage}</p>
-              <p className="text-[11px] text-stone-600 mt-0.5">आप नीचे दिए गए बॉक्स में सीधे लिख भी सकते हैं या नीचे दिए गए किसी भी उदाहरण पर क्लिक कर सकते हैं।</p>
-            </div>
+          <div className="flex w-full gap-2.5 rounded-3xl border border-amber-200 bg-amber-50 p-3.5 text-left">
+            <AlertCircle size={17} className="mt-0.5 shrink-0 text-amber-600" />
+            <p className="text-2xs leading-relaxed text-amber-900">{errorMessage}</p>
           </div>
         )}
 
         {status === 'recorded' && (
-          <div className="flex items-center gap-3 animate-fade-in py-1">
-            <button
-              onClick={playAudio}
-              className={`w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg transition active:scale-95 ${
-                isPlaying ? 'bg-amber-600 animate-pulse' : 'bg-forest hover:bg-[#326647]'
-              }`}
-              title="Play Recording"
-            >
-              {isPlaying ? <Volume2 size={22} /> : <Play size={20} className="ml-0.5" />}
+          <div className="flex items-center gap-3 animate-fade-in">
+            <button onClick={playAudio} className={`flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lift active:scale-95 ${isPlaying ? 'animate-breathe bg-mustard-500' : 'bg-forest'}`}>
+              {isPlaying ? <Volume2 size={22} /> : <Play size={22} className="ml-0.5" />}
             </button>
-            <button
-              onClick={retake}
-              className="w-12 h-12 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-700 flex items-center justify-center shadow-md active:scale-95 transition"
-              title="Retake Voice"
-            >
-              <RotateCcw size={18} />
+            <button onClick={retake} className="flex h-14 w-14 items-center justify-center rounded-full bg-stone-200 text-stone-700 shadow-card active:scale-95">
+              <RotateCcw size={20} />
             </button>
           </div>
         )}
       </div>
 
-      {/* Live / Editable Spoken Transcript Box */}
-      <div className="bg-white p-3.5 rounded-2xl border border-stone-200 text-left text-xs space-y-2 shadow-sm">
+      <div className="space-y-2.5 rounded-3xl border border-stone-200 bg-white p-4 text-left shadow-card">
         <div className="flex items-center justify-between">
-          <span className="font-bold text-stone-800 flex items-center gap-1">
-            <Sparkles size={13} className="text-mustard" /> आपकी आवाज़ (Spoken Text):
+          <span className="flex items-center gap-1.5 text-xs font-black text-charcoal">
+            <Sparkles size={14} className="text-mustard-500" /> {t.yourVoice}
           </span>
-          <span className="text-[10px] text-stone-400 flex items-center gap-0.5">
-            <Edit3 size={10} /> सीधे एडिट / टाइप करें
+          <span className="flex items-center gap-1 text-[10px] text-stone-400">
+            <Edit3 size={11} /> {t.editHint}
           </span>
         </div>
         <textarea
           rows="3"
           value={liveTranscript}
           onChange={(e) => setLiveTranscript(e.target.value)}
-          placeholder="बोलें या लिखें: उदा. यह एक हाथ से बना हुआ पीतल का दीया है जिसमें सुनहरा रंग है, 4 घंटे लगे और ₹200 लागत आई..."
-          className="w-full p-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-800 text-xs outline-none focus:border-terracotta leading-relaxed"
+          placeholder={t.voiceExample}
+          className="field-input resize-none text-xs leading-relaxed"
         />
-
-        {/* Quick Voice Demo Presets */}
-        <div className="pt-1">
-          <p className="text-[10px] text-stone-500 font-semibold mb-1">त्वरित परीक्षण उदाहरण (Quick Test Prompts):</p>
-          <div className="flex flex-wrap gap-1">
-            {QUICK_VOICE_SAMPLES.map((sample, idx) => (
+        <div>
+          <p className="mb-1.5 text-[10px] font-bold text-stone-500">{t.quickTests}</p>
+          <div className="flex flex-wrap gap-1.5">
+                        {(VOICE_SAMPLES[speechLang] || VOICE_SAMPLES['en-IN']).map((s, i) => (
               <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  setLiveTranscript(sample.text);
-                  setStatus('recorded');
-                }}
-                className="text-[10px] px-2 py-1 rounded-lg bg-stone-100 hover:bg-terracotta hover:text-white text-stone-700 border border-stone-200 transition active:scale-95 font-medium"
+                key={i}
+                onClick={() => { setLiveTranscript(s.text); setStatus('recorded'); }}
+                className="chip border-stone-200 bg-stone-50 text-stone-700 hover:bg-terracotta hover:text-white"
               >
-                {sample.label}
+                {s.label}
               </button>
             ))}
           </div>
         </div>
       </div>
+            {liveTranscript.trim().length > 0 && liveTranscript.trim().length < 25 && (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-2xs font-semibold text-amber-800">
+          {t.sayMore}
+        </p>
+      )}
 
-      {/* Proceed Button */}
-      {(status === 'recorded' || liveTranscript.trim().length > 0) && (
+      {(status === 'recorded' || liveTranscript.trim()) && (
         <button
           onClick={submitVoice}
-          className="w-full py-4 bg-terracotta hover:bg-[#8e3e29] text-white rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg shadow-terracotta/25 active:scale-[0.98] transition"
+          className="touch flex w-full items-center justify-center gap-2 rounded-3xl bg-craft px-5 py-4 text-sm font-bold text-white shadow-lift active:scale-[0.98]"
         >
-          <Sparkles size={18} /> कैटलॉग में बदलें (Generate AI Catalog) <ArrowRight size={18} />
+          <Sparkles size={18} /> {t.genCatalog} <ArrowRight size={18} />
         </button>
       )}
     </div>

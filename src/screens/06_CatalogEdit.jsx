@@ -1,46 +1,100 @@
 import React from 'react';
+import { ArrowRight, Sparkles, Tag, X, Check } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import ScreenHeader from '../components/ui/ScreenHeader';
-import Card from '../components/ui/Card';
 import PrimaryButton from '../components/ui/PrimaryButton';
+
+function Field({ label, value, onChange, rows, placeholder }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-2xs font-black uppercase tracking-wide text-stone-400">{label}</label>
+      {rows ? (
+        <textarea rows={rows} value={value || ''} placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="field-input resize-none text-xs leading-relaxed" />
+      ) : (
+        <input value={value || ''} placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="field-input font-semibold" />
+      )}
+    </div>
+  );
+}
 
 export default function CatalogEditScreen() {
   const { productData, updateProduct, nextStep, t } = useCraft();
+  const keywords = productData.keywords || [];
+
+  const removeKeyword = (k) => updateProduct({ keywords: keywords.filter((x) => x !== k) });
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-    <ScreenHeader title={t.catalogTitle} subtitle={t.catalogSub} step={4} totalSteps={7} />
+      <ScreenHeader title={t.catalogTitle} subtitle={t.catalogSub} icon={Sparkles} step={4} totalSteps={6} />
+      {productData.spoken_transcript && (
+        <div className="space-y-2 rounded-3xl border border-mustard-200 bg-mustard-50 p-4 animate-scale-in">
+          <p className="flex items-center gap-1.5 text-2xs font-black uppercase tracking-wide text-mustard-700">
+            <Sparkles size={12} /> {t.aiHeard}
+          </p>
+          <p className="text-xs italic leading-relaxed text-mustard-800">"{productData.spoken_transcript}"</p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[
+              productData.material && productData.material !== 'Not clearly identifiable' && productData.material,
+              productData.colour && productData.colour !== 'Not clearly identifiable' && productData.colour,
+              productData.category,
+              productData.hours_spent && `${productData.hours_spent} hrs`,
+            ].filter(Boolean).map((v, i) => (
+              <span key={i} className="chip animate-pop border-white bg-white text-mustard-700" style={{ animationDelay: `${i * 80}ms` }}>
+                <Check size={11} strokeWidth={3} className="text-forest" /> {v}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="flex gap-3 rounded-3xl border border-stone-200 bg-white p-3 shadow-card">
+        <img
+          src={productData.enhancedImage || productData.originalImage}
+          alt=""
+          className="h-20 w-20 shrink-0 rounded-2xl border border-stone-200 object-cover"
+        />
+        <div className="min-w-0 flex-1 self-center">
+          <p className="truncate text-sm font-black text-charcoal">{productData.name || '—'}</p>
+          <p className="mt-0.5 truncate text-2xs text-stone-500">{productData.material || '—'}</p>
+          {productData.isEnhanced && (
+            <span className="chip mt-1.5 border-forest-200 bg-forest-50 text-forest">
+              <Sparkles size={11} /> AI
+            </span>
+          )}
+        </div>
+      </div>
 
-      <img
-        src={productData.enhancedImage || productData.originalImage}
-        alt={productData.name}
-        className="w-full h-40 object-cover rounded-2xl border border-stone-200 shadow-sm"
-      />
+      <div className="space-y-3.5 rounded-3xl border border-stone-200 bg-white p-4 shadow-card">
+        <Field label={t.fTitle}    value={productData.name}     onChange={(v) => updateProduct({ name: v })} />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t.fCategory} value={productData.category} onChange={(v) => updateProduct({ category: v })} />
+          <Field label={t.fColour}   value={productData.colour}   onChange={(v) => updateProduct({ colour: v })} />
+        </div>
+        <Field label={t.fMaterial}   value={productData.material} onChange={(v) => updateProduct({ material: v })} />
+        <Field label={t.fDescNative} value={productData.description_hi} rows={3} onChange={(v) => updateProduct({ description_hi: v })} />
+        <Field label={t.fDescEn}     value={productData.description_en} rows={3} onChange={(v) => updateProduct({ description_en: v })} />
 
-      <Card className="space-y-3 text-xs">
-        <div>
-          <label className="text-stone-400 font-bold block mb-0.5">Product Title</label>
-          <input className="w-full font-bold text-stone-800 border-b pb-1 outline-none text-sm focus:border-terracotta"
-            value={productData.name} onChange={e => updateProduct({ name: e.target.value })} />
-        </div>
-        <div>
-          <label className="text-stone-400 font-bold block mb-0.5">Material & Craft Technique</label>
-          <input className="w-full font-medium border-b pb-1 outline-none text-stone-700 focus:border-terracotta"
-            value={productData.material} onChange={e => updateProduct({ material: e.target.value })} />
-        </div>
-        <div>
-          <label className="text-stone-400 font-bold block mb-0.5">Description (Native)</label>
-          <textarea className="w-full border rounded-lg p-2 outline-none leading-relaxed text-xs focus:border-terracotta"
-            rows="2" value={productData.description_hi} onChange={e => updateProduct({ description_hi: e.target.value })} />
-        </div>
-        <div>
-          <label className="text-stone-400 font-bold block mb-0.5">English Translation</label>
-          <textarea className="w-full border rounded-lg p-2 outline-none text-stone-700 leading-relaxed text-xs focus:border-terracotta"
-            rows="2" value={productData.description_en} onChange={e => updateProduct({ description_en: e.target.value })} />
-        </div>
-      </Card>
+        {keywords.length > 0 && (
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 text-2xs font-black uppercase tracking-wide text-stone-400">
+              <Tag size={11} /> {t.fKeywords}
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {keywords.map((k) => (
+                <button key={k} onClick={() => removeKeyword(k)}
+                  className="chip border-mustard-200 bg-mustard-50 text-mustard-700">
+                  {k} <X size={11} strokeWidth={3} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
-      <PrimaryButton onClick={nextStep}>{t.calcPriceBtn}</PrimaryButton>
+      <PrimaryButton onClick={nextStep} iconRight={ArrowRight}>{t.calcPriceBtn}</PrimaryButton>
     </div>
   );
 }

@@ -1,157 +1,200 @@
-import { useState, useRef } from 'react';
-import { Camera, Sparkles, ArrowRight, RotateCcw } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Camera, Images, RotateCcw, ArrowRight, AlertTriangle, Sparkles } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
 import ScreenHeader from '../components/ui/ScreenHeader';
 
+const STAGE_ORDER = [
+  'starting', 'loaded', 'resizing', 'quality', 'background', 'edges',
+  'cropping', 'product_quality', 'upscaling', 'lighting', 'canvas', 'enhancing', 'complete',
+];
+
+const STAGE_LABELS = {
+  starting: 'Receiving image', loaded: 'Image loaded', resizing: 'Resizing',
+  quality: 'Analysing quality', background: 'Removing background', edges: 'Refining edges',
+  cropping: 'Cropping product', product_quality: 'Checking product', upscaling: 'Upscaling (Real-ESRGAN)',
+  lighting: 'Correcting lighting', canvas: 'Building 1080×1080 canvas', enhancing: 'Finalising', complete: 'Done',
+};
+
 export default function CaptureScreen() {
-  const { updateProduct, setOriginalPreview, nextStep, setIsLoading, setProcessingStages, setCurrentStage, t } = useCraft();
+  const { updateProduct, setOriginalPreview, nextStep, t } = useCraft();
   const [preview, setPreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
+  const [phase, setPhase] = useState('idle');   // idle | working | failed
+  const [stage, setStage] = useState('');
+  const [done, setDone] = useState([]);
+  const galleryRef = useRef(null);
+
+  const pct = stage ? Math.round(((STAGE_ORDER.indexOf(stage) + 1) / STAGE_ORDER.length) * 100) : 0;
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file || uploading) return;
+    if (!file || phase === 'working') return;
 
-    let success = false;
-    let localPreviewUrl = null;
+    setPhase('working');
+    setStage('');
+    setDone([]);
+
+    let ok = false;
+       const localUrl = setOriginalPreview(file);
+    setPreview(localUrl);
+    updateProduct({ originalImage: localUrl, enhancedImage: null, isEnhanced: false, original_image_url: localUrl });
+
+    // keep a base64 copy so publishing works even if enhancement fails
+    try {
+      const b64 = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).split(',')[1]);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      updateProduct({ originalB64: b64 });
+    } catch { /* non-fatal */ }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      setUploading(true);
-      localPreviewUrl = setOriginalPreview(file);
-      setPreview(localPreviewUrl);
-      updateProduct({
-        originalImage: localPreviewUrl,
-        enhancedImage: localPreviewUrl,
-        original_image_url: localPreviewUrl,
-      });
+      const response = await api.uploadImageStream(file, { signal: controller.signal });
+      if (!response?.ok || !response.body) throw new Error('stream unavailable');
 
-      // Attempt streaming enhancement with a 5-second network timeout safeguard
-      const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s ceiling for image AI
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-try {
-  // MUST pass signal to forward abort control to the fetch call
-  const response = await api.uploadImageStream(file, { signal: controller.signal });
-  clearTimeout(timeoutId);
+      while (true) {
+        const { done: finished, value } = await reader.read();
+        if (finished) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || '';
 
-        if (response && response.ok && response.body) {
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith('data: ')) continue;
+          let ev;
+          try { ev = JSON.parse(line.slice(6)); } catch { continue; }
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const parts = buffer.split('\n\n');
-            buffer = parts.pop() || '';
-
-            for (const part of parts) {
-              const line = part.trim();
-              if (!line.startsWith('data: ')) continue;
-
-              let eventData;
-              try {
-                eventData = JSON.parse(line.slice(6));
-              } catch {
-                continue;
-              }
-
-              if (eventData.stage === 'error') {
-                break;
-              }
-
-              setProcessingStages(prev => {
-                const exists = prev.some(p => p.stage === eventData.stage);
-                return exists ? prev : [...prev, { stage: eventData.stage, message: eventData.message }];
-              });
-
-              if (!eventData.stage?.includes('complete') && !eventData.stage?.includes('stored')) {
-                setCurrentStage(eventData.stage);
-              }
-
-              if (eventData.stage === 'complete' && eventData.image_b64) {
-                success = true;
-                setCurrentStage('');
-                const dataUrl = `data:${eventData.mimeType || 'image/jpeg'};base64,${eventData.image_b64}`;
-                updateProduct({
-                  enhancedImage: dataUrl,
-                  enhancedImageB64: eventData.image_b64,
-                  original_image_url: localPreviewUrl,
-                  // NOTE: image_url is NOT set here — it is only set at final submission
-                  // after permanent storage succeeds
-                });
-              }
-            }
+          if (ev.stage === 'error') throw new Error(ev.message || 'pipeline error');
+          if (ev.stage) {
+            setStage(ev.stage);
+            setDone((p) => (p.includes(ev.stage) ? p : [...p, ev.stage]));
+          }
+          if (ev.stage === 'complete' && ev.image_b64) {
+            ok = true;
+            updateProduct({
+              enhancedImage: `data:${ev.mimeType || 'image/jpeg'};base64,${ev.image_b64}`,
+              enhancedImageB64: ev.image_b64,
+              isEnhanced: true,
+              original_image_url: localUrl,
+            });
           }
         }
-      } catch (streamErr) {
-        console.log('[Capture] Local image mode active:', streamErr.message);
       }
     } catch (err) {
-      console.warn('[Capture] Notice:', err.message);
+      console.warn('[Capture] enhancement failed:', err.message);
     } finally {
-      setIsLoading(false);
-      setUploading(false);
-      setProcessingStages([]);
-      setCurrentStage('');
-      // Always proceed to next step smoothly
-      nextStep();
+      clearTimeout(timeoutId);
     }
+
+    if (ok) { setPhase('idle'); nextStep(); }
+    else { setPhase('failed'); }
   };
 
-  return (
-    <div className="text-center space-y-5 animate-fade-in-up">
-      <ScreenHeader title={t.photoTitle} subtitle={t.photoSub} step={1} totalSteps={7} />
+  const Picker = ({ icon: Icon, label, capture, primary }) => (
+    <label
+      className={`touch flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-3xl px-3 py-5 text-center font-bold transition active:scale-[0.97] ${
+        primary
+          ? 'bg-craft text-white shadow-lift'
+          : 'border border-stone-200 bg-white text-stone-700 shadow-card'
+      }`}
+    >
+      <Icon size={26} strokeWidth={2.3} />
+      <span className="text-xs leading-tight">{label}</span>
+      <input
+        type="file"
+        accept="image/*"
+        {...(capture ? { capture: 'environment' } : {})}
+        className="hidden"
+        onChange={handleUpload}
+        disabled={phase === 'working'}
+      />
+    </label>
+  );
 
-      <div className="border-2 border-dashed border-terracotta/40 rounded-3xl p-6 bg-white/70 flex flex-col items-center shadow-inner">
+  return (
+    <div className="space-y-5 animate-fade-in-up">
+      <ScreenHeader title={t.photoTitle} subtitle={t.photoSub} step={1} totalSteps={6} />
+
+      {/* preview / dropzone */}
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-card">
         {preview ? (
-          <div className="w-full space-y-3">
-            <img src={preview} alt="Selected Craft" className="w-full h-48 object-cover rounded-2xl shadow-md border border-stone-200" />
-            <div className="flex gap-2">
-              <label className="flex-1 cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
-                <RotateCcw size={14} /> दूसरी फोटो चुनें
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleUpload}
+          <img src={preview} alt="" className="h-56 w-full object-cover" />
+        ) : (
+          <div className="flex h-56 flex-col items-center justify-center gap-3 bg-gradient-to-b from-terracotta-50/60 to-white">
+            <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-terracotta shadow-card">
+              <Camera size={30} strokeWidth={2.2} />
+            </span>
+            <p className="max-w-[15rem] text-center text-xs font-semibold leading-relaxed text-stone-500">
+              {t.supportedCrafts}
+            </p>
+          </div>
+        )}
+
+        {phase === 'working' && (
+          <div className="absolute inset-0 flex flex-col justify-end bg-charcoal/70 p-4 backdrop-blur-[2px] animate-fade-in">
+            <div className="space-y-2.5 rounded-2xl bg-white/95 p-3.5 shadow-lift">
+              <div className="flex items-center gap-2">
+                <Sparkles size={15} className="shrink-0 text-terracotta animate-breathe" />
+                <p className="flex-1 text-xs font-black text-charcoal">{t.aiWorking}</p>
+                <span className="text-xs font-black tabular-nums text-terracotta">{pct}%</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-stone-200">
+                <div
+                  className="h-full rounded-full bg-craft transition-all duration-500"
+                  style={{ width: `${pct}%` }}
                 />
-              </label>
-              <button
-                onClick={nextStep}
-                className="flex-1 bg-terracotta hover:bg-[#8e3e29] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition"
-              >
-                आगे बढ़ें <ArrowRight size={14} />
-              </button>
+              </div>
+              <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                {STAGE_LABELS[stage] || '…'} · {done.length}/{STAGE_ORDER.length}
+              </p>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-terracotta mb-3 shadow-sm">
-              <Camera size={32} />
-            </div>
-            <p className="text-xs font-semibold text-stone-700 mb-4">{t.photoBtn}</p>
-
-            <label className="cursor-pointer bg-terracotta text-white px-6 py-3.5 rounded-xl font-bold text-sm shadow-md hover:bg-[#8e3e29] transition active:scale-95 flex items-center gap-2">
-              <Camera size={18} /> {t.photoBtn}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleUpload}
-                disabled={uploading}
-              />
-            </label>
-          </>
         )}
       </div>
-      <p className="text-[11px] text-stone-400">{t.supportedCrafts}</p>
+
+      {phase === 'failed' && (
+        <div className="flex gap-2.5 rounded-3xl border border-amber-200 bg-amber-50 p-3.5 animate-fade-in">
+          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-600" />
+          <div className="min-w-0">
+            <p className="text-xs font-black text-amber-900">{t.enhanceFail}</p>
+            <p className="mt-0.5 text-2xs leading-relaxed text-amber-800/80">{t.enhanceFailSub}</p>
+          </div>
+        </div>
+      )}
+
+      {phase === 'failed' ? (
+        <div className="flex gap-2.5">
+          <button
+            onClick={() => galleryRef.current?.click()}
+            className="touch flex flex-1 items-center justify-center gap-2 rounded-3xl border border-stone-200 bg-white text-xs font-bold text-stone-700 shadow-card active:scale-[0.97]"
+          >
+            <RotateCcw size={15} strokeWidth={2.5} /> {t.retry}
+          </button>
+          <button
+            onClick={nextStep}
+            className="touch flex flex-1 items-center justify-center gap-2 rounded-3xl bg-craft text-xs font-bold text-white shadow-lift active:scale-[0.97]"
+          >
+            {t.continueAnyway} <ArrowRight size={15} strokeWidth={2.5} />
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2.5">
+          <Picker icon={Camera} label={t.photoBtn} capture primary />
+          <Picker icon={Images} label={t.retakePhoto} />
+        </div>
+      )}
+
+      <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
     </div>
   );
 }
-
