@@ -34,7 +34,7 @@ export default function Header({ isWizard = false }) {
               className="h-9 w-9 shrink-0 rounded-2xl border border-mustard-200 object-contain shadow-xs"
             />
             <div className="min-w-0 flex-1">
-              <p className="font-display text-base font-black leading-none tracking-tight text-charcoal">
+              <p className="font-display text-base font-black leading-none tracking-tight text-royal">
                 ShilpSaathi
               </p>
                             <p className="mt-0.5 text-[10px] font-medium text-stone-500">शिल्पसाथी · {t.appSub}</p>

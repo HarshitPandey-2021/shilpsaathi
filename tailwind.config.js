@@ -3,29 +3,44 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-      colors: {
+           colors: {
+        // Primary — warm terracotta/vermilion (CTAs, brand accents)
         terracotta: {
-          DEFAULT: '#A44932',
-          50:  '#FBF1EE', 100: '#F6DFD8', 200: '#EBBBAC',
-          300: '#DC9078', 400: '#C76A4E', 500: '#A44932',
-          600: '#8E3E29', 700: '#733222', 800: '#57261A',
-          900: '#3B1A12',
+          DEFAULT: '#D55E3A',
+          50:  '#FDF3F0', 100: '#FBE3DB', 200: '#F5C0AF',
+          300: '#EC9376', 400: '#E1744F', 500: '#D55E3A',
+          600: '#B84A2B', 700: '#953A22', 800: '#6E2B19',
+          900: '#4A1D11',
         },
+        // Secondary — saffron gold
         mustard: {
-          DEFAULT: '#D4A72C',
-          50:  '#FDF8EA', 100: '#FAEFC9', 200: '#F3DE93',
-          300: '#E9CA5C', 400: '#D4A72C', 500: '#BC9222',
-          600: '#96741B', 700: '#6F5614', 800: '#48380D',
+          DEFAULT: '#F59E0B',
+          50:  '#FFFBEB', 100: '#FEF3C7', 200: '#FDE68A',
+          300: '#FCD34D', 400: '#FBBF24', 500: '#F59E0B',
+          600: '#D97706', 700: '#B45309', 800: '#92400E',
         },
+        // Success — peacock teal (was forest green)
         forest: {
-          DEFAULT: '#3F7D58',
-          50: '#EFF6F2', 100: '#D8EADF', 200: '#A9CFBA',
-          300: '#77B192', 400: '#3F7D58', 500: '#356848',
-          600: '#2A533A', 700: '#1F3E2B',
+          DEFAULT: '#0D9488',
+          50:  '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4',
+          300: '#5EEAD4', 400: '#2DD4BF', 500: '#0D9488',
+          600: '#0F766E', 700: '#115E59',
         },
-        ivory:    '#FFF9F0',
-        parchment:'#FBF3E7',
-        charcoal: '#292524',
+        // Royal blue — AI moments, trust surfaces
+        royal: {
+          DEFAULT: '#1E3ABA',
+          50:  '#EEF2FF', 100: '#E0E7FF', 200: '#C7D2FE',
+          300: '#A5B4FC', 400: '#6366F1', 500: '#1E3ABA',
+          600: '#1A32A0', 700: '#152885', 800: '#101E64',
+        },
+        // Rani pink — sparing accent
+        rani: {
+          DEFAULT: '#BE185D',
+          50: '#FDF2F8', 100: '#FCE7F3', 200: '#FBCFE8', 500: '#BE185D', 600: '#9D174D',
+        },
+        ivory:     '#FFF7ED',
+        parchment: '#FEF3E2',
+        charcoal:  '#1E293B',
       },
       fontFamily: {
         sans:    ['Inter', 'Noto Sans Devanagari', 'system-ui', 'sans-serif'],
@@ -54,11 +69,13 @@ export default {
         glow:  '0 0 0 4px rgba(164,73,50,0.10)',
         inset: 'inset 0 1px 2px rgba(41,37,36,0.06)',
       },
-      backgroundImage: {
-        'craft':   'linear-gradient(135deg, #A44932 0%, #8E3E29 55%, #733222 100%)',
-        'gold':    'linear-gradient(135deg, #D4A72C 0%, #BC9222 100%)',
-        'leaf':    'linear-gradient(135deg, #3F7D58 0%, #2A533A 100%)',
-        'shimmer': 'linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)',
+            backgroundImage: {
+        'craft':   'linear-gradient(135deg, #E34A34 0%, #F59E0B 55%, #D55E3A 100%)',
+        'royal':   'linear-gradient(135deg, #1E3ABA 0%, #3B4FD8 45%, #0D9488 100%)',
+        'gold':    'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
+        'leaf':    'linear-gradient(135deg, #0D9488 0%, #0F766E 100%)',
+        'rose':    'linear-gradient(135deg, #BE185D 0%, #9D174D 100%)',
+        'shimmer': 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
       },
       keyframes: {
         'fade-in':    { '0%': { opacity: 0 }, '100%': { opacity: 1 } },

@@ -150,7 +150,7 @@ export default function CaptureScreen() {
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-stone-200">
                 <div
-                  className="h-full rounded-full bg-craft transition-all duration-500"
+                  className="h-full rounded-full bg-royal transition-all duration-500"
                   style={{ width: `${pct}%` }}
                 />
               </div>
