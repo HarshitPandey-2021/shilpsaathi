@@ -25,12 +25,24 @@ export function validateProductInput(body, isUpdate = false) {
     errors.craft_type = 'Craft type must be 100 characters or less';
   }
 
-  if (body.final_price !== undefined) {
+    if (body.final_price !== undefined) {
     const price = Number(body.final_price);
     if (isNaN(price) || price < 0) {
       errors.final_price = 'Final price must be a valid non-negative number';
     }
+  } else if (!isUpdate) {
+    // final_price is mandatory for new products (image must be stored first).
+    errors.final_price = 'Final price is required';
   }
+
+  if (body.image_url !== undefined) {
+    if (typeof body.image_url !== 'string' || body.image_url.trim().length === 0) {
+      errors.image_url = 'image_url must be a non-empty string';
+    }
+  } else if (!isUpdate) {
+    errors.image_url = 'Product image URL is required';
+  }
+
 
   if (body.price_min !== undefined) {
     const price = Number(body.price_min);
@@ -110,4 +122,29 @@ export function validateArtisanInput(body, isUpdate = false) {
 export function isValidUUID(str) {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
+}
+
+/**
+ * Validate and normalize an Indian mobile number to E.164 (+91XXXXXXXXXX).
+ *
+ * Accepts: "9876543210", "09876543210", "919876543210", "+919876543210"
+ * Rejects: non-10-digit, wrong leading digit (must be 6-9), letters, etc.
+ *
+ * @returns {{ valid: boolean, normalized: string|null, error: string|null }}
+ */
+export function normalizeIndianMobile(input) {
+  if (typeof input !== 'string') return { valid: false, normalized: null, error: 'Mobile number is required' };
+
+  const digits = input.replace(/\D/g, '');
+
+  // Strip a leading '0' (common Indian domestic prefix), e.g. 09876...
+  let core = digits.length === 11 && digits.startsWith('0') ? digits.slice(1) : digits;
+  // Strip a leading '91' country code supplied without '+', e.g. 919876...
+  core = core.length === 12 && core.startsWith('91') ? core.slice(2) : core;
+
+  const valid = core.length === 10 && /^[6-9]\d{9}$/.test(core);
+  if (!valid) {
+    return { valid: false, normalized: null, error: 'Mobile number must be a valid 10-digit Indian number (e.g. 9876543210)' };
+  }
+  return { valid: true, normalized: `+91${core}`, error: null };
 }

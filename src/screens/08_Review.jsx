@@ -6,20 +6,36 @@ import ScreenHeader from '../components/ui/ScreenHeader';
 import PrimaryButton from '../components/ui/PrimaryButton';
 
 export default function ReviewScreen() {
-  const { productData, updateProduct, goToStep, clearOriginalPreview, getArtisanId, resolveArtisan, linkPhone, t } = useCraft();
+  const { productData, updateProduct, goToStep, clearOriginalPreview, getArtisanId, resolveArtisan, linkPhone, t, confirmedPhone } = useCraft();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState('');
   const [phone, setPhone] = useState('');
   const [phoneState, setPhoneState] = useState('idle');
 
-  const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2600); };
+  const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2600); }
 
   const handlePublish = async () => {
-    setSaving(true); setSaveError(null);
+    setSaving(true); setSaveError(null); setValidationErrors({});
     try {
+      // Frontend Validation
+      const errors = {};
+      if (!productData.name?.trim()) errors.name = 'Product name is required';
+      if (!productData.final_price || isNaN(Number(productData.final_price)) || Number(productData.final_price) < 0) {
+        errors.price = 'A valid final price is required';
+      }
+      if (!productData.image_url && !productData.enhancedImageB64 && !productData.originalB64) {
+        errors.image = 'Product image is required';
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        throw new Error('Please fix validation errors');
+      }
+
       const artisanId = getArtisanId() || (await resolveArtisan());
       if (!artisanId) throw new Error('Could not identify your shop. Check the server is running.');
 
@@ -57,6 +73,10 @@ export default function ReviewScreen() {
       setSaved(true);
       showToast(t.publishToast);
     } catch (err) {
+      if (err.message === 'Please fix validation errors') {
+        setSaving(false);
+        return;
+      }
       const e = err.data?.errors;
       const detail = e
         ? (Array.isArray(e) ? e.join(', ') : Object.entries(e).map(([k, v]) => `${k}: ${v}`).join(' · '))
@@ -120,9 +140,22 @@ export default function ReviewScreen() {
       )}
 
       {!saved ? (
-        <PrimaryButton onClick={handlePublish} loading={saving} variant="success" icon={CheckCircle2}>
-          {saving ? t.publishing : t.publishBtn}
-        </PrimaryButton>
+        <>
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="flex gap-2.5 rounded-3xl border border-red-200 bg-red-50 p-3.5 animate-fade-in">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600" />
+              <div className="flex flex-col gap-0.5">
+                <p className="text-xs font-black text-red-900">Please check the following:</p>
+                {Object.entries(validationErrors).map(([key, msg]) => (
+                  <p key={key} className="text-2xs leading-relaxed text-red-800/80">• {msg}</p>
+                ))}
+              </div>
+            </div>
+          )}
+          <PrimaryButton onClick={handlePublish} loading={saving} variant="success" icon={CheckCircle2}>
+            {saving ? t.publishing : t.publishBtn}
+          </PrimaryButton>
+        </>
       ) : (
         <div className="space-y-3 animate-fade-in">
           <div className="flex items-center gap-2.5 rounded-3xl border border-forest-200 bg-forest-50 p-4">
@@ -142,7 +175,7 @@ export default function ReviewScreen() {
             </button>
           </div>
 
-          {phoneState !== 'done' && (
+          {!confirmedPhone && phoneState !== 'done' && (
             <div className="space-y-2 rounded-3xl border border-stone-200 bg-white p-4 shadow-card">
               <p className="flex items-center gap-1.5 text-xs font-black text-charcoal">
                 <ShieldCheck size={14} className="text-forest" /> {t.savePhoneTitle}

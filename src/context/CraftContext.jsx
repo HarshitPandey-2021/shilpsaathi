@@ -513,6 +513,9 @@ export function CraftProvider({ children }) {
   const RAW_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
   const API = RAW_API.endsWith('/api') ? RAW_API : `${RAW_API}/api`;
   const [artisanId, setArtisanId] = useState(localStorage.getItem('shilpsaathi_artisan_uuid') || null);
+  const [confirmedPhone, setConfirmedPhone] = useState(localStorage.getItem('shilpsaathi_artisan_phone') || null);
+
+
 
   const getDeviceHandle = () => {
     let h = localStorage.getItem('shilpsaathi_device_id');
@@ -523,8 +526,9 @@ export function CraftProvider({ children }) {
     return h;
   };
 
-  const resolveArtisan = async () => {
-    const handle = localStorage.getItem('shilpsaathi_artisan_phone') || getDeviceHandle();
+  const resolveArtisan = async (phone) => {
+    const handle = phone || localStorage.getItem('shilpsaathi_artisan_phone');
+    if (!handle) return null;
     try {
       const res = await fetch(`${API}/artisans/resolve`, {
         method: 'POST',
@@ -534,6 +538,10 @@ export function CraftProvider({ children }) {
       const json = await res.json();
       if (json?.data?.id) {
         localStorage.setItem('shilpsaathi_artisan_uuid', json.data.id);
+        if (phone) {
+          localStorage.setItem('shilpsaathi_artisan_phone', phone);
+          setConfirmedPhone(phone);
+        }
         setArtisanId(json.data.id);
         return json.data.id;
       }
@@ -554,6 +562,7 @@ export function CraftProvider({ children }) {
       if (json?.data?.id) {
         localStorage.setItem('shilpsaathi_artisan_phone', phone);
         localStorage.setItem('shilpsaathi_artisan_uuid', json.data.id);
+        setConfirmedPhone(phone);
         setArtisanId(json.data.id);
         return true;
       }
@@ -601,7 +610,7 @@ export function CraftProvider({ children }) {
       loadingMessage, setLoadingMessage,
       showLangModal, setShowLangModal,
       processingStages, setProcessingStages,
-          currentStage, setCurrentStage, getArtisanId, linkPhone, resolveArtisan
+          currentStage, setCurrentStage, getArtisanId, linkPhone, resolveArtisan, confirmedPhone
     }}>
       {children}
     </CraftContext.Provider>

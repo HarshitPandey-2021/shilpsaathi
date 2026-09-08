@@ -11,14 +11,32 @@ const FEATURES = [
 ];
 
 export default function OnboardingScreen() {
-  const { goToStep, lang, setLang, t } = useCraft();
+  const { goToStep, lang, setLang, t, getArtisanId, resolveArtisan, confirmedPhone } = useCraft();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState('');
   const audioCapableLang = t.code === 'hi-IN' || t.code === 'en-IN';
 
   const handleSpeech = async () => {
     if (!audioCapableLang) return;
     setIsPlaying(true);
     await playNativeAudio(t.speechText, t.code, () => setIsPlaying(true), () => setIsPlaying(false));
+  };
+
+  const handleStart = async () => {
+    setError('');
+    if (!confirmedPhone) {
+      if (phone.length !== 10) {
+        setError('Please enter a valid 10-digit mobile number');
+        return;
+      }
+      const id = await resolveArtisan(phone);
+      if (!id) {
+        setError('Could not verify mobile number. Please try again.');
+        return;
+      }
+    }
+    goToStep(2);
   };
 
   return (
@@ -108,8 +126,24 @@ export default function OnboardingScreen() {
           </div>
         </div>
 
+        {!confirmedPhone && (
+          <div className="mt-4 space-y-2 animate-fade-in">
+            <p className="text-center text-xs font-bold text-charcoal">Enter Mobile Number to Continue</p>
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+              placeholder="10 digit mobile number"
+              className="field-input w-full text-center font-black tracking-widest py-3"
+            />
+            {error && <p className="text-center text-xs font-bold text-red-500">{error}</p>}
+          </div>
+        )}
+
         <button
-          onClick={() => goToStep(2)}
+          onClick={handleStart}
           className="touch mt-auto flex w-full items-center justify-center gap-2 rounded-3xl bg-craft px-5 py-4 text-sm font-bold text-white shadow-lift transition active:scale-[0.98] hover:brightness-110"
         >
           {t.startBtn}
