@@ -449,9 +449,11 @@ const UI = {
 const UI2 = {
   hi: { before:"पहले", after:"बाद में", aiWorking:"AI आपकी फोटो सुधार रहा है", enhanceFail:"AI सुधार नहीं हो सका", enhanceFailSub:"आपकी असली फोटो इस्तेमाल होगी", continueAnyway:"इसी फोटो से आगे बढ़ें", retry:"दोबारा कोशिश करें", dragCompare:"तुलना करने के लिए खिसकाएं",
         fTitle:"उत्पाद का नाम", fCategory:"श्रेणी", fMaterial:"सामग्री", fColour:"रंग", fDescNative:"विवरण (आपकी भाषा)", fDescEn:"English Description", fKeywords:"खोज शब्द",
-        yourPrice:"आपकी कीमत", belowRange:"सुझाई गई कीमत से कम", inRange:"अच्छी कीमत है", aboveRange:"सुझाई गई कीमत से ज़्यादा", costBreakdown:"कीमत कैसे बनी",        savePhoneTitle:"अपनी दुकान सुरक्षित करें", savePhoneSub:"नंबर डालें ताकि आपकी लिस्टिंग कभी न खोए", savePhoneBtn:"सेव करें", skipForNow:"अभी नहीं", },
+        yourPrice:"आपकी कीमत", belowRange:"सुझाई गई कीमत से कम", inRange:"अच्छी कीमत है", aboveRange:"सुझाई गई कीमत से ज़्यादा", costBreakdown:"कीमत कैसे बनी",        savePhoneTitle:"अपनी दुकान सुरक्षित करें", savePhoneSub:"नंबर डालें ताकि आपकी लिस्टिंग कभी न खोए", savePhoneBtn:"सेव करें", skipForNow:"अभी नहीं",aiHeard:"AI ने यह सुना",        matCost:"सामग्री लागत", hoursWorked:"कितने घंटे लगे", labourCost:"मेहनत", overhead:"अन्य खर्च (12%)", margin:"आपका मुनाफ़ा (25%)", totalCost:"सुझाई कीमत", perHour:"प्रति घंटा",
+        askInputs:"जांचें — गलत हो तो बदलें", publishToast:"आपकी दुकान में प्रकाशित!", phoneLinked:"दुकान आपके नंबर से जुड़ गई", phoneFail:"नहीं जुड़ सका, दोबारा करें", restoreShop:"मेरी दुकान वापस पाएं",sayMore:"थोड़ा और बताएं — क्या है, किस चीज़ का, क्या रंग, कितने घंटे लगे?", needName:"पहले उत्पाद का नाम भरें", untitled:"हस्तनिर्मित शिल्प",catalogValue:"कुल कीमत", },
 
-  en: { before:"Before", after:"After", aiWorking:"AI is improving your photo", enhanceFail:"AI enhancement unavailable", enhanceFailSub:"Your original photo will be used", continueAnyway:"Continue with this photo", retry:"Try again", dragCompare:"Drag to compare",         savePhoneTitle:"Save your shop", savePhoneSub:"Add your number so your listings are never lost", savePhoneBtn:"Save", skipForNow:"Skip for now",
+  en: { before:"Before", after:"After", catalogValue:"Catalog value",aiWorking:"AI is improving your photo", enhanceFail:"AI enhancement unavailable", enhanceFailSub:"Your original photo will be used", continueAnyway:"Continue with this photo", retry:"Try again", dragCompare:"Drag to compare",  sayMore:"Tell me more — what is it, what material, what colour, how many hours?",       savePhoneTitle:"Save your shop", savePhoneSub:"Add your number so your listings are never lost", savePhoneBtn:"Save", skipForNow:"Skip for now",aiHeard:"AI heard this",        matCost:"Material cost", hoursWorked:"Hours worked", labourCost:"Labour", overhead:"Overhead (12%)", margin:"Your profit (25%)", totalCost:"Suggested price", perHour:"per hour",
+        askInputs:"Check these — change if wrong", publishToast:"Published to your shop!", phoneLinked:"Shop linked to your number", phoneFail:"Could not link, try again", restoreShop:"Restore my shop", needName:"Please add a product name first", untitled:"Handmade Craft",
         fTitle:"Product name", fCategory:"Category", fMaterial:"Material", fColour:"Colour", fDescNative:"Description (your language)", fDescEn:"English Description", fKeywords:"Search keywords",
         yourPrice:"Your price", belowRange:"Below suggested range", inRange:"Good price", aboveRange:"Above suggested range", costBreakdown:"How this price was made" },
   bn: { before:"আগে", after:"পরে", aiWorking:"AI আপনার ছবি উন্নত করছে", enhanceFail:"AI উন্নতি সম্ভব হয়নি", enhanceFailSub:"আপনার আসল ছবি ব্যবহার হবে", continueAnyway:"এই ছবি নিয়েই এগোন", retry:"আবার চেষ্টা করুন", dragCompare:"তুলনা করতে টানুন",
@@ -480,25 +482,88 @@ export function CraftProvider({ children }) {
   const [processingStages, setProcessingStages] = useState([]);
   const [currentStage, setCurrentStage] = useState('');
   const originalPreviewUrlRef = useRef(null);
-
-  const [productData, setProductData] = useState({
+  const BLANK_PRODUCT = {
     originalImage: null,
-    enhancedImage: "https://images.unsplash.com/photo-1590736969955-71cc94801759?w=800&auto=format&fit=crop",
-    name: "Handcrafted Terracotta Earthen Vase",
-    category: "Clay & Ceramic Crafts",
-    material: "Traditional Riverbed Clay",
-    colour: "Natural Ochre & Terracotta",
-    description_hi: "हाथ से चाक पर तैयार की गई शुद्ध मिट्टी की सुराही। प्राकृतिक रूप से पकाई गई और पर्यावरण के अनुकूल।",
-    description_en: "Handmade wheel-thrown terracotta vase crafted from local riverbed clay. Eco-friendly with natural earthen finish.",
-    keywords: ["pottery", "terracotta", "handmade", "eco-friendly"],
-    price_min: 750,
-    price_max: 1100,
-    final_price: 890,
-    price_reasoning: "Material Cost (₹220) + 5 hrs hand-turning + category benchmark markup."
-  });
+    enhancedImage: null,
+    enhancedImageB64: null,
+    isEnhanced: false,
+    image_url: null,
+    original_image_url: null,
+    name: "",
+    category: "",
+    material: "",
+    colour: "",
+    craft_type: "",
+    description_hi: "",
+    description_en: "",
+    keywords: [],
+    spoken_transcript: "",
+    hours_spent: null,
+    raw_material_cost: null,
+    price_min: 0,
+    price_max: 0,
+    final_price: 0,
+    price_reasoning: "",
+    savedProductId: null,
+  };
+
+  const [productData, setProductData] = useState({ ...BLANK_PRODUCT });
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.hi;
-const getArtisanId = () => localStorage.getItem('shilpsaathi_artisan_phone') || 'guest';
+  const RAW_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
+  const API = RAW_API.endsWith('/api') ? RAW_API : `${RAW_API}/api`;
+  const [artisanId, setArtisanId] = useState(localStorage.getItem('shilpsaathi_artisan_uuid') || null);
+
+  const getDeviceHandle = () => {
+    let h = localStorage.getItem('shilpsaathi_device_id');
+    if (!h) {
+      h = 'g-' + Math.random().toString(16).slice(2, 10);
+      localStorage.setItem('shilpsaathi_device_id', h);
+    }
+    return h;
+  };
+
+  const resolveArtisan = async () => {
+    const handle = localStorage.getItem('shilpsaathi_artisan_phone') || getDeviceHandle();
+    try {
+      const res = await fetch(`${API}/artisans/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle, preferred_language: lang }),
+      });
+      const json = await res.json();
+      if (json?.data?.id) {
+        localStorage.setItem('shilpsaathi_artisan_uuid', json.data.id);
+        setArtisanId(json.data.id);
+        return json.data.id;
+      }
+    } catch (e) { console.warn('[Artisan] resolve failed:', e.message); }
+    return null;
+  };
+
+  const linkPhone = async (phone) => {
+    const id = artisanId || (await resolveArtisan());
+    if (!id) return false;
+    try {
+      const res = await fetch(`${API}/artisans/link-phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artisan_id: id, phone }),
+      });
+      const json = await res.json();
+      if (json?.data?.id) {
+        localStorage.setItem('shilpsaathi_artisan_phone', phone);
+        localStorage.setItem('shilpsaathi_artisan_uuid', json.data.id);
+        setArtisanId(json.data.id);
+        return true;
+      }
+    } catch (e) { console.warn('[Artisan] link failed:', e.message); }
+    return false;
+  };
+
+  useEffect(() => { if (!artisanId) resolveArtisan(); }, []);
+
+  const getArtisanId = () => artisanId;
 // add getArtisanId to the provider value
   const updateProduct = (fields) => setProductData(prev => ({ ...prev, ...fields }));
   const setOriginalPreview = (file) => {
@@ -517,13 +582,18 @@ const getArtisanId = () => localStorage.getItem('shilpsaathi_artisan_phone') || 
     }
   };
   useEffect(() => clearOriginalPreview, []);
+    const startNewProduct = () => {
+    clearOriginalPreview();
+    setProductData({ ...BLANK_PRODUCT });
+    setCurrentStep(3);
+  };
   const nextStep = () => setCurrentStep(prev => prev + 1);
   const prevStep = () => setCurrentStep(prev => Math.max(1, prev - 1));
   const goToStep = (step) => setCurrentStep(step);
 
   return (
     <CraftContext.Provider value={{
-      currentStep, nextStep, prevStep, goToStep,
+      currentStep, nextStep, prevStep, goToStep,startNewProduct,
       lang, setLang, t,
       productData, updateProduct,
       setOriginalPreview, clearOriginalPreview,
@@ -531,7 +601,7 @@ const getArtisanId = () => localStorage.getItem('shilpsaathi_artisan_phone') || 
       loadingMessage, setLoadingMessage,
       showLangModal, setShowLangModal,
       processingStages, setProcessingStages,
-      currentStage, setCurrentStage, getArtisanId
+          currentStage, setCurrentStage, getArtisanId, linkPhone, resolveArtisan
     }}>
       {children}
     </CraftContext.Provider>

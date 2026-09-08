@@ -69,6 +69,23 @@
     content: '';
     @apply absolute inset-0 bg-shimmer animate-shimmer;
   }
+    .range-craft {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 10px; border-radius: 999px;
+    background: linear-gradient(90deg, #EBBBAC 0%, #3F7D58 50%, #EBBBAC 100%);
+    outline: none;
+  }
+  .range-craft::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 34px; height: 34px; border-radius: 999px;
+    background: #A44932; border: 4px solid #fff;
+    box-shadow: 0 4px 12px rgba(164,73,50,.35); cursor: pointer;
+  }
+  .range-craft::-moz-range-thumb {
+    width: 34px; height: 34px; border-radius: 999px;
+    background: #A44932; border: 4px solid #fff;
+    box-shadow: 0 4px 12px rgba(164,73,50,.35); cursor: pointer;
+  }
 }
 
 @layer utilities {

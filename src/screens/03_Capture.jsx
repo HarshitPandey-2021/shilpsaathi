@@ -35,9 +35,20 @@ export default function CaptureScreen() {
     setDone([]);
 
     let ok = false;
-    const localUrl = setOriginalPreview(file);
+       const localUrl = setOriginalPreview(file);
     setPreview(localUrl);
     updateProduct({ originalImage: localUrl, enhancedImage: null, isEnhanced: false, original_image_url: localUrl });
+
+    // keep a base64 copy so publishing works even if enhancement fails
+    try {
+      const b64 = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).split(',')[1]);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      updateProduct({ originalB64: b64 });
+    } catch { /* non-fatal */ }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);

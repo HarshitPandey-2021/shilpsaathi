@@ -28,10 +28,10 @@ export default function OnboardingScreen() {
         <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-mustard-400/25 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 top-28 h-44 w-44 rounded-full bg-terracotta-300/20 blur-3xl" />
 
-        <div className="relative flex items-center justify-center gap-2">
-          <IndiaFlag size={12} />
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
-                  {t.govInit}
+               <div className="relative mx-auto flex w-fit items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm">
+          <IndiaFlag size={20} />
+          <span className="text-[11px] font-bold leading-tight text-white/90">
+            {t.govInit}
           </span>
         </div>
 

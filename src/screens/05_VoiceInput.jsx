@@ -9,14 +9,36 @@ const SPEECH_LANG_OPTIONS = [
   { code: 'bn-IN', label: 'বাংলা' }, { code: 'ta-IN', label: 'தமிழ்' },
   { code: 'te-IN', label: 'తెలుగు' }, { code: 'mr-IN', label: 'मराठी' },
 ];
-
-const QUICK_VOICE_SAMPLES = [
-  { label: '🪔 पीतल का दीया', text: 'यह एक हाथ से बना हुआ पीतल का दीया है जिसमें सुनहरा रंग है, 4 घंटे लगे और ₹200 कच्चा माल खर्च हुआ।' },
-  { label: '🏺 मिट्टी का फूलदान', text: 'यह एक हस्तनिर्मित टेराकोटा मिट्टी का फूलदान है जिसे चाक पर प्राकृतिक गेरुआ रंग से बनाया गया है, 5 घंटे लगे।' },
-  { label: '🪵 लकड़ी का डिब्बा', text: 'यह शीशम की लकड़ी का हाथ से नक्काशी किया हुआ संदूक है, 7 घंटे लगे और ₹350 लागत आई।' },
-  { label: '🧵 हथकरघा साड़ी', text: 'यह शुद्ध सूती हथकरघा बुनी हुई साड़ी है जिसमें प्राकृतिक नीला और लाल रंग है, 12 घंटे लगे।' },
-  { label: '🎨 मधुबनी पेंटिंग', text: 'यह हस्तनिर्मित प्राकृतिक रंगों से बनी मधुबनी लोक कला पेंटिंग है, 6 घंटे लगे।' },
-];
+const VOICE_SAMPLES = {
+  'hi-IN': [
+    { label: '🪔 पीतल का दीया', text: 'यह एक हाथ से बना हुआ पीतल का दीया है जिसमें सुनहरा रंग है, 4 घंटे लगे और ₹200 कच्चा माल खर्च हुआ।' },
+    { label: '🏺 मिट्टी का फूलदान', text: 'यह एक हस्तनिर्मित टेराकोटा मिट्टी का फूलदान है जिसे चाक पर प्राकृतिक गेरुआ रंग से बनाया गया है, 5 घंटे लगे।' },
+    { label: '🪵 लकड़ी का डिब्बा', text: 'यह शीशम की लकड़ी का हाथ से नक्काशी किया हुआ संदूक है, 7 घंटे लगे और ₹350 लागत आई।' },
+    { label: '🧵 हथकरघा साड़ी', text: 'यह शुद्ध सूती हथकरघा बुनी हुई साड़ी है जिसमें प्राकृतिक नीला रंग है, 12 घंटे लगे।' },
+  ],
+  'en-IN': [
+    { label: '🪔 Brass Diya', text: 'This is a handmade brass diya in golden colour, took 4 hours and ₹200 of raw material.' },
+    { label: '🏺 Clay Vase', text: 'This is a handcrafted terracotta clay vase made on the wheel in natural ochre colour, took 5 hours.' },
+    { label: '🪵 Wooden Box', text: 'This is a hand-carved sheesham wood box, took 7 hours and cost ₹350.' },
+    { label: '🧵 Handloom Saree', text: 'This is a pure cotton handloom saree in natural blue colour, took 12 hours.' },
+  ],
+  'bn-IN': [
+    { label: '🏺 মাটির ফুলদানি', text: 'এটি হাতে তৈরি টেরাকোটা মাটির ফুলদানি, প্রাকৃতিক গেরুয়া রঙের, ৫ ঘণ্টা লেগেছে।' },
+    { label: '🧵 তাঁতের শাড়ি', text: 'এটি খাঁটি সুতির তাঁতের শাড়ি, নীল রঙের, ১২ ঘণ্টা লেগেছে।' },
+  ],
+  'ta-IN': [
+    { label: '🏺 களிமண் ஜாடி', text: 'இது கையால் செய்யப்பட்ட களிமண் பூச்சாடி, இயற்கை மஞ்சள் நிறம், 5 மணி நேரம் ஆனது.' },
+    { label: '🧵 கைத்தறி புடவை', text: 'இது தூய பருத்தி கைத்தறி புடவை, நீல நிறம், 12 மணி நேரம் ஆனது.' },
+  ],
+  'te-IN': [
+    { label: '🏺 మట్టి కుండ', text: 'ఇది చేతితో తయారు చేసిన మట్టి కుండ, సహజ గోధుమ రంగు, 5 గంటలు పట్టింది.' },
+    { label: '🧵 చేనేత చీర', text: 'ఇది స్వచ్ఛమైన పత్తి చేనేత చీర, నీలం రంగు, 12 గంటలు పట్టింది.' },
+  ],
+  'mr-IN': [
+    { label: '🏺 मातीचे फुलदाणी', text: 'ही हाताने बनवलेली मातीची फुलदाणी आहे, नैसर्गिक गेरू रंगाची, ५ तास लागले.' },
+    { label: '🧵 हातमाग साडी', text: 'ही शुद्ध सुती हातमाग साडी आहे, निळ्या रंगाची, १२ तास लागले.' },
+  ],
+};
 
 export default function VoiceInputScreen() {
   const { updateProduct, nextStep, setIsLoading, setLoadingMessage, lang, t } = useCraft();
@@ -54,7 +76,7 @@ export default function VoiceInputScreen() {
     if (SR) {
       try {
         const r = new SR();
-        r.continuous = true; r.interimResults = true; r.lang = speechLang; r.maxAlternatives = 1;
+               r.continuous = true; r.interimResults = true; r.lang = speechLang; r.maxAlternatives = 3;
         r.onresult = (e) => {
           let fin = '', int = '';
           for (let i = 0; i < e.results.length; i++) {
@@ -309,7 +331,7 @@ export default function VoiceInputScreen() {
         <div>
           <p className="mb-1.5 text-[10px] font-bold text-stone-500">{t.quickTests}</p>
           <div className="flex flex-wrap gap-1.5">
-            {QUICK_VOICE_SAMPLES.map((s, i) => (
+                        {(VOICE_SAMPLES[speechLang] || VOICE_SAMPLES['en-IN']).map((s, i) => (
               <button
                 key={i}
                 onClick={() => { setLiveTranscript(s.text); setStatus('recorded'); }}
@@ -321,6 +343,11 @@ export default function VoiceInputScreen() {
           </div>
         </div>
       </div>
+            {liveTranscript.trim().length > 0 && liveTranscript.trim().length < 25 && (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-2xs font-semibold text-amber-800">
+          {t.sayMore}
+        </p>
+      )}
 
       {(status === 'recorded' || liveTranscript.trim()) && (
         <button

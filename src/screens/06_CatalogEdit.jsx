@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sparkles, Tag, X } from 'lucide-react';
+import { ArrowRight, Sparkles, Tag, X, Check } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import PrimaryButton from '../components/ui/PrimaryButton';
@@ -30,7 +30,26 @@ export default function CatalogEditScreen() {
   return (
     <div className="space-y-4 animate-fade-in-up">
       <ScreenHeader title={t.catalogTitle} subtitle={t.catalogSub} icon={Sparkles} step={4} totalSteps={6} />
-
+      {productData.spoken_transcript && (
+        <div className="space-y-2 rounded-3xl border border-mustard-200 bg-mustard-50 p-4 animate-scale-in">
+          <p className="flex items-center gap-1.5 text-2xs font-black uppercase tracking-wide text-mustard-700">
+            <Sparkles size={12} /> {t.aiHeard}
+          </p>
+          <p className="text-xs italic leading-relaxed text-mustard-800">"{productData.spoken_transcript}"</p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[
+              productData.material && productData.material !== 'Not clearly identifiable' && productData.material,
+              productData.colour && productData.colour !== 'Not clearly identifiable' && productData.colour,
+              productData.category,
+              productData.hours_spent && `${productData.hours_spent} hrs`,
+            ].filter(Boolean).map((v, i) => (
+              <span key={i} className="chip animate-pop border-white bg-white text-mustard-700" style={{ animationDelay: `${i * 80}ms` }}>
+                <Check size={11} strokeWidth={3} className="text-forest" /> {v}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="flex gap-3 rounded-3xl border border-stone-200 bg-white p-3 shadow-card">
         <img
           src={productData.enhancedImage || productData.originalImage}
