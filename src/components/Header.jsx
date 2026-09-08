@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, Globe, Check, X } from 'lucide-react';
+import { ChevronLeft, Globe, Check, X, User } from 'lucide-react';
 import { useCraft, TRANSLATIONS } from '../context/CraftContext';
 
 const WIZARD_KEYS = { 3: 'wPhoto', 4: 'wStudio', 5: 'wVoice', 6: 'wDetails', 7: 'wPrice', 8: 'wPublish' };
@@ -39,13 +39,26 @@ export default function Header({ isWizard = false }) {
               </p>
                             <p className="mt-0.5 text-[10px] font-medium text-stone-500">शिल्पसाथी · {t.appSub}</p>
             </div>
-            <button
-              onClick={() => setShowLangModal(true)}
-              className="chip touch border-mustard-200 bg-mustard-50 px-3 text-terracotta-600"
-            >
-              <Globe size={13} strokeWidth={2.6} />
-              {t.name}
-            </button>
+                       <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                onClick={() => setShowLangModal(true)}
+                className="chip touch border-mustard-200 bg-mustard-50 px-3 text-terracotta-600"
+              >
+                <Globe size={13} strokeWidth={2.6} />
+                {t.name}
+              </button>
+              <button
+                onClick={() => goToStep(11)}
+                aria-label={t.navProfile}
+                className={`tap flex h-9 w-9 items-center justify-center rounded-2xl border transition ${
+                  currentStep === 11
+                    ? 'border-terracotta bg-terracotta text-white'
+                    : 'border-stone-200 bg-white text-stone-500'
+                }`}
+              >
+                <User size={16} strokeWidth={2.5} />
+              </button>
+            </div>
           </>
         )}
       </header>

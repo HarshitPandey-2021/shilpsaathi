@@ -13,6 +13,7 @@ import CatalogEditScreen from './screens/06_CatalogEdit';
 import PricingScreen     from './screens/07_Pricing';
 import ReviewScreen      from './screens/08_Review';
 import MyListingsScreen  from './screens/10_MyListings';
+import ProfileScreen from './screens/ProfilePage';
 
 export const WIZARD_STEPS = [3, 4, 5, 6, 7, 8];
 
@@ -26,6 +27,7 @@ const SCREENS = {
   7: PricingScreen,
   8: ReviewScreen,
   10: MyListingsScreen,
+   11: ProfileScreen,
 };
 
 function AppShell() {
