@@ -20,7 +20,7 @@ from background_remover import remove_background
 
 def resize_for_processing(
     image,
-    max_size=768
+    max_size=512
 ):
     image = image.copy()
 

@@ -10,8 +10,13 @@ _rembg_failed = False
 def _session():
     global _rembg_failed
     try:
+        import onnxruntime as ort
         from rembg import new_session
-        return new_session(MODEL_NAME)
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = 1
+        opts.inter_op_num_threads = 1
+        opts.enable_mem_pattern = False
+        return new_session(MODEL_NAME, sess_opts=opts)
     except Exception as e:
         print(f"[BG Remover] rembg model initialization note: {e}")
         _rembg_failed = True
