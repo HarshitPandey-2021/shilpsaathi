@@ -82,9 +82,9 @@ export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 
 
   const candidateModels = [...new Set([
     model,
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
+    'gemini-2.5-flash',
+    'gemini-flash-latest',
+    'gemini-2.5-flash-lite',
   ])].filter(Boolean);
 
   try {
@@ -174,13 +174,10 @@ export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3 } 
 
   const candidateModels = [...new Set([
     model,
-    'llama-3.1-8b-instant',
-    'llama3-8b-8192',
-    'llama3-70b-8192',
-    'gemma2-9b-it',
-    'llama-3.3-70b-versatile',
+    'openai/gpt-oss-20b',
+    'openai/gpt-oss-120b',
+    'qwen/qwen3.6-27b',
   ])].filter(Boolean);
-
   try {
     const messages = [];
     if (systemPrompt) {

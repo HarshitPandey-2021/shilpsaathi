@@ -189,8 +189,8 @@ export default function CaptureScreen() {
         </div>
       ) : (
         <div className="flex gap-2.5">
-          <Picker icon={Camera} label={t.photoBtn} capture primary />
-          <Picker icon={Images} label={t.retakePhoto} />
+                   <Picker icon={Camera} label={t.takePhoto || 'Camera'} capture primary />
+          <Picker icon={Images} label={t.fromGallery || 'Gallery'} />
         </div>
       )}
 

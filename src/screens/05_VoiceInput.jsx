@@ -11,12 +11,14 @@ const SPEECH_LANG_OPTIONS = [
 ];
 const VOICE_SAMPLES = {
   'hi-IN': [
+      { label: '👜 काला बैग', text: 'यह हाथ से बना काला बैग है, सूती कपड़े का, 5 घंटे लगे और ₹300 का कच्चा माल लगा।' },
     { label: '🪔 पीतल का दीया', text: 'यह एक हाथ से बना हुआ पीतल का दीया है जिसमें सुनहरा रंग है, 4 घंटे लगे और ₹200 कच्चा माल खर्च हुआ।' },
     { label: '🏺 मिट्टी का फूलदान', text: 'यह एक हस्तनिर्मित टेराकोटा मिट्टी का फूलदान है जिसे चाक पर प्राकृतिक गेरुआ रंग से बनाया गया है, 5 घंटे लगे।' },
     { label: '🪵 लकड़ी का डिब्बा', text: 'यह शीशम की लकड़ी का हाथ से नक्काशी किया हुआ संदूक है, 7 घंटे लगे और ₹350 लागत आई।' },
     { label: '🧵 हथकरघा साड़ी', text: 'यह शुद्ध सूती हथकरघा बुनी हुई साड़ी है जिसमें प्राकृतिक नीला रंग है, 12 घंटे लगे।' },
   ],
   'en-IN': [
+    { label: '👜 Black Bag', text: 'This is a handmade black bag made from cotton fabric, took 5 hours and ₹300 of raw material.' },
     { label: '🪔 Brass Diya', text: 'This is a handmade brass diya in golden colour, took 4 hours and ₹200 of raw material.' },
     { label: '🏺 Clay Vase', text: 'This is a handcrafted terracotta clay vase made on the wheel in natural ochre colour, took 5 hours.' },
     { label: '🪵 Wooden Box', text: 'This is a hand-carved sheesham wood box, took 7 hours and cost ₹350.' },
