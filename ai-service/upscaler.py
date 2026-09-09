@@ -66,4 +66,4 @@ def upscale_image(image, outscale=2):
     target_h = int(image.height * outscale)
     resized = image.resize((target_w, target_h), Image.Resampling.LANCZOS)
     enhancer = ImageEnhance.Sharpness(resized)
-    return enhancer.enhance(1.25)
+    return enhancer.enhance(1.25)
