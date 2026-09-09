@@ -3,7 +3,7 @@
 from functools import lru_cache
 from PIL import Image
 
-MODEL_NAME = "bria-rmbg"
+MODEL_NAME = "u2netp"
 _rembg_failed = False
 
 @lru_cache(maxsize=1)

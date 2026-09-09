@@ -13,6 +13,9 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+# Pre-download the segmentation model at build time so it is never
+# fetched during a request (Render's filesystem is ephemeral).
+RUN python -c "from rembg import new_session; new_session('u2netp')"
 
 ENV PORT=8000
 EXPOSE 8000

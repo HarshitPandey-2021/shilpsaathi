@@ -20,7 +20,7 @@ from background_remover import remove_background
 
 def resize_for_processing(
     image,
-    max_size=1600
+    max_size=768
 ):
     image = image.copy()
 
@@ -148,9 +148,7 @@ def should_upscale(
 
     if required_scale <= 1.0:
         return "skip", required_scale
-    if required_scale <= 1.35:
-        return "lanczos", required_scale
-    return "esrgan", required_scale
+    return "lanczos", required_scale
 
 
 def upscale_if_needed(
