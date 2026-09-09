@@ -178,11 +178,15 @@ export default function MyListingsScreen() {
                 </div>
               )}
 
-              {selected.description_hi && (
-                <p className="text-xs leading-relaxed text-stone-700">{selected.description_hi}</p>
+                         {(lang === 'en' ? selected.description_en : selected.description_hi) && (
+                <p className="text-xs leading-relaxed text-stone-700">
+                  {lang === 'en' ? selected.description_en : selected.description_hi}
+                </p>
               )}
-              {selected.description_en && (
-                <p className="text-xs leading-relaxed text-stone-500">{selected.description_en}</p>
+              {(lang === 'en' ? selected.description_hi : selected.description_en) && (
+                <p className="text-xs leading-relaxed text-stone-400">
+                  {lang === 'en' ? selected.description_hi : selected.description_en}
+                </p>
               )}
 
               {(selected.keywords || []).length > 0 && (

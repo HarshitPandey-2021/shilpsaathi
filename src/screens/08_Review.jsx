@@ -6,7 +6,7 @@ import ScreenHeader from '../components/ui/ScreenHeader';
 import PrimaryButton from '../components/ui/PrimaryButton';
 
 export default function ReviewScreen() {
-  const { productData, updateProduct, goToStep, clearOriginalPreview, getArtisanId, resolveArtisan, linkPhone, t, confirmedPhone } = useCraft();
+  const { productData, updateProduct, goToStep, clearOriginalPreview, getArtisanId, resolveArtisan, linkPhone, t, confirmedPhone, lang } = useCraft();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -39,8 +39,9 @@ export default function ReviewScreen() {
       const artisanId = getArtisanId() || (await resolveArtisan());
       if (!artisanId) throw new Error('Could not identify your shop. Check the server is running.');
 
-      let imageUrl = productData.image_url;
       const b64 = productData.enhancedImageB64 || productData.originalB64;
+      // Always store the current image; never reuse a previous product's URL
+      let imageUrl = b64 ? null : productData.image_url;
       if (!imageUrl && b64) {
         try {
           const store = await api.storePermanentImage(b64, 'image/jpeg');
@@ -99,7 +100,8 @@ export default function ReviewScreen() {
   };
 
   const handleShare = async () => {
-    const text = `${productData.name}\n₹${productData.final_price}\n${productData.description_hi || ''}`;
+        const primaryDesc = lang === 'en' ? productData.description_en : productData.description_hi;
+    const text = `${productData.name}\n₹${productData.final_price}\n${primaryDesc || ''}`;
     try {
       const blob = await fetch(productData.enhancedImage || productData.originalImage).then((r) => r.blob());
       const file = new File([blob], 'product.jpg', { type: blob.type });
@@ -153,8 +155,15 @@ export default function ReviewScreen() {
             )}
           </div>
 
-          {productData.description_en && (
-            <p className="text-xs leading-relaxed text-stone-600">{productData.description_en}</p>
+                  {(lang === 'en' ? productData.description_en : productData.description_hi) && (
+            <p className="text-xs leading-relaxed text-stone-600">
+              {lang === 'en' ? productData.description_en : productData.description_hi}
+            </p>
+          )}
+          {(lang === 'en' ? productData.description_hi : productData.description_en) && (
+            <p className="text-2xs leading-relaxed text-stone-400">
+              {lang === 'en' ? productData.description_hi : productData.description_en}
+            </p>
           )}
           <div className="flex items-end justify-between border-t border-stone-100 pt-3">
             <div>
