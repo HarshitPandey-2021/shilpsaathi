@@ -25,7 +25,10 @@ app.use(
         allowedOrigins.includes(origin) ||
         origin.endsWith('.vercel.app') ||
         origin.includes('localhost') ||
-        origin.includes('127.0.0.1')
+        origin.includes('127.0.0.1') ||
+        // LAN/mobile dev: allow private-network origins such as
+        // http://192.168.x.x:5173 or http://10.x.x.x:5173.
+        /^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(origin)
       ) {
         return callback(null, true);
       }

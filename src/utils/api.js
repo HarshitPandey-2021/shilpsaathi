@@ -7,8 +7,15 @@ const getApiBaseUrl = () => {
     return url;
   }
   if (typeof window !== 'undefined' && window.location && window.location.hostname) {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return `http://${window.location.hostname}:5000/api`;
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `http://${host}:5000/api`;
+    }
+    // LAN/mobile dev: when opened as http://<LAPTOP-LAN-IP>:5173, call the
+    // backend on the same laptop IP (backend default port 5000).
+    // Override with VITE_API_URL=http://<LAPTOP-LAN-IP>:5000/api if needed.
+    if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host)) {
+      return `http://${host}:5000/api`;
     }
     return `${window.location.origin}/api`;
   }
