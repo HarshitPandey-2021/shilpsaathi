@@ -26,12 +26,26 @@ function imageFilter(req, file, cb) {
 }
 
 function audioFilter(req, file, cb) {
-  if (ALLOWED_AUDIO_TYPES.includes(file.mimetype) || file.mimetype.startsWith('audio/')) {
+  const mime = (file.mimetype || '').toLowerCase();
+
+  // Accept any audio/* MIME type (covers webm, wav, mp3, ogg, opus, flac, etc.).
+  // Also accept application/octet-stream because some mobile audio recorders do
+  // not set a specific audio MIME type. Reject everything else.
+  if (mime.startsWith('audio/') || ALLOWED_AUDIO_TYPES.includes(mime)) {
+    cb(null, true);
+  } else if (mime === 'application/octet-stream' || mime === '') {
     cb(null, true);
   } else {
-    cb(null, true); // Permissive for mobile recorder codecs
+    cb(
+      new Error(
+        `Invalid audio type "${mime || 'unknown'}". Allowed: audio/* (webm, wav, mp3, ogg, opus, etc.).`
+      ),
+      false
+    );
   }
 }
+
+const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10 MB (voice recordings are small)
 
 const imageUpload = multer({
   storage,
@@ -42,7 +56,7 @@ const imageUpload = multer({
 const audioUpload = multer({
   storage,
   fileFilter: audioFilter,
-  limits: { fileSize: MAX_FILE_SIZE, files: 1 },
+  limits: { fileSize: MAX_AUDIO_SIZE, files: 1 },
 });
 
 export const uploadSingleImage = imageUpload.single('image');
@@ -70,5 +84,5 @@ export function handleUploadError(err, req, res, next) {
   next();
 }
 
-export { ALLOWED_IMAGE_TYPES, ALLOWED_AUDIO_TYPES, MAX_FILE_SIZE as MAX_IMAGE_SIZE };
+export { ALLOWED_IMAGE_TYPES, ALLOWED_AUDIO_TYPES, MAX_FILE_SIZE as MAX_IMAGE_SIZE, MAX_AUDIO_SIZE };
 
