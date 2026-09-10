@@ -1,8 +1,16 @@
 -- =============================================================================
--- Migration: ShilpSaathi — Link artisans to Supabase Auth users
--- Adds auth_uid column to map artisan rows to auth.users for RLS.
--- Safe, idempotent. Run AFTER migration_002_rls_policies.sql if you want
--- RLS to use auth.uid() directly. Otherwise skip and use phone-based mapping.
+-- Migration: ShilpSaathi — Link artisans to Supabase Auth users (REVISED)
+-- Adds auth_uid column to map artisan rows to auth.users.id for RLS.
+--
+-- RUN THIS FIRST (before migration_002_rls_policies.sql).
+--
+-- Identity chain this enables:
+--   auth.uid() → artisans.auth_uid → artisans.id → products.artisan_id
+--
+-- EXISTING DATA IS SAFE:
+--   - artisan IDs do NOT change
+--   - product artisan_id references do NOT change
+--   - only a new nullable column is added + backfilled from phone match
 -- =============================================================================
 
 -- 1. Add auth_uid column (nullable — existing rows may not have auth yet).
@@ -19,39 +27,3 @@ SET auth_uid = u.id
 FROM auth.users u
 WHERE a.auth_uid IS NULL
   AND a.phone = u.phone;
-
--- =============================================================================
--- OPTIONAL: If you want RLS to use auth_uid instead of artisans.id,
--- replace the artisan policies in migration_002 with these:
---
--- CREATE POLICY "artisans_owner_update"
---   ON artisans FOR UPDATE
---   USING (auth_uid = auth.uid())
---   WITH CHECK (auth_uid = auth.uid());
---
--- CREATE POLICY "artisans_owner_delete"
---   ON artisans FOR DELETE
---   USING (auth_uid = auth.uid());
---
--- CREATE POLICY "artisans_authenticated_insert"
---   ON artisans FOR INSERT
---   WITH CHECK (auth_uid = auth.uid());
---
--- And for products:
--- CREATE POLICY "products_owner_select"
---   ON products FOR SELECT
---   USING (artisan_id IN (SELECT id FROM artisans WHERE auth_uid = auth.uid()));
---
--- CREATE POLICY "products_owner_insert"
---   ON products FOR INSERT
---   WITH CHECK (artisan_id IN (SELECT id FROM artisans WHERE auth_uid = auth.uid()));
---
--- CREATE POLICY "products_owner_update"
---   ON products FOR UPDATE
---   USING (artisan_id IN (SELECT id FROM artisans WHERE auth_uid = auth.uid()))
---   WITH CHECK (artisan_id IN (SELECT id FROM artisans WHERE auth_uid = auth.uid()));
---
--- CREATE POLICY "products_owner_delete"
---   ON products FOR DELETE
---   USING (artisan_id IN (SELECT id FROM artisans WHERE auth_uid = auth.uid()));
--- =============================================================================
