@@ -1,5 +1,4 @@
 import * as productService from '../services/productService.js';
-import * as artisanService from '../services/artisanService.js';
 import { isSupabaseConfigured } from '../config/index.js';
 import { validateProductInput } from '../utils/validation.js';
 import { successResponse, errorResponse, validationError, notFoundResponse } from '../utils/response.js';
@@ -24,16 +23,23 @@ function buildProductData(body) {
 }
 export async function getAllProducts(req, res, next) {
   try {
-    const { artisan_id } = req.query;
-    // Clean string input: accept phone numbers, UUIDs, or undefined
-    const cleanId = artisan_id && typeof artisan_id === 'string' ? artisan_id.trim() : undefined;
-    const products = await productService.getAllProducts(cleanId);
+    // When authenticated, scope to the verified artisan's products.
+    // The artisan_id is NEVER taken from the client for authenticated requests.
+    const artisanId = req.artisan?.id || null;
+
+    // For unauthenticated requests, allow a public listing query only if
+    // a valid UUID is explicitly provided (marketplace browsing).
+    const queryArtisanId = req.query?.artisan_id;
+    const cleanId = artisanId
+      ? artisanId
+      : (queryArtisanId && typeof queryArtisanId === 'string' ? queryArtisanId.trim() : undefined);
+
+    const products = await productService.getAllProducts(cleanId || null);
     return successResponse(res, products || [], 'Products retrieved successfully');
   } catch (err) {
     if (err.message === 'Database not configured') {
       return errorResponse(res, 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.', 503);
     }
-    // Fallback: If service rejects phone format, return empty array instead of crashing client UI
     if (err.statusCode === 400 || err.message?.includes('artisan_id')) {
       console.warn('[Products] Handled query format notice:', err.message);
       return successResponse(res, [], 'Products retrieved successfully');
@@ -66,10 +72,10 @@ export async function createProduct(req, res, next) {
     const { isValid, errors } = validateProductInput(req.body);
     if (!isValid) return validationError(res, errors);
 
-    let artisanId = req.body.artisan_id || null;
+    // Ownership is derived from the authenticated JWT — never from client input.
+    const artisanId = req.artisan?.id;
     if (!artisanId) {
-      const demoArtisan = await artisanService.getOrCreateDemoArtisan();
-      artisanId = demoArtisan.id;
+      return errorResponse(res, 'Authentication required to create a product.', 401);
     }
 
     const productData = {
@@ -95,19 +101,27 @@ export async function createProduct(req, res, next) {
 
 export async function updateProduct(req, res, next) {
   try {
+    // Authenticate FIRST — fail fast before any database access.
+    const authArtisanId = req.artisan?.id;
+    if (!authArtisanId) {
+      return errorResponse(res, 'Authentication required to modify a product.', 401);
+    }
+
     const { isValid, errors } = validateProductInput(req.body, true);
     if (!isValid) return validationError(res, errors);
 
     const existing = await productService.getProductById(req.params.id);
     if (!existing) return notFoundResponse(res, 'Product not found');
 
-    const requestArtisanId = req.body.artisan_id || req.query.artisan_id;
-    if (requestArtisanId && existing.artisan_id !== requestArtisanId) {
-      const owned = await productService.isProductOwnedByArtisan(req.params.id, requestArtisanId);
-      if (!owned) return errorResponse(res, 'You do not have permission to modify this product', 403);
+    // Ownership is mandatory and derived from the authenticated JWT.
+    if (existing.artisan_id !== authArtisanId) {
+      return errorResponse(res, 'You do not have permission to modify this product', 403);
     }
 
+    // Prevent client from transferring ownership via update.
     const updateData = buildProductData(req.body);
+    delete updateData.artisan_id;
+
     const product = await productService.updateProduct(req.params.id, updateData);
     return successResponse(res, product, 'Product updated successfully');
   } catch (err) {
@@ -122,13 +136,18 @@ export async function updateProduct(req, res, next) {
 
 export async function deleteProduct(req, res, next) {
   try {
+    // Authenticate FIRST — fail fast before any database access.
+    const authArtisanId = req.artisan?.id;
+    if (!authArtisanId) {
+      return errorResponse(res, 'Authentication required to delete a product.', 401);
+    }
+
     const existing = await productService.getProductById(req.params.id);
     if (!existing) return notFoundResponse(res, 'Product not found');
 
-    const requestArtisanId = req.query.artisan_id;
-    if (requestArtisanId && existing.artisan_id !== requestArtisanId) {
-      const owned = await productService.isProductOwnedByArtisan(req.params.id, requestArtisanId);
-      if (!owned) return errorResponse(res, 'You do not have permission to delete this product', 403);
+    // Ownership is mandatory and derived from the authenticated JWT.
+    if (existing.artisan_id !== authArtisanId) {
+      return errorResponse(res, 'You do not have permission to delete this product', 403);
     }
 
     await productService.deleteProduct(req.params.id);
@@ -187,6 +206,12 @@ export async function getProductListing(req, res, next) {
 
 export async function updateProductStatus(req, res, next) {
   try {
+    // Authenticate FIRST — fail fast before any database access.
+    const authArtisanId = req.artisan?.id;
+    if (!authArtisanId) {
+      return errorResponse(res, 'Authentication required to change product status.', 401);
+    }
+
     const { status } = req.body;
     if (!status) return validationError(res, { status: 'Status is required' });
 
@@ -197,6 +222,11 @@ export async function updateProductStatus(req, res, next) {
 
     const existing = await productService.getProductById(req.params.id);
     if (!existing) return notFoundResponse(res, 'Product not found');
+
+    // Ownership is mandatory and derived from the authenticated JWT.
+    if (existing.artisan_id !== authArtisanId) {
+      return errorResponse(res, 'You do not have permission to modify this product', 403);
+    }
 
     const product = await productService.updateProductStatus(req.params.id, status);
     return successResponse(res, product, 'Product status updated successfully');

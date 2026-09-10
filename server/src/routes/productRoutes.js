@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { authenticate, optionalAuth } from '../middleware/auth.js';
 import {
   getAllProducts,
   getProductById,
@@ -12,12 +13,15 @@ import {
 
 const router = Router();
 
-router.get('/', asyncHandler(getAllProducts));
-router.post('/', asyncHandler(createProduct));
+// Public routes.
+router.get('/', optionalAuth, asyncHandler(getAllProducts));
 router.get('/:id', asyncHandler(getProductById));
-router.put('/:id', asyncHandler(updateProduct));
-router.delete('/:id', asyncHandler(deleteProduct));
 router.get('/:id/listing', asyncHandler(getProductListing));
-router.patch('/:id/status', asyncHandler(updateProductStatus));
+
+// Authenticated routes — ownership derived from verified JWT, never from client.
+router.post('/', authenticate, asyncHandler(createProduct));
+router.put('/:id', authenticate, asyncHandler(updateProduct));
+router.delete('/:id', authenticate, asyncHandler(deleteProduct));
+router.patch('/:id/status', authenticate, asyncHandler(updateProductStatus));
 
 export default router;
