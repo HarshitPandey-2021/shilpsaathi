@@ -286,6 +286,82 @@ export async function transcribeWithBhashini(audioBuffer, rawLanguage = 'hi', mi
   return null;
 }
 
+/**
+ * Transcribe audio using OpenRouter (OpenAI-compatible audio transcription
+ * endpoint). Serves as the second-stage fallback when Bhashini ASR does not
+ * yield a transcript.
+ *
+ * Endpoint: POST https://openrouter.ai/api/v1/audio/transcriptions
+ *
+ * @param {Buffer} audioBuffer - Raw audio bytes.
+ * @param {string} mimeType   - Audio MIME type (e.g. 'audio/webm').
+ * @returns {Promise<string|null>} Transcribed text, or null on any failure.
+ */
+export async function transcribeWithOpenRouter(audioBuffer, mimeType = 'audio/webm') {
+  if (!config.openrouter?.enabled || !config.openrouter?.apiKey) {
+    console.warn('[OpenRouter] Not configured. Skipping OpenRouter STT fallback.');
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timeoutMs = config.openrouter.timeoutMs || 45000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    console.log(`[OpenRouter] Initiating STT transcription (model: ${config.openrouter.sttModel})...`);
+
+    // Derive a file extension from the MIME type for the multipart payload.
+    const ext = (mimeType.split('/')[1] || 'webm').split(';')[0];
+    const form = new FormData();
+    const blob = new Blob([audioBuffer], { type: mimeType });
+    form.append('file', blob, `audio.${ext}`);
+    form.append('model', config.openrouter.sttModel);
+
+    const res = await fetch('https://openrouter.ai/api/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.openrouter.apiKey}`,
+        'HTTP-Referer': config.openrouter.referer || 'http://localhost:5000',
+        'X-Title': config.openrouter.title || 'ShilpSaathi',
+      },
+      body: form,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      let errText = '';
+      try { errText = await res.text(); } catch { /* ignore */ }
+      // Redact any leaked credentials before logging.
+      const safeErr = errText.replace(/Bearer\s+[^\s]+/gi, 'Bearer REDACTED').slice(0, 200);
+      const classification = classifyError(res.status, safeErr);
+      console.error(`[OpenRouter] ${classification.label} — STT failed (HTTP ${res.status}): ${safeErr}`);
+      return null;
+    }
+
+    let data = null;
+    try { data = await res.json(); } catch {
+      console.error('[OpenRouter] Malformed JSON in transcription response.');
+      return null;
+    }
+
+    const transcript = (data?.text || '').trim();
+    if (transcript) {
+      console.log('[OpenRouter] ✅ Transcription successful:', transcript);
+      return transcript;
+    }
+
+    console.warn('[OpenRouter] Empty transcription returned by model.');
+    return null;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const classification = classifyError(0, err.message, err.name);
+    console.error(`[OpenRouter] ${classification.label} — error: ${err.message}`);
+    return null;
+  }
+}
+
 import { callLlmWithFallback, classifyError } from './llmService.js';
 
 /**
