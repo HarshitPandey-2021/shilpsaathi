@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { supabase } from '../config/index.js';
 import { isValidUUID, normalizeIndianMobile } from '../utils/validation.js';
+import { authenticate, optionalAuth } from '../middleware/auth.js';
 import {
   getAllArtisans,
   getArtisanById,
@@ -14,14 +15,8 @@ const router = Router();
 
 /**
  * Resolve (or lazily create) an artisan identity.
- *
- * Accepts a `handle` that is either:
- *   - a 10-digit Indian mobile number (validated & normalized to E.164), or
- *   - a legacy device handle (`g-...`) for deferred identity (kept for
- *     frontend compatibility).
- *
- * The mobile number is the canonical identity: the SAME number must always
- * resolve to the SAME artisan row (no duplicates).
+ * PUBLIC — onboarding ke liye zaruri, auth nahi chahiye.
+ * Phone number response mein nahi bhejta (PII protection).
  */
 router.post('/resolve', asyncHandler(async (req, res) => {
   if (!supabase) {
@@ -33,7 +28,6 @@ router.post('/resolve', asyncHandler(async (req, res) => {
     return res.status(422).json({ success: false, message: 'handle is required (max 20 chars)' });
   }
 
-  // --- Mobile-number path (preferred) ---
   const mobile = normalizeIndianMobile(handle);
   if (mobile.valid) {
     const { data: existing } = await supabase
@@ -55,11 +49,6 @@ router.post('/resolve', asyncHandler(async (req, res) => {
     return res.status(201).json({ success: true, message: 'Artisan created', data: created });
   }
 
-    // --- Legacy device-handle fallback (deferred identity) ---
-  // The frontend only ever generates device handles of the form "g-<hex>"
-  // (see getDeviceHandle()). Anything that is not a valid Indian mobile and
-  // does not match that device-handle format is rejected with 400 so we never
-  // persist garbage phone values.
   if (handle.startsWith('g-')) {
     const { data: existing } = await supabase
       .from('artisans').select('*').eq('phone', handle).maybeSingle();
@@ -86,18 +75,21 @@ router.post('/resolve', asyncHandler(async (req, res) => {
   });
 }));
 
-// Link a real phone number to an existing artisan (by UUID).
-// Rejects invalid numbers and refuses to steal a number already owned by another artisan.
-router.post('/link-phone', asyncHandler(async (req, res) => {
+/**
+ * Link phone to artisan — AUTHENTICATED.
+ * Ab client artisan_id nahi bhejta, server JWT se derive karta hai.
+ */
+router.post('/link-phone', authenticate, asyncHandler(async (req, res) => {
   if (!supabase) {
     return res.status(503).json({ success: false, message: 'Database not configured' });
   }
 
-  const id = String(req.body?.artisan_id || '').trim();
+  // JWT se artisan identity already verified hai.
+  const id = req.artisan?.id;
   const phone = String(req.body?.phone || '').trim();
 
-  if (!isValidUUID(id)) {
-    return res.status(400).json({ success: false, message: 'Valid artisan_id (UUID) is required' });
+  if (!id) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
   }
 
   const mobile = normalizeIndianMobile(phone);
@@ -105,19 +97,17 @@ router.post('/link-phone', asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: mobile.error });
   }
 
-  // Is this phone already attached to an artisan?
+  // Kisi aur ka phone toh nahi?
   const { data: taken } = await supabase
     .from('artisans').select('id').eq('phone', mobile.normalized).maybeSingle();
 
   if (taken) {
     if (taken.id === id) {
-      // Already linked to this very artisan — no-op update.
       const { data: updated, error } = await supabase
         .from('artisans').update({ phone: mobile.normalized }).eq('id', id).select().single();
       if (error) return res.status(500).json({ success: false, message: error.message });
       return res.json({ success: true, message: 'Phone linked', data: updated });
     }
-    // Belongs to another artisan — do NOT return an id (would mis-identify the caller).
     return res.status(409).json({
       success: false,
       message: 'This phone number is already in use by another shop',
@@ -130,12 +120,32 @@ router.post('/link-phone', asyncHandler(async (req, res) => {
 
   if (error) return res.status(500).json({ success: false, message: error.message });
   return res.json({ success: true, message: 'Phone linked', data });
-}));  
+}));
 
-router.get('/', asyncHandler(getAllArtisans));
+/**
+ * GET / — AUTHENTICATED. Sirf authenticated artisan ki info deta hai.
+ * Pehle sabka data leke aata tha (PII leak).
+ */
+router.get('/', authenticate, asyncHandler(getAllArtisans));
+
+/**
+ * GET /:id — PUBLIC lekin phone number strip karta hai (PII).
+ */
 router.get('/:id', asyncHandler(getArtisanById));
-router.post('/', asyncHandler(createArtisan));
-router.put('/:id', asyncHandler(updateArtisan));
-router.delete('/:id', asyncHandler(deleteArtisan));
+
+/**
+ * POST / — AUTHENTICATED. Naya artisan authenticated user ke liye create karo.
+ */
+router.post('/', authenticate, asyncHandler(createArtisan));
+
+/**
+ * PUT /:id — AUTHENTICATED + OWNER ONLY.
+ */
+router.put('/:id', authenticate, asyncHandler(updateArtisan));
+
+/**
+ * DELETE /:id — AUTHENTICATED + OWNER ONLY.
+ */
+router.delete('/:id', authenticate, asyncHandler(deleteArtisan));
 
 export default router;

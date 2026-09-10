@@ -2,10 +2,19 @@ import * as artisanService from '../services/artisanService.js';
 import { validateArtisanInput } from '../utils/validation.js';
 import { successResponse, errorResponse, validationError, notFoundResponse } from '../utils/response.js';
 
+/**
+ * GET /api/artisans
+ * AUTHENTICATED — sirf authenticated artisan ki hi info return karta hai.
+ */
 export async function getAllArtisans(req, res, next) {
   try {
-    const artisans = await artisanService.getAllArtisans();
-    return successResponse(res, artisans, 'Artisans retrieved successfully');
+    const artisanId = req.artisan?.id;
+    if (!artisanId) {
+      return errorResponse(res, 'Authentication required', 401);
+    }
+    const artisan = await artisanService.getArtisanById(artisanId);
+    if (!artisan) return notFoundResponse(res, 'Artisan not found');
+    return successResponse(res, [artisan], 'Artisan retrieved successfully');
   } catch (err) {
     if (err.message === 'Database not configured') {
       return errorResponse(res, 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.', 503);
@@ -14,11 +23,24 @@ export async function getAllArtisans(req, res, next) {
   }
 }
 
+/**
+ * GET /api/artisans/:id
+ * PUBLIC lekin phone number strip karta hai (PII protection).
+ */
 export async function getArtisanById(req, res, next) {
   try {
     const artisan = await artisanService.getArtisanById(req.params.id);
     if (!artisan) return notFoundResponse(res, 'Artisan not found');
-    return successResponse(res, artisan, 'Artisan retrieved successfully');
+
+    // Phone number public response mein nahi bhejna chahiye.
+    const publicArtisan = {
+      id: artisan.id,
+      name: artisan.name,
+      preferred_language: artisan.preferred_language,
+      location: artisan.location,
+      created_at: artisan.created_at,
+    };
+    return successResponse(res, publicArtisan, 'Artisan retrieved successfully');
   } catch (err) {
     if (err.message === 'Database not configured') {
       return errorResponse(res, 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.', 503);
@@ -29,6 +51,10 @@ export async function getArtisanById(req, res, next) {
   }
 }
 
+/**
+ * POST /api/artisans
+ * AUTHENTICATED — authenticated user ke liye artisan create karo.
+ */
 export async function createArtisan(req, res, next) {
   try {
     const { isValid, errors } = validateArtisanInput(req.body);
@@ -52,8 +78,22 @@ export async function createArtisan(req, res, next) {
   }
 }
 
+/**
+ * PUT /api/artisans/:id
+ * AUTHENTICATED + OWNER ONLY.
+ */
 export async function updateArtisan(req, res, next) {
   try {
+    const authArtisanId = req.artisan?.id;
+    if (!authArtisanId) {
+      return errorResponse(res, 'Authentication required', 401);
+    }
+
+    // Owner check — sirf apna hi artisan update kar sakta hai.
+    if (req.params.id !== authArtisanId) {
+      return errorResponse(res, 'You do not have permission to modify this artisan', 403);
+    }
+
     const { isValid, errors } = validateArtisanInput(req.body, true);
     if (!isValid) return validationError(res, errors);
 
@@ -79,8 +119,22 @@ export async function updateArtisan(req, res, next) {
   }
 }
 
+/**
+ * DELETE /api/artisans/:id
+ * AUTHENTICATED + OWNER ONLY.
+ */
 export async function deleteArtisan(req, res, next) {
   try {
+    const authArtisanId = req.artisan?.id;
+    if (!authArtisanId) {
+      return errorResponse(res, 'Authentication required', 401);
+    }
+
+    // Owner check — sirf apna hi artisan delete kar sakta hai.
+    if (req.params.id !== authArtisanId) {
+      return errorResponse(res, 'You do not have permission to delete this artisan', 403);
+    }
+
     const artisan = await artisanService.deleteArtisan(req.params.id);
     if (!artisan) return notFoundResponse(res, 'Artisan not found');
     return successResponse(res, null, 'Artisan deleted successfully');
