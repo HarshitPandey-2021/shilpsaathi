@@ -50,6 +50,7 @@ DROP POLICY IF EXISTS products_owner_delete ON products;
 
 DROP POLICY IF EXISTS processing_logs_owner_select ON processing_logs;
 DROP POLICY IF EXISTS processing_logs_authenticated_insert ON processing_logs;
+DROP POLICY IF EXISTS processing_logs_owner_insert ON processing_logs;
 DROP POLICY IF EXISTS processing_logs_owner_update ON processing_logs;
 
 -- =============================================================================
@@ -106,7 +107,7 @@ CREATE POLICY products_owner_delete
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'processing_logs') THEN
-    CREATE POLICY processing_logs_owner_select
+    EXECUTE 'CREATE POLICY processing_logs_owner_select
       ON processing_logs FOR SELECT
       USING (
         product_id IN (
@@ -114,13 +115,19 @@ BEGIN
             SELECT id FROM artisans WHERE auth_uid = auth.uid()
           )
         )
-      );
+      )';
 
-    CREATE POLICY processing_logs_authenticated_insert
+    EXECUTE 'CREATE POLICY processing_logs_owner_insert
       ON processing_logs FOR INSERT
-      WITH CHECK (auth.role() = 'authenticated');
+      WITH CHECK (
+        product_id IN (
+          SELECT id FROM products WHERE artisan_id IN (
+            SELECT id FROM artisans WHERE auth_uid = auth.uid()
+          )
+        )
+      )';
 
-    CREATE POLICY processing_logs_owner_update
+    EXECUTE 'CREATE POLICY processing_logs_owner_update
       ON processing_logs FOR UPDATE
       USING (
         product_id IN (
@@ -128,7 +135,7 @@ BEGIN
             SELECT id FROM artisans WHERE auth_uid = auth.uid()
           )
         )
-      );
+      )';
   END IF;
 END $$;
 
@@ -140,10 +147,13 @@ END $$;
 --    linked. Run the backfill UPDATE in migration_003.
 -- 3. The Express backend (service role key) BYPASSES these policies — no
 --    impact on backend functionality.
--- 4. To test after applying:
+-- 4. processing_logs INSERT verifies product ownership (same chain as
+--    SELECT/UPDATE). Previously it only checked auth.role() = 'authenticated'
+--    which allowed any authenticated user to insert logs for any product.
+-- 5. To test after applying:
 --    - SET ROLE anon; SELECT * FROM products; → should return nothing
 --    - SET ROLE authenticated; (as owner) SELECT * FROM products; → own only
--- 5. If you need PUBLIC product listing, add:
+-- 6. If you need PUBLIC product listing, add:
 --    CREATE POLICY products_public_read_published
 --      ON products FOR SELECT USING (status = 'published');
 --    But this exposes product data to anyone with the anon key.
