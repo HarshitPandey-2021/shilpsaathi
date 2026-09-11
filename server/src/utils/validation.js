@@ -1,3 +1,60 @@
+import { config as appConfig } from '../config/index.js';
+
+// Max length for a product image URL. Supabase Storage public URLs are short;
+// this limit prevents raw base64 / data URI payloads from being smuggled through.
+const MAX_IMAGE_URL_LENGTH = 2048;
+
+/**
+ * Validates that a product image_url points to our own Supabase Storage bucket.
+ * Rejects data URIs, raw base64, external URLs, and oversized values.
+ *
+ * @param {string} imageUrl - The image URL to validate
+ * @returns {{ valid: boolean, error: string|null }}
+ */
+export function validateImageUrl(imageUrl) {
+  if (typeof imageUrl !== 'string') {
+    return { valid: false, error: 'image_url must be a string' };
+  }
+
+  const trimmed = imageUrl.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'image_url must not be empty' };
+  }
+
+  if (trimmed.length > MAX_IMAGE_URL_LENGTH) {
+    return { valid: false, error: `image_url must be ${MAX_IMAGE_URL_LENGTH} characters or less` };
+  }
+
+  // Reject data URIs (e.g. data:image/png;base64,...)
+  if (trimmed.startsWith('data:')) {
+    return { valid: false, error: 'Data URIs are not allowed for product images. Please upload the image first.' };
+  }
+
+  // Reject blob: and other non-http schemes
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return { valid: false, error: 'image_url must be a valid HTTP or HTTPS URL' };
+  }
+
+  // Must point to our Supabase Storage bucket
+  const bucket = appConfig.storage?.bucket || process.env.SUPABASE_STORAGE_BUCKET || 'product-images';
+  const storagePathSegment = `/storage/v1/object/public/${bucket}/`;
+
+  if (!trimmed.includes(storagePathSegment)) {
+    return { valid: false, error: 'image_url must reference an image in the approved storage bucket' };
+  }
+
+  // Verify the URL originates from our own Supabase instance.
+  // This prevents a malicious client from bypassing the bucket-path check
+  // by crafting a URL on a different domain that happens to contain the
+  // same storage path segment.
+  const supabaseUrl = (appConfig.supabase?.url || process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  if (supabaseUrl && !trimmed.toLowerCase().startsWith(supabaseUrl.toLowerCase())) {
+    return { valid: false, error: 'image_url must reference an image in the approved storage bucket' };
+  }
+
+  return { valid: true, error: null };
+}
+
 export function validateProductInput(body, isUpdate = false) {
   const errors = {};
 
@@ -36,8 +93,9 @@ export function validateProductInput(body, isUpdate = false) {
   }
 
   if (body.image_url !== undefined) {
-    if (typeof body.image_url !== 'string' || body.image_url.trim().length === 0) {
-      errors.image_url = 'image_url must be a non-empty string';
+    const imageValidation = validateImageUrl(body.image_url);
+    if (!imageValidation.valid) {
+      errors.image_url = imageValidation.error;
     }
   } else if (!isUpdate) {
     errors.image_url = 'Product image URL is required';
