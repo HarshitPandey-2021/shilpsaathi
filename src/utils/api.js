@@ -24,9 +24,14 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Default timeout for normal API requests (30s). AI/image/voice operations use
+// LONG_API_TIMEOUT (120s) because they call into model inference pipelines.
+const DEFAULT_API_TIMEOUT = 30000;
+const LONG_API_TIMEOUT = 120000;
+
 const TOKEN_KEY = 'shilpsaathi_auth_token';
 
-export function setAuthToken(token) {
+function setAuthToken(token) {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token);
   } else {
@@ -34,11 +39,11 @@ export function setAuthToken(token) {
   }
 }
 
-export function getAuthToken() {
+function getAuthToken() {
   return localStorage.getItem(TOKEN_KEY) || null;
 }
 
-export function clearAuthToken() {
+function clearAuthToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
@@ -59,35 +64,68 @@ function shouldAttachToken(url) {
 }
 
 async function fetchJSON(url, options = {}) {
-  const token = getAuthToken();
-  const attachToken = token && shouldAttachToken(url) && !options.headers?.['Authorization'];
+  // Extract timeout and caller signal from options; remaining options go to fetch.
+  const { timeout = DEFAULT_API_TIMEOUT, signal: callerSignal, ...fetchOptions } = options;
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      ...(attachToken ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
-    },
-  });
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeout);
 
-  const data = await response.json().catch(() => null);
-
-  // On 401, clear stale token so the app re-authenticates.
-  if (response.status === 401 && token) {
-    clearAuthToken();
-    window.dispatchEvent(new CustomEvent('shilpsaathi:unauthorized'));
+  // Honor a caller-provided AbortSignal in addition to our timeout.
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      controller.abort();
+    } else {
+      callerSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
   }
 
-  if (!response.ok) {
-    const message = data?.message || `Request failed with status ${response.status}`;
-    const error = new Error(message);
-    error.status = response.status;
-    error.data = data;
-    throw error;
-  }
+  try {
+    const token = getAuthToken();
+    const attachToken = token && shouldAttachToken(url) && !fetchOptions.headers?.['Authorization'];
 
-  return data;
+    const response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal,
+      headers: {
+        ...(fetchOptions.headers || {}),
+        ...(attachToken ? { Authorization: `Bearer ${token}` } : {}),
+        ...(fetchOptions.body && !(fetchOptions.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+      },
+    });
+
+    const data = await response.json().catch(() => null);
+
+    // On 401, clear stale token so the app re-authenticates.
+    if (response.status === 401 && token) {
+      clearAuthToken();
+      window.dispatchEvent(new CustomEvent('shilpsaathi:unauthorized'));
+    }
+
+    if (!response.ok) {
+      const message = data?.message || `Request failed with status ${response.status}`;
+      const error = new Error(message);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    // Convert a timeout abort into a distinguishable TimeoutError.
+    if (err.name === 'AbortError' && timedOut) {
+      const timeoutErr = new Error(`Request timed out after ${timeout / 1000}s`);
+      timeoutErr.name = 'TimeoutError';
+      timeoutErr.status = 408;
+      throw timeoutErr;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export const api = {
@@ -116,7 +154,7 @@ export const api = {
   uploadImage: (file) => {
     const formData = new FormData();
     formData.append('image', file);
-    return fetchJSON(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
+    return fetchJSON(`${API_BASE_URL}/upload`, { method: 'POST', body: formData, timeout: LONG_API_TIMEOUT });
   },
 
   uploadImageStream: (file, onStage) => {
@@ -177,6 +215,7 @@ export const api = {
     fetchJSON(`${API_BASE_URL}/enhance-image`, {
       method: 'POST',
       body: JSON.stringify({ image }),
+      timeout: LONG_API_TIMEOUT,
     }),
 
   processVoice: ({ audioBlob = null, transcript = null, language = 'hi', targetLanguage = 'en' } = {}) => {
@@ -186,12 +225,13 @@ export const api = {
       if (transcript) formData.append('transcript', transcript);
       formData.append('language', language);
       formData.append('targetLanguage', targetLanguage);
-      return fetchJSON(`${API_BASE_URL}/process-voice`, { method: 'POST', body: formData });
+      return fetchJSON(`${API_BASE_URL}/process-voice`, { method: 'POST', body: formData, timeout: LONG_API_TIMEOUT });
     }
 
     return fetchJSON(`${API_BASE_URL}/process-voice`, {
       method: 'POST',
       body: JSON.stringify({ transcript, language, targetLanguage }),
+      timeout: LONG_API_TIMEOUT,
     });
   },
 
@@ -202,7 +242,7 @@ export const api = {
     const url = productId
       ? `${API_BASE_URL}/products/${productId}/transcribe`
       : `${API_BASE_URL}/process-voice`;
-    return fetchJSON(url, { method: 'POST', body: formData });
+    return fetchJSON(url, { method: 'POST', body: formData, timeout: LONG_API_TIMEOUT });
   },
 
   generateCatalog: (productId, transcript, language = 'hi', targetLanguage = 'en') => {
@@ -212,6 +252,7 @@ export const api = {
     return fetchJSON(url, {
       method: 'POST',
       body: JSON.stringify({ transcript, language, targetLanguage }),
+      timeout: LONG_API_TIMEOUT,
     });
   },
 };
