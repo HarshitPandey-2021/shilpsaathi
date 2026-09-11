@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { authenticate } from '../middleware/auth.js';
+import { otpSendProtection, otpVerifyProtection } from '../middleware/otpProtection.js';
 import {
   getMe,
   syncArtisan,
@@ -11,8 +12,11 @@ import {
 const router = Router();
 
 // Public onboarding endpoints (no auth required).
-router.post('/send-otp', asyncHandler(sendOtp));
-router.post('/verify-otp', asyncHandler(verifyOtp));
+// OTP abuse protection guards both the send and verify paths to prevent
+// SMS-credit exhaustion and brute-force attacks, while preserving the
+// existing Supabase Auth OTP flow.
+router.post('/send-otp', otpSendProtection, asyncHandler(sendOtp));
+router.post('/verify-otp', otpVerifyProtection, asyncHandler(verifyOtp));
 
 // Authenticated endpoints (require valid Bearer token).
 router.get('/me', authenticate, asyncHandler(getMe));

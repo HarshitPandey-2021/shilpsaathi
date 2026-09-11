@@ -62,6 +62,14 @@ export const config = {
     strictWindowMs: positiveInt(process.env.RATE_LIMIT_STRICT_WINDOW_MS, 10 * 60 * 1000),
     strictMax: positiveInt(process.env.RATE_LIMIT_STRICT_MAX, 20),
   },
+  otp: {
+    resendCooldownMs: positiveInt(process.env.OTP_RESEND_COOLDOWN_MS, 60 * 1000),
+    maxSendsPerWindow: positiveInt(process.env.OTP_MAX_SENDS_PER_WINDOW, 5),
+    sendWindowMs: positiveInt(process.env.OTP_SEND_WINDOW_MS, 15 * 60 * 1000),
+    maxSendsPerDay: positiveInt(process.env.OTP_MAX_SENDS_PER_DAY, 10),
+    maxFailedAttempts: positiveInt(process.env.OTP_MAX_FAILED_ATTEMPTS, 5),
+    lockDurationMs: positiveInt(process.env.OTP_LOCK_DURATION_MS, 15 * 60 * 1000),
+  },
 };
 
 export function isSupabaseConfigured() {
