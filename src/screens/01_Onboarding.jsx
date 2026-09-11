@@ -11,9 +11,13 @@ const FEATURES = [
 ];
 
 export default function OnboardingScreen() {
-  const { goToStep, lang, setLang, t, getArtisanId, resolveArtisan, confirmedPhone } = useCraft();
+  const { goToStep, lang, setLang, t, getArtisanId, resolveArtisan, confirmedPhone, sendOtp, verifyOtp, isAuthenticated } = useCraft();
   const [isPlaying, setIsPlaying] = useState(false);
   const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const audioCapableLang = t.code === 'hi-IN' || t.code === 'en-IN';
 
@@ -23,20 +27,57 @@ export default function OnboardingScreen() {
     await playNativeAudio(t.speechText, t.code, () => setIsPlaying(true), () => setIsPlaying(false));
   };
 
-  const handleStart = async () => {
+  const handleSendOtp = async () => {
     setError('');
-    if (!confirmedPhone) {
-      if (phone.length !== 10) {
-        setError('Please enter a valid 10-digit mobile number');
-        return;
-      }
-      const id = await resolveArtisan(phone);
-      if (!id) {
-        setError('Could not verify mobile number. Please try again.');
-        return;
-      }
+    if (phone.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
     }
-    goToStep(2);
+    setSending(true);
+    try {
+      await sendOtp(phone);
+      setOtpSent(true);
+    } catch (e) {
+      setError(e.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError('');
+    if (!otp || otp.length < 4) {
+      setError('Please enter the verification code');
+      return;
+    }
+    setVerifying(true);
+    try {
+      const result = await verifyOtp(phone, otp, { preferred_language: lang });
+      if (result?.access_token) {
+        goToStep(2);
+      } else {
+        setError('Verification failed. Please try again.');
+      }
+    } catch (e) {
+      setError(e.message || 'Invalid or expired verification code.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleStart = async () => {
+    // If already authenticated via OTP, proceed.
+    if (isAuthenticated) {
+      goToStep(2);
+      return;
+    }
+    // If OTP sent, verify it.
+    if (otpSent) {
+      await handleVerifyOtp();
+      return;
+    }
+    // Otherwise, send OTP first.
+    await handleSendOtp();
   };
 
   return (
@@ -136,17 +177,40 @@ export default function OnboardingScreen() {
               value={phone}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
               placeholder="10 digit mobile number"
+              disabled={otpSent}
               className="field-input w-full text-center font-black tracking-widest py-3"
             />
+            {otpSent && (
+              <div className="space-y-2 animate-fade-in">
+                <p className="text-center text-xs font-bold text-charcoal">Enter Verification Code</p>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="6 digit code"
+                  className="field-input w-full text-center font-black tracking-widest py-3"
+                />
+                <button
+                  onClick={handleSendOtp}
+                  disabled={sending}
+                  className="text-xs font-bold text-terracotta underline disabled:opacity-50"
+                >
+                  {sending ? 'Resending...' : 'Resend code'}
+                </button>
+              </div>
+            )}
             {error && <p className="text-center text-xs font-bold text-red-500">{error}</p>}
           </div>
         )}
 
         <button
           onClick={handleStart}
-          className="touch mt-auto flex w-full items-center justify-center gap-2 rounded-3xl bg-craft px-5 py-4 text-sm font-bold text-white shadow-lift transition active:scale-[0.98] hover:brightness-110"
+          disabled={sending || verifying}
+          className="touch mt-auto flex w-full items-center justify-center gap-2 rounded-3xl bg-craft px-5 py-4 text-sm font-bold text-white shadow-lift transition active:scale-[0.98] hover:brightness-110 disabled:opacity-60"
         >
-          {t.startBtn}
+          {verifying ? 'Verifying...' : sending ? 'Sending...' : otpSent ? 'Verify & Continue' : t.startBtn}
           <ArrowRight size={18} strokeWidth={2.6} />
         </button>
 

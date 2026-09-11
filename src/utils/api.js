@@ -24,17 +24,60 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+const TOKEN_KEY = 'shilpsaathi_auth_token';
+
+export function setAuthToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function getAuthToken() {
+  return localStorage.getItem(TOKEN_KEY) || null;
+}
+
+export function clearAuthToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+// Public endpoints that should NEVER include an auth token.
+const PUBLIC_ENDPOINTS = new Set([
+  '/api/auth/send-otp',
+  '/api/auth/verify-otp',
+  '/api/artisans/resolve',
+  '/api/health',
+]);
+
+function shouldAttachToken(url) {
+  const path = url.replace(API_BASE_URL, '');
+  for (const pub of PUBLIC_ENDPOINTS) {
+    if (path === pub || path.startsWith(pub + '?')) return false;
+  }
+  return true;
+}
 
 async function fetchJSON(url, options = {}) {
+  const token = getAuthToken();
+  const attachToken = token && shouldAttachToken(url) && !options.headers?.['Authorization'];
+
   const response = await fetch(url, {
     ...options,
     headers: {
       ...(options.headers || {}),
+      ...(attachToken ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
     },
   });
 
   const data = await response.json().catch(() => null);
+
+  // On 401, clear stale token so the app re-authenticates.
+  if (response.status === 401 && token) {
+    clearAuthToken();
+    window.dispatchEvent(new CustomEvent('shilpsaathi:unauthorized'));
+  }
 
   if (!response.ok) {
     const message = data?.message || `Request failed with status ${response.status}`;
@@ -49,6 +92,26 @@ async function fetchJSON(url, options = {}) {
 
 export const api = {
   getHealth: () => fetchJSON(`${API_BASE_URL}/health`),
+
+  sendOtp: (phone) =>
+    fetchJSON(`${API_BASE_URL}/auth/send-otp`, {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    }),
+
+  verifyOtp: (phone, token, extras = {}) =>
+    fetchJSON(`${API_BASE_URL}/auth/verify-otp`, {
+      method: 'POST',
+      body: JSON.stringify({ phone, token, ...extras }),
+    }),
+
+  getMe: () => fetchJSON(`${API_BASE_URL}/auth/me`),
+
+  syncArtisan: (data = {}) =>
+    fetchJSON(`${API_BASE_URL}/auth/sync`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   uploadImage: (file) => {
     const formData = new FormData();
@@ -153,5 +216,5 @@ export const api = {
   },
 };
 
-export { API_BASE_URL };
+export { API_BASE_URL, setAuthToken, getAuthToken, clearAuthToken };
 

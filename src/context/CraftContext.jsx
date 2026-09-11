@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { api, setAuthToken, getAuthToken, clearAuthToken } from '../utils/api.js';
 
 const CraftContext = createContext();
 
@@ -533,6 +534,8 @@ export function CraftProvider({ children }) {
   const API = RAW_API.endsWith('/api') ? RAW_API : `${RAW_API}/api`;
   const [artisanId, setArtisanId] = useState(localStorage.getItem('shilpsaathi_artisan_uuid') || null);
   const [confirmedPhone, setConfirmedPhone] = useState(localStorage.getItem('shilpsaathi_artisan_phone') || null);
+  const [authToken, setAuthTokenState] = useState(getAuthToken());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const getDeviceHandle = () => {
     let h = localStorage.getItem('shilpsaathi_device_id');
@@ -542,6 +545,87 @@ export function CraftProvider({ children }) {
     }
     return h;
   };
+
+  // ---- Auth methods ----
+
+  const handleSendOtp = async (phone) => {
+    return api.sendOtp(phone);
+  };
+
+  const handleVerifyOtp = async (phone, token, extras = {}) => {
+    const result = await api.verifyOtp(phone, token, extras);
+    if (result?.access_token) {
+      setAuthToken(result.access_token);
+      setAuthTokenState(result.access_token);
+      setIsAuthenticated(true);
+      if (result?.artisan?.id) {
+        localStorage.setItem('shilpsaathi_artisan_uuid', result.artisan.id);
+        if (result.artisan.phone) {
+          localStorage.setItem('shilpsaathi_artisan_phone', result.artisan.phone);
+          setConfirmedPhone(result.artisan.phone);
+        }
+        setArtisanId(result.artisan.id);
+      }
+    }
+    return result;
+  };
+
+  const handleSyncArtisan = async (data = {}) => {
+    const result = await api.syncArtisan(data);
+    if (result?.artisan?.id) {
+      localStorage.setItem('shilpsaathi_artisan_uuid', result.artisan.id);
+      if (result.artisan.phone) {
+        localStorage.setItem('shilpsaathi_artisan_phone', result.artisan.phone);
+        setConfirmedPhone(result.artisan.phone);
+      }
+      setArtisanId(result.artisan.id);
+    }
+    return result;
+  };
+
+  const logout = () => {
+    clearAuthToken();
+    setAuthTokenState(null);
+    setIsAuthenticated(false);
+    setArtisanId(null);
+    setConfirmedPhone('');
+    localStorage.removeItem('shilpsaathi_artisan_uuid');
+    localStorage.removeItem('shilpsaathi_artisan_phone');
+  };
+
+  // Validate existing token on mount.
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token) return;
+    api.getMe()
+      .then((res) => {
+        if (res?.artisan?.id) {
+          setArtisanId(res.artisan.id);
+          if (res.artisan.phone) {
+            setConfirmedPhone(res.artisan.phone);
+            localStorage.setItem('shilpsaathi_artisan_phone', res.artisan.phone);
+          }
+          localStorage.setItem('shilpsaathi_artisan_uuid', res.artisan.id);
+          setIsAuthenticated(true);
+        } else {
+          logout();
+        }
+      })
+      .catch(() => {
+        logout();
+      });
+  }, []);
+
+  // Listen for 401 events from api.js.
+  useEffect(() => {
+    const onUnauthorized = () => {
+      clearAuthToken();
+      setAuthTokenState(null);
+      setIsAuthenticated(false);
+    };
+    window.addEventListener('shilpsaathi:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('shilpsaathi:unauthorized', onUnauthorized);
+  }, []);
 
   const resolveArtisan = async (phone) => {
     const handle = phone || localStorage.getItem('shilpsaathi_artisan_phone');
@@ -647,6 +731,12 @@ export function CraftProvider({ children }) {
         resolveArtisan,
         linkPhone,
         confirmedPhone,
+        authToken,
+        isAuthenticated,
+        sendOtp: handleSendOtp,
+        verifyOtp: handleVerifyOtp,
+        syncArtisan: handleSyncArtisan,
+        logout,
       }}
     >
       {children}

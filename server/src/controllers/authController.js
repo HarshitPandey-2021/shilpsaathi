@@ -49,14 +49,29 @@ export async function syncArtisan(req, res, next) {
       return errorResponse(res, 'No verified phone on this account.', 400);
     }
 
+    const authUserId = req.supabaseUser.id;
+
     const { data: existing } = await supabase
       .from('artisans')
-      .select('id, name, phone, preferred_language, location, created_at')
+      .select('id, name, phone, preferred_language, location, created_at, auth_uid')
       .eq('phone', phone)
       .maybeSingle();
 
     if (existing) {
-      return successResponse(res, { artisan: existing, created: false }, 'Artisan profile synced');
+      // Link auth_uid if missing.
+      if (existing.auth_uid !== authUserId) {
+        const { data: linked } = await supabase
+          .from('artisans')
+          .update({ auth_uid: authUserId })
+          .eq('id', existing.id)
+          .select('id, name, phone, preferred_language, location, created_at')
+          .single();
+        if (linked) {
+          return successResponse(res, { artisan: linked, created: false, linked: true }, 'Artisan profile synced');
+        }
+      }
+      const { id, name: n, phone: p, preferred_language, location, created_at } = existing;
+      return successResponse(res, { artisan: { id, name: n, phone: p, preferred_language, location, created_at }, created: false }, 'Artisan profile synced');
     }
 
     const name = req.body?.name?.trim() || 'Artisan';
@@ -65,7 +80,7 @@ export async function syncArtisan(req, res, next) {
 
     const { data: created, error } = await supabase
       .from('artisans')
-      .insert({ name, phone, preferred_language: preferredLanguage, location })
+      .insert({ name, phone, preferred_language: preferredLanguage, location, auth_uid: authUserId })
       .select('id, name, phone, preferred_language, location, created_at')
       .single();
 
@@ -161,19 +176,89 @@ export async function verifyOtp(req, res, next) {
       return errorResponse(res, 'Verification succeeded but no session returned.', 500);
     }
 
-    const { data: artisan } = await supabase
+    const authUserId = data.user.id;
+
+    // Lookup artisan by verified phone.
+    const { data: existingArtisan } = await supabase
       .from('artisans')
-      .select('id, name, phone, preferred_language, location, created_at')
+      .select('id, name, phone, preferred_language, location, created_at, auth_uid')
       .eq('phone', mobile.normalized)
       .maybeSingle();
+
+    let artisan = existingArtisan;
+    let created = false;
+    let linked = false;
+
+    if (artisan) {
+      // Link auth_uid if not already set or if it changed.
+      if (artisan.auth_uid !== authUserId) {
+        const { data: linkedArtisan, error: linkError } = await supabase
+          .from('artisans')
+          .update({ auth_uid: authUserId })
+          .eq('id', artisan.id)
+          .select('id, name, phone, preferred_language, location, created_at')
+          .single();
+        if (!linkError && linkedArtisan) {
+          artisan = linkedArtisan;
+          linked = true;
+        }
+      }
+    } else {
+      // No artisan for this phone — create one linked to the auth user.
+      const name = req.body?.name?.trim() || 'Artisan';
+      const preferredLanguage = req.body?.preferred_language || 'hi';
+      const location = req.body?.location || null;
+
+      const { data: newArtisan, error: createError } = await supabase
+        .from('artisans')
+        .insert({
+          name,
+          phone: mobile.normalized,
+          preferred_language: preferredLanguage,
+          location,
+          auth_uid: authUserId,
+        })
+        .select('id, name, phone, preferred_language, location, created_at')
+        .single();
+
+      if (createError) {
+        if (createError.code === '23505') {
+          // Race: another request created the artisan. Re-link auth_uid.
+          const { data: raced } = await supabase
+            .from('artisans')
+            .select('id, name, phone, preferred_language, location, created_at, auth_uid')
+            .eq('phone', mobile.normalized)
+            .single();
+          if (raced && raced.auth_uid !== authUserId) {
+            const { data: relinked } = await supabase
+              .from('artisans')
+              .update({ auth_uid: authUserId })
+              .eq('id', raced.id)
+              .select('id, name, phone, preferred_language, location, created_at')
+              .single();
+            if (relinked) { artisan = relinked; linked = true; }
+          } else if (raced) {
+            artisan = raced;
+          }
+        } else {
+          console.error('[Auth] Failed to create artisan:', createError.message);
+          return errorResponse(res, 'Failed to create artisan profile.', 500);
+        }
+      } else {
+        artisan = newArtisan;
+        created = true;
+      }
+    }
 
     return successResponse(res, {
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
       expires_in: data.session.expires_in,
       token_type: 'Bearer',
-      user: { id: data.user.id, phone: data.user.phone },
+      user: { id: authUserId, phone: data.user.phone },
       artisan: artisan || null,
+      created,
+      linked,
       needs_onboarding: !artisan,
     }, 'Phone verified successfully');
   } catch (err) {
