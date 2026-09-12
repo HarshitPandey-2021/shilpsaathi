@@ -7,6 +7,7 @@ import artisanRoutes from './routes/artisanRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import smsHookRoutes from './routes/smsHookRoutes.js';
 import { rateLimit } from './middleware/rateLimiter.js';
 import { authenticate } from './middleware/auth.js';
 
@@ -93,6 +94,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/artisans', artisanRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/hooks', smsHookRoutes);
 app.use('/api', aiRoutes);
 
 app.use(notFoundHandler);

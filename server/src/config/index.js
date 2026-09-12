@@ -70,6 +70,13 @@ export const config = {
     maxFailedAttempts: positiveInt(process.env.OTP_MAX_FAILED_ATTEMPTS, 5),
     lockDurationMs: positiveInt(process.env.OTP_LOCK_DURATION_MS, 15 * 60 * 1000),
   },
+  brevo: {
+    apiKey: (process.env.BREVO_API_KEY || '').trim(),
+    smsSender: (process.env.BREVO_SMS_SENDER || '').trim(),
+  },
+  smsHook: {
+    secret: (process.env.SUPABASE_SMS_HOOK_SECRET || '').trim(),
+  },
 };
 
 export function isSupabaseConfigured() {
