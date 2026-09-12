@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { handleSendSmsHook } from '../services/brevoSmsHook.js';
+import { handleSendSmsHook } from '../services/textBeeSmsHook.js';
 
 const router = Router();
 

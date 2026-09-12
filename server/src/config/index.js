@@ -70,9 +70,9 @@ export const config = {
     maxFailedAttempts: positiveInt(process.env.OTP_MAX_FAILED_ATTEMPTS, 5),
     lockDurationMs: positiveInt(process.env.OTP_LOCK_DURATION_MS, 15 * 60 * 1000),
   },
-  brevo: {
-    apiKey: (process.env.BREVO_API_KEY || '').trim(),
-    smsSender: (process.env.BREVO_SMS_SENDER || '').trim(),
+  textbee: {
+    // Project convention uses TEXTBEE_API as the server-side TextBee key.
+    apiKey: (process.env.TEXTBEE_API || process.env.TEXTBEE_API_KEY || '').trim(),
   },
   smsHook: {
     secret: (process.env.SUPABASE_SMS_HOOK_SECRET || '').trim(),

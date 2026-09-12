@@ -1,22 +1,22 @@
 /**
- * Supabase Send SMS Hook → Brevo transactional SMS delivery.
+ * Supabase Send SMS Hook → TextBee SMS delivery.
  *
  * Architecture (unchanged auth flow):
  *   POST /api/auth/send-otp → otpProtection → supabase.auth.signInWithOtp()
  *     → Supabase invokes THIS hook with { user: { phone }, sms: { otp } }
- *     → this handler delivers the Supabase-generated OTP via Brevo only.
+ *     → this handler delivers the Supabase-generated OTP via TextBee only.
  *
  * Verification stays untouched: POST /api/auth/verify-otp →
  * supabase.auth.verifyOtp() → JWT/artisan flow.
  *
  * This module NEVER generates, stores, or verifies OTPs. The OTP value is
- * used only in-memory to build the Brevo request body and is never logged.
+ * used only in-memory to build the TextBee request body and is never logged.
  */
 
 import { config } from '../config/index.js';
 import { normalizeIndianMobile } from '../utils/validation.js';
 
-const BREVO_SEND_URL = 'https://api.brevo.com/v3/transactionalSMS/send';
+const TEXTBEE_SEND_URL = 'https://api.textbee.dev/api/v1/gateway/send-sms';
 
 function safeEqual(a, b) {
   const x = String(a || '');
@@ -45,16 +45,13 @@ export function extractSmsHookPayload(body) {
   return { valid: true, phone: mobile.normalized, otp };
 }
 
-export function buildBrevoSmsRequest({ phone, otp }, { sender } = {}) {
-  const resolvedSender = String(sender || config.brevo?.smsSender || '').trim();
-  if (!resolvedSender) throw Object.assign(new Error('SMS sender is not configured'), { statusCode: 500 });
+export function buildTextBeeSmsRequest({ phone, otp }) {
   return {
-    url: BREVO_SEND_URL,
-    headers: { accept: 'application/json', 'content-type': 'application/json', 'api-key': config.brevo?.apiKey || '' },
+    url: TEXTBEE_SEND_URL,
+    headers: { 'content-type': 'application/json', 'x-api-key': config.textbee?.apiKey || '' },
     body: {
-      recipient: phone,
-      sender: resolvedSender,
-      content: `Your ShilpSaathi verification code is: ${otp}. It expires soon.`,
+      recipients: [phone],
+      message: `Your ShilpSaathi verification code is: ${otp}. It expires soon.`,
     },
   };
 }
@@ -76,26 +73,20 @@ export async function handleSendSmsHook(req, res) {
     return res.status(400).json({ success: false, message: extracted.error });
   }
 
-  const apiKey = (config.brevo?.apiKey || '').trim();
+  const apiKey = (config.textbee?.apiKey || '').trim();
   if (!apiKey) {
     return res.status(500).json({ success: false, message: 'SMS provider is not configured.' });
   }
 
-  let request;
-  try {
-    request = buildBrevoSmsRequest(extracted);
-  } catch (err) {
-    const status = err.statusCode || 500;
-    return res.status(status).json({ success: false, message: err.message });
-  }
+  const request = buildTextBeeSmsRequest(extracted);
 
   try {
-    const brevoRes = await fetch(request.url, {
+    const textBeeRes = await fetch(request.url, {
       method: 'POST',
       headers: request.headers,
       body: JSON.stringify(request.body),
     });
-    if (!brevoRes.ok) {
+    if (!textBeeRes.ok) {
       return res.status(502).json({ success: false, message: 'Failed to deliver verification SMS.' });
     }
     // Supabase treats empty 200 as hook success.
