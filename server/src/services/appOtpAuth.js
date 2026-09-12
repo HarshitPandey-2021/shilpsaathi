@@ -38,7 +38,7 @@ export function hashOtp(otp, phone) {
 }
 
 export function buildOtpMessage(otp) {
-  return `Your ShilpSaathi verification code is: ${otp}. It expires soon.`;
+  return `Your ShilpSaathi code is ${otp}. Expires in 10 minutes.`;
 }
 
 export function buildTextBeeRequest({ phone, message }) {
