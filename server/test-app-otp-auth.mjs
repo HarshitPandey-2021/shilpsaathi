@@ -27,8 +27,10 @@ function mockRes() {
 }
 
 config.textbee.apiKey = 'test-key-from-env';
-config.appAuth.jwtSecret = 'test-jwt-secret-0123456789';
+config.appAuth.jwtSecret = 'test-jwt-secret-0123456789abcdef';
 config.appAuth.otpPepper = 'test-pepper';
+process.env.APP_JWT_SECRET = config.appAuth.jwtSecret;
+process.env.APP_OTP_PEPPER = config.appAuth.otpPepper;
 resetOtpStore();
 
 // SEND: secure OTP, hash-only persistence, TextBee shape
@@ -102,7 +104,7 @@ resetOtpStore();
   await authenticate({ headers: { authorization: 'Bearer bad.token.here' } }, r2, () => { n2 = true; });
   assert(!n2 && r2.out.status === 401, 'invalid JWT 401');
 }
-// Supabase OTP removal + wiring
+// Supabase OTP removal + wiring + hardening coverage
 {
   const fs = await import('node:fs');
   const ctrlSrc = fs.readFileSync(new URL('./src/controllers/authController.js', import.meta.url), 'utf8');
@@ -111,6 +113,28 @@ resetOtpStore();
   assert(ctrlSrc.includes('signAppToken') && ctrlSrc.includes('verifyStoredOtp'), 'backend OTP+JWT wired');
   const authSrc = fs.readFileSync(new URL('./src/middleware/auth.js', import.meta.url), 'utf8');
   assert(!authSrc.includes('supabase.auth.getUser'), 'middleware off Supabase Auth');
+  const tokenSrc = fs.readFileSync(new URL('./src/services/appToken.js', import.meta.url), 'utf8');
+  assert(!/console\.(log|info|debug)/.test(tokenSrc), 'JWT secret never logged');
+  const cfgSrc = fs.readFileSync(new URL('./src/config/index.js', import.meta.url), 'utf8');
+  assert(!cfgSrc.includes('BREVO_API_KEY') && !cfgSrc.includes('BREVO_SMS_SENDER'), 'dead Brevo SMS config gone');
+  const appSrc = fs.readFileSync(new URL('./src/app.js', import.meta.url), 'utf8');
+  assert(appSrc.includes("app.set('trust proxy', 1)"), 'trust proxy exactly one hop');
+  assert(!/SERVICE_ROLE|SUPABASE_SERVICE_ROLE_KEY/.test(appSrc), 'service key not in app wiring');
+  // missing/weak secret fails closed
+  const keep = config.appAuth.jwtSecret;
+  config.appAuth.jwtSecret = '';
+  assert(verifyAppToken(signAppTokenForTest()) === null, 'missing secret rejects tokens');
+  try { signAppToken({ artisanId: 'a1', phone: '+915555555555' }); assert(false, 'missing secret should throw'); }
+  catch (e) { assert(e.statusCode === 503, 'missing secret fails closed 503'); }
+  config.appAuth.jwtSecret = 'short';
+  assert(verifyAppToken('x.y.z') === null, 'weak secret rejects tokens');
+  config.appAuth.jwtSecret = keep;
+  // issuer + required claims enforced
+  const forged = signAppToken({ artisanId: '', phone: '' });
+  assert(!verifyAppToken(forged), 'empty identity claims rejected');
+}
+function signAppTokenForTest() {
+  return 'aaa.bbb.ccc';
 }
 
 console.log(`\nRESULTS: ${passed} passed, ${failed} failed`);

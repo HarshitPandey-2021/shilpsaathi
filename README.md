@@ -57,8 +57,25 @@ Open ShilpSaathi -> Create product -> Take/upload photo -> AI image enhancement
 | Product CRUD API | Implemented | Product create, read, update, delete, listing, and status routes exist. |
 | Artisan CRUD API | Implemented | Artisan create, read, update, and delete routes exist. |
 | Product image storage | Implemented, configuration-dependent | Enhanced files are uploaded to the configured Supabase bucket. |
-| Authentication and authorization | Planned | No login, session, or enforced ownership model is implemented. |
+| Authentication and authorization | Implemented | Backend-managed phone OTP via TextBee SMS; server-signed App JWT; ownership enforced server-side. |
 | Offline mode | Planned | PWA tooling exists, but no verified offline product workflow or local persistence exists. |
+
+## Authentication Architecture (current)
+
+```text
+TextBee SMS → backend-generated OTP → backend hash verification
+  → server-signed App JWT → backend auth middleware → artisan ownership
+  → Supabase PostgreSQL/Storage via server-side service_role client
+```
+
+- TextBee is the SMS delivery provider only; OTPs are generated and verified by the backend.
+- Supabase Auth OTP is no longer used; no Supabase Send SMS Hook is required.
+- Supabase PostgreSQL/Storage remain the data layer.
+- Backend authorization is authoritative for API requests. The server uses the
+  service_role key server-side, which bypasses RLS; Supabase RLS therefore does
+  not authorize API requests and remains direct DB/PostgREST defense-in-depth.
+- `artisans.auth_uid` is legacy/dead runtime auth schema (Supabase Auth linkage);
+  current sessions reference `artisans.id` + verified phone from the App JWT.
 
 ## Current Implementation
 

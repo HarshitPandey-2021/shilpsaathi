@@ -84,6 +84,8 @@ export const config = {
     otpPepper: (process.env.APP_OTP_PEPPER || '').trim(),
   },
   smsHook: {
+    // LEGACY: Supabase Send SMS Hook is no longer used (backend-managed OTP).
+    // Kept only so older environments do not crash on load; unused at runtime.
     secret: (process.env.SUPABASE_SMS_HOOK_SECRET || '').trim(),
   },
 };

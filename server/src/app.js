@@ -12,6 +12,10 @@ import { authenticate } from './middleware/auth.js';
 
 const app = express();
 
+// Behind Render/production reverse proxy, Express must trust exactly one
+// proxy hop so req.ip is the client IP without trusting spoofed headers.
+app.set('trust proxy', 1);
+
 const allowedOrigins = (config.cors?.origin || '*')
   .split(',')
   .map((o) => o.trim())
