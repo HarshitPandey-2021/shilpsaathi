@@ -1,22 +1,17 @@
 /**
  * Authentication & artisan-identity middleware for ShilpSaathi.
  *
- * Phone-based JWT model:
- *   1. Frontend uses Supabase JS client SDK to perform phone OTP sign-in.
- *   2. Supabase issues a short-lived JWT (access_token).
- *   3. Frontend sends `Authorization: Bearer <token>` on every API call.
- *   4. This middleware verifies the token via Supabase, extracts the verified
- *      phone number, and resolves the corresponding artisan row server-side.
- *   5. The authenticated artisan is attached as req.artisan. Routes NEVER
- *      trust a client-supplied artisan_id for ownership decisions.
+ * Backend-managed JWT model (TextBee OTP):
+ *   POST /api/auth/send-otp -> backend OTP via TextBee
+ *   POST /api/auth/verify-otp -> backend verifies hash, issues app JWT
+ *   Authorization: Bearer <app JWT> -> verified here with APP_JWT_SECRET.
  *
- * Existing artisan migration:
- *   Artisans already have a canonical E.164 phone (+91XXXXXXXXXX). Supabase
- *   Auth also stores phone in E.164 after OTP verification, so a simple
- *   phone equality match links an authenticated user to their artisan record.
+ * Artisan identity is resolved server-side by verified JWT claims and the
+ * artisans table. Routes NEVER trust client-supplied artisan_id.
  */
 
 import { supabase } from '../config/index.js';
+import { verifyAppToken } from '../services/appToken.js';
 
 /**
  * Extracts and validates a Bearer token from the Authorization header.
@@ -31,9 +26,9 @@ function extractBearerToken(req) {
 
 /**
  * Core authentication middleware.
- * Verifies the Supabase JWT and resolves the artisan identity server-side.
+ * Verifies the backend application JWT and resolves artisan server-side.
  *
- * On success: attaches req.artisan and req.supabaseUser, calls next().
+ * On success: attaches req.artisan and req.appUser, calls next().
  * On failure: returns 401/403 and does NOT call next().
  */
 export async function authenticate(req, res, next) {
@@ -53,29 +48,31 @@ export async function authenticate(req, res, next) {
   }
 
   try {
-    // Verify the JWT via Supabase Auth.
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Verify the backend application JWT (HS256, server secret).
+    const claims = verifyAppToken(token);
 
-    if (error || !user) {
+    if (!claims) {
       return res.status(401).json({
         success: false,
         message: 'Invalid or expired token. Please sign in again.',
       });
     }
 
-    // The verified phone number is the canonical identity link.
-    const phone = (user.phone || '').trim();
-    if (!phone) {
+    // JWT identity: server-resolved artisan id + verified phone.
+    const artisanId = String(claims.sub || '').trim();
+    const phone = String(claims.phone || '').trim();
+    if (!artisanId || !phone) {
       return res.status(403).json({
         success: false,
         message: 'Your account has no verified phone number.',
       });
     }
 
-    // Resolve artisan by verified phone (E.164, unique).
+    // Resolve artisan by id AND phone (prevents id substitution).
     const { data: artisan, error: artisanError } = await supabase
       .from('artisans')
       .select('id, name, phone, preferred_language, location, created_at')
+      .eq('id', artisanId)
       .eq('phone', phone)
       .maybeSingle();
 
@@ -96,7 +93,7 @@ export async function authenticate(req, res, next) {
 
     // Attach authenticated identity to the request.
     req.artisan = artisan;
-    req.supabaseUser = user;
+    req.appUser = { artisanId: artisan.id, phone: artisan.phone };
     req.authToken = token;
     next();
   } catch (err) {
@@ -120,17 +117,18 @@ export async function optionalAuth(req, res, next) {
   if (!token) return next();
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (!error && user && user.phone) {
+    const claims = verifyAppToken(token);
+    if (claims?.sub && claims?.phone) {
       const { data: artisan } = await supabase
         .from('artisans')
         .select('id, name, phone, preferred_language, location, created_at')
-        .eq('phone', user.phone)
+        .eq('id', String(claims.sub))
+        .eq('phone', String(claims.phone))
         .maybeSingle();
 
       if (artisan) {
         req.artisan = artisan;
-        req.supabaseUser = user;
+        req.appUser = { artisanId: artisan.id, phone: artisan.phone };
         req.authToken = token;
       }
     }

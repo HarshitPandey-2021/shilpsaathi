@@ -69,10 +69,19 @@ export const config = {
     maxSendsPerDay: positiveInt(process.env.OTP_MAX_SENDS_PER_DAY, 10),
     maxFailedAttempts: positiveInt(process.env.OTP_MAX_FAILED_ATTEMPTS, 5),
     lockDurationMs: positiveInt(process.env.OTP_LOCK_DURATION_MS, 15 * 60 * 1000),
+    // Backend-managed OTP lifecycle (TextBee delivery, HMAC-hashed storage).
+    length: positiveInt(process.env.APP_OTP_LENGTH, 6),
+    ttlMs: positiveInt(process.env.APP_OTP_TTL_MS, 5 * 60 * 1000),
   },
   textbee: {
     // Project convention uses TEXTBEE_API as the server-side TextBee key.
     apiKey: (process.env.TEXTBEE_API || process.env.TEXTBEE_API_KEY || '').trim(),
+  },
+  appAuth: {
+    // Server-only JWT signing secret. No default — auth is fail-closed.
+    jwtSecret: (process.env.APP_JWT_SECRET || '').trim(),
+    jwtExpiresInSec: positiveInt(process.env.APP_JWT_EXPIRES_IN_SEC, 7 * 24 * 60 * 60),
+    otpPepper: (process.env.APP_OTP_PEPPER || '').trim(),
   },
   smsHook: {
     secret: (process.env.SUPABASE_SMS_HOOK_SECRET || '').trim(),

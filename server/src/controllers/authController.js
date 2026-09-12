@@ -1,19 +1,27 @@
 /**
- * Authentication controller for ShilpSaathi phone-based JWT model.
+ * Authentication controller: backend-managed phone OTP via TextBee.
  *
- * The frontend performs the actual OTP flow using the Supabase JS client SDK
- * (signInWithOtp / verifyOtp). This controller provides server-side helpers:
+ *   - POST /api/auth/send-otp   -> generate OTP, store hash, send via TextBee
+ *   - POST /api/auth/verify-otp -> verify hash, issue application JWT
+ *   - GET  /api/auth/me         -> current authenticated artisan profile
+ *   - POST /api/auth/sync       -> ensure artisan row for verified session
  *
- *   - GET  /api/auth/me          -> current authenticated artisan profile
- *   - POST /api/auth/sync        -> ensure an artisan row exists for the
- *                                    verified phone (auto-creates if missing)
- *   - POST /api/auth/send-otp    -> server-initiated OTP (uses Supabase Admin)
- *   - POST /api/auth/verify-otp  -> server-initiated OTP verification
+ * Supabase Auth OTP phone methods and the Send SMS Hook are
+ * intentionally no longer used. Supabase PostgreSQL/Storage remain the
+ * data layer.
  */
 
 import { supabase } from '../config/index.js';
 import { normalizeIndianMobile } from '../utils/validation.js';
 import { successResponse, errorResponse } from '../utils/response.js';
+import {
+  issueOtp,
+  clearOtpState,
+  verifyStoredOtp,
+  buildOtpMessage,
+  sendTextBeeSms,
+} from '../services/appOtpAuth.js';
+import { signAppToken } from '../services/appToken.js';
 
 /**
  * Returns the authenticated artisan's profile.
@@ -24,9 +32,9 @@ export async function getMe(req, res, next) {
     return successResponse(res, {
       artisan: req.artisan,
       user: {
-        id: req.supabaseUser.id,
-        phone: req.supabaseUser.phone,
-        email: req.supabaseUser.email || null,
+        id: req.artisan?.id || null,
+        phone: req.artisan?.phone || req.appUser?.phone || null,
+        email: null,
       },
     }, 'Authenticated identity retrieved');
   } catch (err) {
@@ -35,7 +43,7 @@ export async function getMe(req, res, next) {
 }
 
 /**
- * Ensures an artisan row exists for the authenticated user's verified phone.
+ * Ensures an artisan row exists for the authenticated session's phone.
  * Auto-creates the artisan if it does not exist yet.
  */
 export async function syncArtisan(req, res, next) {
@@ -44,34 +52,19 @@ export async function syncArtisan(req, res, next) {
       return errorResponse(res, 'Database not configured.', 503);
     }
 
-    const phone = req.supabaseUser.phone;
+    const phone = req.artisan?.phone || req.appUser?.phone;
     if (!phone) {
       return errorResponse(res, 'No verified phone on this account.', 400);
     }
 
-    const authUserId = req.supabaseUser.id;
-
     const { data: existing } = await supabase
       .from('artisans')
-      .select('id, name, phone, preferred_language, location, created_at, auth_uid')
+      .select('id, name, phone, preferred_language, location, created_at')
       .eq('phone', phone)
       .maybeSingle();
 
     if (existing) {
-      // Link auth_uid if missing.
-      if (existing.auth_uid !== authUserId) {
-        const { data: linked } = await supabase
-          .from('artisans')
-          .update({ auth_uid: authUserId })
-          .eq('id', existing.id)
-          .select('id, name, phone, preferred_language, location, created_at')
-          .single();
-        if (linked) {
-          return successResponse(res, { artisan: linked, created: false, linked: true }, 'Artisan profile synced');
-        }
-      }
-      const { id, name: n, phone: p, preferred_language, location, created_at } = existing;
-      return successResponse(res, { artisan: { id, name: n, phone: p, preferred_language, location, created_at }, created: false }, 'Artisan profile synced');
+      return successResponse(res, { artisan: existing, created: false }, 'Artisan profile synced');
     }
 
     const name = req.body?.name?.trim() || 'Artisan';
@@ -80,7 +73,7 @@ export async function syncArtisan(req, res, next) {
 
     const { data: created, error } = await supabase
       .from('artisans')
-      .insert({ name, phone, preferred_language: preferredLanguage, location, auth_uid: authUserId })
+      .insert({ name, phone, preferred_language: preferredLanguage, location })
       .select('id, name, phone, preferred_language, location, created_at')
       .single();
 
@@ -99,54 +92,58 @@ export async function syncArtisan(req, res, next) {
       return errorResponse(res, 'Failed to create artisan profile.', 500);
     }
 
-    return successResponse(res, { artisan: created, created: true }, 'Artisan profile created', 201);
+    return successResponse(res, { artisan: created, created: true }, 'Artisan profile created');
   } catch (err) {
     next(err);
   }
 }
 
 /**
- * Server-initiated OTP: sends a verification code to the given phone number.
+ * Backend-managed OTP send: generate OTP, store hash, deliver via TextBee.
+ * Plaintext OTP is never stored or logged.
  */
 export async function sendOtp(req, res, next) {
+  let phone = null;
   try {
-    if (!supabase) {
-      return errorResponse(res, 'Authentication service not configured.', 503);
-    }
-
     const rawPhone = String(req.body?.phone || '').trim();
     const mobile = normalizeIndianMobile(rawPhone);
 
     if (!mobile.valid) {
       return errorResponse(res, mobile.error, 400);
     }
+    phone = mobile.normalized;
 
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: mobile.normalized,
-      options: { channel: 'sms' },
-    });
-
-    if (error) {
-      console.error('[Auth] send-otp failed:', error.message);
-      return errorResponse(res, 'Failed to send verification code. Please try again.', 500);
+    const otp = issueOtp(phone);
+    try {
+      await sendTextBeeSms({ phone, message: buildOtpMessage(otp) });
+    } catch (err) {
+      clearOtpState(phone);
+      const status = err.statusCode || 502;
+      if (status === 500) {
+        return errorResponse(res, 'SMS provider is not configured.', 500);
+      }
+      console.error('[Auth] send-otp delivery failed.');
+      return errorResponse(res, 'Failed to send verification code. Please try again.', 502);
     }
 
     return successResponse(res, {
-      phone: mobile.normalized,
+      phone,
       message: 'Verification code sent. Please check your SMS.',
     }, 'OTP sent successfully');
   } catch (err) {
+    if (phone) clearOtpState(phone);
     next(err);
   }
 }
 
 /**
- * Server-initiated OTP verification: verifies the code and returns the session.
+ * Backend-managed OTP verification: checks hash, issues application JWT.
+ * OTP is single-use; artisan is resolved/created server-side by phone.
  */
 export async function verifyOtp(req, res, next) {
   try {
     if (!supabase) {
-      return errorResponse(res, 'Authentication service not configured.', 503);
+      return errorResponse(res, 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.', 503);
     }
 
     const rawPhone = String(req.body?.phone || '').trim();
@@ -161,50 +158,25 @@ export async function verifyOtp(req, res, next) {
       return errorResponse(res, 'Verification code is required.', 400);
     }
 
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone: mobile.normalized,
-      token,
-      type: 'sms',
-    });
-
-    if (error) {
-      console.error('[Auth] verify-otp failed:', error.message);
+    const check = verifyStoredOtp(mobile.normalized, token);
+    if (!check.ok) {
+      if (check.reason === 'locked') {
+        return errorResponse(res, 'Too many failed attempts. Please try again later.', 429);
+      }
       return errorResponse(res, 'Invalid or expired verification code.', 401);
     }
 
-    if (!data.session || !data.user) {
-      return errorResponse(res, 'Verification succeeded but no session returned.', 500);
-    }
-
-    const authUserId = data.user.id;
-
-    // Lookup artisan by verified phone.
+    // Lookup artisan by verified phone; reuse existing row, else create once.
     const { data: existingArtisan } = await supabase
       .from('artisans')
-      .select('id, name, phone, preferred_language, location, created_at, auth_uid')
+      .select('id, name, phone, preferred_language, location, created_at')
       .eq('phone', mobile.normalized)
       .maybeSingle();
 
     let artisan = existingArtisan;
     let created = false;
-    let linked = false;
 
-    if (artisan) {
-      // Link auth_uid if not already set or if it changed.
-      if (artisan.auth_uid !== authUserId) {
-        const { data: linkedArtisan, error: linkError } = await supabase
-          .from('artisans')
-          .update({ auth_uid: authUserId })
-          .eq('id', artisan.id)
-          .select('id, name, phone, preferred_language, location, created_at')
-          .single();
-        if (!linkError && linkedArtisan) {
-          artisan = linkedArtisan;
-          linked = true;
-        }
-      }
-    } else {
-      // No artisan for this phone — create one linked to the auth user.
+    if (!artisan) {
       const name = req.body?.name?.trim() || 'Artisan';
       const preferredLanguage = req.body?.preferred_language || 'hi';
       const location = req.body?.location || null;
@@ -216,32 +188,25 @@ export async function verifyOtp(req, res, next) {
           phone: mobile.normalized,
           preferred_language: preferredLanguage,
           location,
-          auth_uid: authUserId,
         })
         .select('id, name, phone, preferred_language, location, created_at')
         .single();
 
       if (createError) {
         if (createError.code === '23505') {
-          // Race: another request created the artisan. Re-link auth_uid.
           const { data: raced } = await supabase
             .from('artisans')
-            .select('id, name, phone, preferred_language, location, created_at, auth_uid')
+            .select('id, name, phone, preferred_language, location, created_at')
             .eq('phone', mobile.normalized)
             .single();
-          if (raced && raced.auth_uid !== authUserId) {
-            const { data: relinked } = await supabase
-              .from('artisans')
-              .update({ auth_uid: authUserId })
-              .eq('id', raced.id)
-              .select('id, name, phone, preferred_language, location, created_at')
-              .single();
-            if (relinked) { artisan = relinked; linked = true; }
-          } else if (raced) {
+          if (raced) {
             artisan = raced;
+          } else {
+            console.error('[Auth] Failed to create artisan.');
+            return errorResponse(res, 'Failed to create artisan profile.', 500);
           }
         } else {
-          console.error('[Auth] Failed to create artisan:', createError.message);
+          console.error('[Auth] Failed to create artisan.');
           return errorResponse(res, 'Failed to create artisan profile.', 500);
         }
       } else {
@@ -250,15 +215,19 @@ export async function verifyOtp(req, res, next) {
       }
     }
 
+    let accessToken;
+    try {
+      accessToken = signAppToken({ artisanId: artisan.id, phone: artisan.phone });
+    } catch (err) {
+      return errorResponse(res, 'Authentication is not configured.', err.statusCode || 503);
+    }
+
     return successResponse(res, {
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_in: data.session.expires_in,
+      access_token: accessToken,
       token_type: 'Bearer',
-      user: { id: authUserId, phone: data.user.phone },
+      user: { id: artisan.id, phone: artisan.phone },
       artisan: artisan || null,
       created,
-      linked,
       needs_onboarding: !artisan,
     }, 'Phone verified successfully');
   } catch (err) {
