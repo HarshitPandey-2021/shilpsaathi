@@ -4,7 +4,7 @@ import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
 
 export default function MyListingsScreen() {
-  const { getArtisanId, startNewProduct, t } = useCraft();
+  const { getArtisanId, startNewProduct, t, lang } = useCraft();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
