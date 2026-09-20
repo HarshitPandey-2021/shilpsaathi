@@ -1,4 +1,4 @@
-  name: Build AI Service
+name:Build AI Service
 
 on:
   push:
