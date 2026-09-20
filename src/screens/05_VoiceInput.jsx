@@ -3,6 +3,7 @@ import { Mic, Square, Play, RotateCcw, ArrowRight, Sparkles, Volume2, Edit3, Ale
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
 import ScreenHeader from '../components/ui/ScreenHeader';
+import { WavAudioRecorder } from '../utils/wavEncoder';
 
 const SPEECH_LANG_OPTIONS = [
   { code: 'hi-IN', label: 'हिंदी' }, { code: 'en-IN', label: 'English' },
@@ -43,7 +44,7 @@ const VOICE_SAMPLES = {
 };
 
 export default function VoiceInputScreen() {
-  const { updateProduct, nextStep, setIsLoading, setLoadingMessage, lang, t } = useCraft();
+  const { productData, updateProduct, nextStep, setIsLoading, setLoadingMessage, lang, t } = useCraft();
   const [speechLang, setSpeechLang] = useState(lang === 'en' ? 'en-IN' : `${lang}-IN`);
   const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -52,6 +53,7 @@ export default function VoiceInputScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [vol, setVol] = useState(0);
+  const [asrSource, setAsrSource] = useState('');
 
   const recorderRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -63,9 +65,8 @@ export default function VoiceInputScreen() {
 
   useEffect(() => () => {
     try { recognitionRef.current?.abort(); } catch {}
-    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+    try { if (recorderRef.current?.isRecording) recorderRef.current.stop(); } catch {}
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    audioCtxRef.current?.close().catch(() => {});
     if (audioURL) URL.revokeObjectURL(audioURL);
   }, [audioURL]);
 
@@ -95,25 +96,17 @@ export default function VoiceInputScreen() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
-      const chunks = [];
-      rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-      rec.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        blobRef.current = blob;
-        setAudioURL(URL.createObjectURL(blob));
-        stream.getTracks().forEach((tr) => tr.stop());
-      };
-      rec.start();
+      // 16 kHz mono WAV — the format Bhashini's ASR actually expects
+      const rec = new WavAudioRecorder(16000);
+      await rec.start();
       recorderRef.current = rec;
 
-      // FIX: real level meter instead of Math.random()
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtxRef.current = ctx;
+      // level meter off the same stream — no second getUserMedia
+      const ctx = rec.audioContext;
+      audioCtxRef.current = null;   // recorder owns it, don't double-close
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
-      ctx.createMediaStreamSource(stream).connect(analyser);
+      ctx.createMediaStreamSource(rec.mediaStream).connect(analyser);
       const data = new Uint8Array(analyser.frequencyBinCount);
       const tick = () => {
         analyser.getByteTimeDomainData(data);
@@ -132,27 +125,41 @@ export default function VoiceInputScreen() {
 
   const stopRecording = async () => {
     try { recognitionRef.current?.stop(); } catch {}
-    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    audioCtxRef.current?.close().catch(() => {});
     setVol(0);
     setStatus('recorded');
 
-    await new Promise((r) => setTimeout(r, 250));   // let onstop populate blobRef
+    let wav = null;
+    try {
+      if (recorderRef.current?.isRecording) wav = recorderRef.current.stop();
+    } catch (e) { console.warn('[Voice] recorder stop:', e.message); }
 
-    if (!liveTranscript.trim() && blobRef.current?.size > 100) {
+    if (wav && wav.size > 100) {
+      blobRef.current = wav;
+      setAudioURL(URL.createObjectURL(wav));
+
+      // ALWAYS call the server so Bhashini actually gets used
       setIsTranscribing(true);
       try {
-        const res = await api.processVoice({ audioBlob: blobRef.current, language: speechLang.split('-')[0] });
-        if (res?.data?.transcript?.trim()) setLiveTranscript(res.data.transcript.trim());
-      } catch (e) { console.warn('[Voice] ASR fallback:', e.message); }
-      finally { setIsTranscribing(false); }
+        const res = await api.processVoice({
+          audioBlob: wav,
+          language: speechLang.split('-')[0],
+          transcribeOnly: true,
+        });
+        const serverText = res?.data?.transcript?.trim();
+        if (serverText) {
+          setLiveTranscript(serverText);
+          setAsrSource(res?.data?.source || '');
+        }
+      } catch (e) {
+        console.warn('[Voice] server ASR failed, keeping browser transcript:', e.message);
+      } finally { setIsTranscribing(false); }
     }
   };
 
   const retake = () => {
     if (audioURL) URL.revokeObjectURL(audioURL);
-    setAudioURL(null); blobRef.current = null;
+    setAudioURL(null); blobRef.current = null; setAsrSource('');
     setLiveTranscript(''); setErrorMessage(''); setVol(0); setStatus('idle');
   };
 
@@ -239,10 +246,12 @@ export default function VoiceInputScreen() {
 
     try {
       const result = await api.processVoice({
-        audioBlob: blobRef.current,
+        audioBlob: tr ? null : blobRef.current,
         transcript: tr || null,
         language: sourceLanguage,
         targetLanguage,
+        imageB64: productData.enhancedImageB64 || null,
+        detectedColor: productData.detected_color || null,
       });
       if (!result?.success || !result.data) throw new Error('no structured data');
 
@@ -357,6 +366,12 @@ export default function VoiceInputScreen() {
             <Sparkles size={14} className="text-mustard-500" /> {t.yourVoice}
           </span>
           <span className="flex items-center gap-1 text-[10px] text-stone-400">
+            {asrSource === 'bhashini_asr' && (
+              <span className="mr-1 rounded-full bg-royal-50 px-1.5 py-0.5 font-bold text-royal">BHASHINI</span>
+            )}
+            {asrSource === 'groq_whisper' && (
+              <span className="mr-1 rounded-full bg-stone-100 px-1.5 py-0.5 font-bold text-stone-500">WHISPER</span>
+            )}
             <Edit3 size={11} /> {t.editHint}
           </span>
         </div>

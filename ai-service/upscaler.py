@@ -9,6 +9,11 @@ def _get_upsampler():
     if _upsampler is not None or _model_failed:
         return _upsampler
 
+    # Real-ESRGAN is not installed in this environment (torch/basicsr removed).
+    # Skip the import attempt entirely — it costs ~10s per request to fail.
+    _model_failed = True
+    return None
+
     try:
         import torch
         from basicsr.archs.rrdbnet_arch import RRDBNet
@@ -66,4 +71,4 @@ def upscale_image(image, outscale=2):
     target_h = int(image.height * outscale)
     resized = image.resize((target_w, target_h), Image.Resampling.LANCZOS)
     enhancer = ImageEnhance.Sharpness(resized)
-    return enhancer.enhance(1.25)
+    return enhancer.enhance(1.25)

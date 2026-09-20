@@ -33,7 +33,7 @@ async def enhance_image(
         io.BytesIO(contents)
     ).convert("RGBA")
 
-    result = process_product_image(image)
+    result, _meta = process_product_image(image)
 
     output = io.BytesIO()
 
@@ -103,7 +103,7 @@ async def enhance_image_stream(
                     # No artificial progress: wait for the next real stage.
                     pass
 
-            result = await processing_task
+            result, meta = await processing_task
 
             while not progress_queue.empty():
                 stage, message = progress_queue.get_nowait()
@@ -123,12 +123,10 @@ async def enhance_image_stream(
 
             image_b64 = base64.b64encode(output.getvalue()).decode("ascii")
 
-            yield _encode_sse_event(
-                "complete",
-                "Processing complete",
-                success=True,
-                image_b64=image_b64
-            )
+            payload = {"stage": "complete", "message": "Processing complete",
+                       "success": True, "image_b64": image_b64,
+                       "detected_color": (meta or {}).get("color")}
+            yield f"data: {json.dumps(payload)}\n\n"
 
         except Exception as e:
             yield _encode_sse_event(

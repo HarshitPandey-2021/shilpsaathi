@@ -291,7 +291,7 @@ import { callLlmWithFallback, classifyError } from './llmService.js';
 /**
  * Builds the structured-catalog extraction prompt shared across LLM providers.
  */
-export function buildCatalogPrompt(text, sourceLanguage = 'hi', targetLanguage = 'en') {
+export function buildCatalogPrompt(text, sourceLanguage = 'hi', targetLanguage = 'en', hasImage = false, detectedColor = null) {
   const langNames = {
     hi: 'Hindi',
     en: 'English',
@@ -311,6 +311,15 @@ An artisan has described their handcrafted item using voice.
 Your task is to transform their spoken note into a professional, high-converting e-commerce product listing while strictly preserving their stated facts.
 
 Artisan Spoken Note: "${text}"
+${hasImage ? `
+A PHOTOGRAPH OF THE ACTUAL PRODUCT IS ATTACHED. Use it as the primary source of truth for
+what the object physically is, its material, its shape and its craft technique. The artisan's
+speech may be incomplete or mis-transcribed — the image is not. Where the two disagree,
+trust the image for physical properties and the speech for cost, hours and price.
+` : ''}${detectedColor ? `
+MEASURED COLOUR (from the product's actual pixels, not a guess): "${detectedColor.name}".
+Use this exact value for the "colour" field. Do not override it.
+` : ''}
 Artisan's Spoken Language: ${sourceLangName} (${sourceLangCode})
 Secondary Marketing Language: ${targetLangName} (${targetLangCode})
 
@@ -328,15 +337,15 @@ Allowed Product Categories:
 TASK & REQUIREMENTS:
 1. "productName": A short, authentic, marketable product title in ${sourceLangName} (e.g. "हस्तनिर्मित पीतल का दीया", "हाथ से बना टेराकोटा फूलदान", "Handcrafted Sheesham Wood Box").
 2. "category": Pick the single most accurate category from Allowed Product Categories (infer from material/noun context, do not leave blank).
-3. "colour": The primary colour(s). If no specific color is mentioned, infer an authentic tone like "Natural", "Terracotta Red", "Natural Ochre", or "Golden Brass" (never output "—" or "Not clearly identifiable").
+3. "colour": The primary colour ONLY if the artisan explicitly stated it. If no colour was spoken, return null. NEVER guess a colour from the material or product type.
 4. "material": The craft material (e.g. "Natural Clay", "Pure Brass", "Sheesham Wood", "Organic Cotton", "Bamboo Fiber").
 5. "craft_type": The traditional technique (e.g. "Dhokra Metal Casting", "Potter's Wheel", "Handloom Weaving", "Wood Inlay", "Handmade Paper Craft").
 6. "descriptionLocal": A polished, captivating e-commerce marketing description in ${sourceLangName}. Do NOT paste the raw transcript verbatim. Highlight authentic handcrafted quality, cultural value, and any stated facts (time, materials, craft method) in a natural marketing style.
 7. "descriptionEnglish": An equally polished, high-converting e-commerce marketing description in ${targetLangName}.
 8. "keywords": An array of 5-8 SEO keywords in English (e.g. ["handmade brass diya", "traditional home decor", "indian handicraft"]).
 9. "extractedFacts": Extract time and cost numbers from the speech:
-   - "laborHours": Number of labor hours (parse digit or spelled-out words like "do ghante" -> 2, "char ghante" -> 4). Default 4 if unstated.
-   - "materialCostINR": Raw material cost in ₹ INR (parse "do sau rupaye" -> 200, "₹350" -> 350). Default 150 if unstated.
+   - "laborHours": Labour hours ONLY if stated (parse "do ghante" -> 2, "char ghante" -> 4). Return null if the artisan did not say it. NEVER default to a number.
+   - "materialCostINR": Raw material cost in ₹ ONLY if stated (parse "do sau rupaye" -> 200, "₹350" -> 350). Return null if not stated. NEVER default to a number.
    - "explicitPrice": Selling price explicitly stated by artisan in ₹ INR, or null if none stated.
 
 Return ONLY a valid JSON object matching this exact schema:
@@ -403,17 +412,17 @@ function normalizeCatalog(parsed, rawText = '') {
 /**
  * Extract structured catalog from raw spoken description using AI / NLP heuristics
  */
-export async function extractCatalogFromText(rawText, sourceLanguage = 'hi', targetLanguage = 'en') {
+export async function extractCatalogFromText(rawText, sourceLanguage = 'hi', targetLanguage = 'en', imageB64 = null, detectedColor = null) {
   const text = (rawText || '').trim();
   let aiCatalog = null;
   let llmProvider = 'none';
 
   // 1. Try Resilient Multi-Provider LLM: Gemini -> Groq
   if (text.length > 3) {
-    const prompt = buildCatalogPrompt(text, sourceLanguage, targetLanguage);
-    console.log('[AI Catalog] Invoking LLM extraction with Gemini -> Groq fallback chain...');
-    
-    const llmRes = await callLlmWithFallback(prompt, { temperature: 0.3 });
+    const prompt = buildCatalogPrompt(text, sourceLanguage, targetLanguage, Boolean(imageB64), detectedColor);
+    console.log(`[AI Catalog] Invoking LLM extraction${imageB64 ? ' WITH product image' : ''}...`);
+
+    const llmRes = await callLlmWithFallback(prompt, { temperature: 0.3, imageB64 });
     if (llmRes.success && llmRes.data) {
       aiCatalog = normalizeCatalog(llmRes.data, text);
       llmProvider = llmRes.provider;
@@ -599,16 +608,13 @@ export async function extractCatalogFromText(rawText, sourceLanguage = 'hi', tar
     finalColor = aiCatalog.colour;
   }
 
-  // 6. Hours spent
-  let hours = extractQuantity(text, ['hour', 'hr', 'ghante', 'घंटे', 'घंटा', 'दिन', 'day', 'समय']) || 4;
-  hours = Math.min(40, Math.max(1, hours));
+  // 6. Hours spent — null when the artisan never said it
+  const rawHours = extractQuantity(text, ['hour', 'hr', 'ghante', 'घंटे', 'घंटा', 'दिन', 'day', 'समय']);
+  const hours = rawHours !== null ? Math.min(40, Math.max(1, rawHours)) : null;
 
-  // 7. Explicit Price / Cost
+  // 7. Explicit Price / Cost — null when unstated
   const explicitCost = extractQuantity(text, ['₹', 'rs', 'rupee', 'रुपये', 'रुपया', 'rupaye', 'rupaya', 'लागत', 'cost', 'खर्च', 'कीमत', 'keemat']);
-  let cost = explicitCost ?? 150;
-  cost = explicitCost !== null
-    ? Math.min(10000, Math.max(0, cost))
-    : Math.min(10000, Math.max(10, cost));
+  const cost = explicitCost !== null ? Math.min(10000, Math.max(0, explicitCost)) : null;
 
   // 8. Bilingual Descriptions reflecting handcrafted value
   const cleanItemName = finalTitle.replace(/^Handcrafted\s+/i, '').trim();
@@ -662,10 +668,14 @@ export async function extractCatalogFromText(rawText, sourceLanguage = 'hi', tar
     keywords: [...new Set([
       ...(Array.isArray(aiCatalog?.keywords) && aiCatalog.keywords.length > 0 ? aiCatalog.keywords : keywords),
     ])],
-    extracted_facts: aiCatalog?.extracted_facts || {
-      labor_hours: hours,
-      material_cost_inr: cost,
-      explicit_price: explicitCost,
+    extracted_facts: {
+      labor_hours: aiCatalog?.extracted_facts?.labor_hours ?? hours,
+      material_cost_inr: aiCatalog?.extracted_facts?.material_cost_inr ?? cost,
+      explicit_price: aiCatalog?.extracted_facts?.explicit_price ?? explicitCost,
+    },
+    fact_sources: {
+      hours: (aiCatalog?.extracted_facts?.labor_hours ?? hours) !== null ? 'spoken' : 'unknown',
+      cost: (aiCatalog?.extracted_facts?.material_cost_inr ?? cost) !== null ? 'spoken' : 'unknown',
     },
     raw_material_cost: explicitCost !== null ? cost : Number(aiCatalog?.raw_material_cost ?? cost),
     hours_spent: Number(aiCatalog?.hours_spent ?? hours),
@@ -686,30 +696,83 @@ export async function extractCatalogFromText(rawText, sourceLanguage = 'hi', tar
 /**
  * End-to-end voice processing: Takes audio buffer or transcript and produces full catalog
  */
-export async function processVoiceAudio({ audioBuffer, mimeType = 'audio/wav', directTranscript = null, language = 'hi', targetLanguage = 'en' }) {
+/**
+ * Groq Whisper large-v3 — fallback ASR when Bhashini is unavailable or returns nothing.
+ * 8.4% WER, 99+ languages, recommended for noisy audio.
+ */
+async function transcribeWithWhisper(audioBuffer, mimeType = 'audio/wav', language = 'hi') {
+  const { apiKey, sttModel } = config.groq;
+  if (!apiKey || !audioBuffer?.length) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  try {
+    const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'mp4' : 'wav';
+    const form = new FormData();
+    form.append('file', new Blob([audioBuffer], { type: mimeType }), `audio.${ext}`);
+    form.append('model', sttModel || 'whisper-large-v3');
+    form.append('language', (language || 'hi').split('-')[0]);
+    form.append('response_format', 'json');
+    form.append('temperature', '0');
+
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const errText = (await res.text().catch(() => '')).slice(0, 160);
+      console.error(`[ASR:Whisper] HTTP ${res.status} — ${errText}`);
+      return null;
+    }
+
+    const data = await res.json();
+    const text = (data?.text || '').trim();
+    if (text) { console.log('[ASR:Whisper] ✅', text); return text; }
+    console.warn('[ASR:Whisper] empty transcript returned');
+    return null;
+  } catch (err) {
+    console.error(`[ASR:Whisper] ${err.name === 'AbortError' ? 'timeout' : err.message}`);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function processVoiceAudio({ audioBuffer, mimeType = 'audio/wav', directTranscript = null, language = 'hi', targetLanguage = 'en', transcribeOnly = false, imageB64 = null, detectedColor = null }) {
   let transcript = (directTranscript || '').trim();
   let source = directTranscript ? 'direct_speech_api' : 'unknown';
 
+  // Tier 1: Bhashini (MeitY Government of India Conformer ASR) — now receiving real 16 kHz WAV
   if (!transcript && audioBuffer && audioBuffer.length > 100) {
-    // Attempt Bhashini ASR (MeitY Government of India Conformer Model)
     const bhashiniText = await transcribeWithBhashini(audioBuffer, language, mimeType);
-    if (bhashiniText) {
+    if (bhashiniText && bhashiniText.length > 2) {
       transcript = bhashiniText;
       source = 'bhashini_asr';
     }
   }
 
-  // Fallback: OpenRouter STT if Bhashini did not produce a transcript
-  if (!transcript && audioBuffer && audioBuffer.length > 100 && config.openrouter.enabled) {
-    const openRouterText = await transcribeWithOpenRouter(audioBuffer, mimeType);
-    if (openRouterText) {
-      transcript = openRouterText;
-      source = 'openrouter_stt';
+  // Tier 2: Groq Whisper large-v3 — fallback when Bhashini is down or returns nothing
+  if (!transcript && audioBuffer && audioBuffer.length > 100) {
+    console.log('[ASR] Bhashini unavailable — falling back to Whisper.');
+    const whisperText = await transcribeWithWhisper(audioBuffer, mimeType, language);
+    if (whisperText) {
+      transcript = whisperText;
+      source = 'groq_whisper';
     }
   }
 
+
+
+  // ASR-only: skip the LLM catalog + pricing entirely
+  if (transcribeOnly) {
+    return { transcript, catalog: null, source };
+  }
+
   // Generate structured catalog
-  const catalog = await extractCatalogFromText(transcript || 'हस्तनिर्मित पारंपरिक भारतीय कलाकृति', language, targetLanguage);
+  const catalog = await extractCatalogFromText(transcript || '', language, targetLanguage, imageB64, detectedColor);
 
   return {
     transcript,

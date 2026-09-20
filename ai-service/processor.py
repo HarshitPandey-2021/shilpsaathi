@@ -14,13 +14,66 @@ from quality import analyze_image_quality
 from background_remover import remove_background
 
 
+
+COLOR_ANCHORS = [
+    ("White",             (245, 245, 240)),
+    ("Off-White / Cream", (234, 224, 204)),
+    ("Beige",             (214, 196, 165)),
+    ("Terracotta Red",    (180,  85,  55)),
+    ("Brown",             (120,  78,  48)),
+    ("Dark Brown",        ( 74,  50,  32)),
+    ("Black",             ( 30,  30,  30)),
+    ("Charcoal",          ( 62,  64,  66)),
+    ("Dark Grey",         (100, 103, 105)),
+    ("Grey",              (140, 140, 140)),
+    ("Light Grey",        (190, 192, 194)),
+    ("Golden Brass",      (200, 160,  70)),
+    ("Mustard Yellow",    (225, 195,  60)),
+    ("Orange",            (230, 130,  45)),
+    ("Red",               (190,  45,  45)),
+    ("Pink",              (225, 130, 160)),
+    ("Purple",            (130,  80, 160)),
+    ("Blue",              ( 55,  95, 175)),
+    ("Indigo Blue",       ( 45,  60, 130)),
+    ("Teal",              ( 30, 140, 135)),
+    ("Green",             ( 70, 140,  70)),
+]
+
+
+def detect_dominant_color(image):
+    """Median colour of fully-opaque product pixels, snapped to a named anchor.
+
+    Median (not mean) so highlights and shadows don't drag the result.
+    """
+    image = image.convert("RGBA")
+    rgb = np.array(image.convert("RGB"), dtype=np.float64)
+    alpha = np.array(image.getchannel("A"))
+
+    mask = alpha > 200
+    if mask.sum() < 50:
+        return None
+
+    med = np.median(rgb[mask], axis=0)
+
+    best_name, best_dist = None, float("inf")
+    for name, ref in COLOR_ANCHORS:
+        dist = np.sqrt(((med - np.array(ref, dtype=np.float64)) ** 2).sum())
+        if dist < best_dist:
+            best_dist, best_name = dist, name
+
+    return {
+        "name": best_name,
+        "rgb": [int(v) for v in med],
+        "confidence": round(max(0.0, 1.0 - best_dist / 260.0), 2),
+    }
+
 # ============================================================
 # RESIZE
 # ============================================================
 
 def resize_for_processing(
     image,
-    max_size=1600
+    max_size=768
 ):
     image = image.copy()
 
@@ -313,21 +366,19 @@ def improve_lighting(image):
 
     elif brightness < 70:
 
-        # Dark product:
-        # moderate CLAHE + gamma brightening
-        correction_type = "strong"
+        # Dark product. Distinguish "underexposed photo" from "genuinely dark object":
+        # a genuinely dark object has LOW colour variance across its visible pixels.
+        spread = float(np.std(gray[visible_mask])) if visible_mask.sum() > 0 else 50.0
 
-        result = _apply_clahe_rgb(
-            rgb_np,
-            clip_limit=2.5,
-            tile_size=8
-        )
-
-        result = _apply_gamma(
-            result,
-            gamma=0.75
-        )
-
+        if spread < 32:
+            # Uniformly dark = the object IS dark. Lift only enough to show detail.
+            correction_type = "gentle (dark object preserved)"
+            result = _apply_clahe_rgb(rgb_np, clip_limit=1.2, tile_size=8)
+            result = _apply_gamma(result, gamma=0.92)
+        else:
+            correction_type = "strong"
+            result = _apply_clahe_rgb(rgb_np, clip_limit=2.5, tile_size=8)
+            result = _apply_gamma(result, gamma=0.75)
     elif brightness < 100:
 
         # Somewhat dark product:
@@ -667,8 +718,15 @@ def create_product_canvas(product, size=1080):
     product = product.copy()
 
     # Product maximum area
-    product.thumbnail(
-        (int(size * 0.82), int(size * 0.82)),
+    # Cap by area, not by longest edge, so tall/wide crops don't dominate the frame
+    max_edge = int(size * 0.82)
+    scale = min(max_edge / product.width, max_edge / product.height, 1.6)
+    target_area_ratio = 0.46
+    area_scale = ((size * size * target_area_ratio) / (product.width * product.height)) ** 0.5
+    scale = min(scale, area_scale)
+
+    product = product.resize(
+        (max(1, int(product.width * scale)), max(1, int(product.height * scale))),
         Image.Resampling.LANCZOS
     )
 
@@ -1014,9 +1072,8 @@ def process_product_image(
         "Improving lighting..."
     )
 
-    product = improve_lighting(
-        product
-    )
+    from adaptive import correct as adaptive_correct
+    product, _adaptive_meta = adaptive_correct(product)
 
     lighting_time = (
         time.perf_counter()
@@ -1058,6 +1115,12 @@ def process_product_image(
     if progress_callback:
         progress_callback("canvas", "Creating marketplace-ready image...")
 
+    detected_color = detect_dominant_color(product)
+    if detected_color:
+        print(f"Detected colour: {detected_color['name']} "
+              f"rgb{tuple(detected_color['rgb'])} "
+              f"conf={detected_color['confidence']}")
+
     # ========================================================
     # TOTAL
     # ========================================================
@@ -1084,4 +1147,4 @@ def process_product_image(
 
     print("=" * 50)
 
-    return result
+    return result, {"color": detected_color}

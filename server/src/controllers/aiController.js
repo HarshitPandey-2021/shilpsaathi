@@ -21,6 +21,11 @@ export async function processVoice(req, res, next) {
     const directTranscript = req.body?.transcript || null;
     const language = req.body?.language || 'hi';
     const targetLanguage = req.body?.targetLanguage || 'en';
+    const transcribeOnly = req.body?.transcribeOnly === 'true' || req.body?.transcribeOnly === true;
+    const imageB64 = req.body?.imageB64 || null;
+    console.log('[DEBUG] imageB64 received:', imageB64 ? `${Math.round(imageB64.length / 1024)}KB` : 'NULL');
+    let detectedColor = null;
+    try { detectedColor = req.body?.detectedColor ? JSON.parse(req.body.detectedColor) : null; } catch {}
 
     console.log('[AI Controller] Processing voice input. Buffer present:', Boolean(audioBuffer), 'Direct transcript:', Boolean(directTranscript), 'Language:', language, 'TargetLanguage:', targetLanguage);
 
@@ -30,8 +35,18 @@ export async function processVoice(req, res, next) {
       directTranscript,
       language,
       targetLanguage,
+      transcribeOnly,
+      imageB64,
+      detectedColor,
     });
 
+    // ASR-only request: return the transcript and skip catalog + pricing entirely
+    if (transcribeOnly) {
+      return successResponse(res, {
+        transcript: result.transcript,
+        source: result.source,
+      }, 'Transcription complete');
+    }
     const catalog = result.catalog || {};
     const matCost = Number(catalog.raw_material_cost ?? catalog.estimated_material_cost ?? 150);
     const labHours = Number(catalog.hours_spent ?? catalog.estimated_labor_hours ?? 4);

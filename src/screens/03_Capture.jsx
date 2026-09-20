@@ -86,6 +86,7 @@ export default function CaptureScreen() {
               enhancedImageB64: ev.image_b64,
               isEnhanced: true,
               original_image_url: localUrl,
+              detected_color: ev.detected_color || null,
             });
           }
         }

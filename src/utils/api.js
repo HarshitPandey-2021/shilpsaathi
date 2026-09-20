@@ -109,19 +109,23 @@ export const api = {
       body: JSON.stringify({ image }),
     }),
 
-  processVoice: ({ audioBlob = null, transcript = null, language = 'hi', targetLanguage = 'en' } = {}) => {
+  processVoice: ({ audioBlob = null, transcript = null, language = 'hi', targetLanguage = 'en', transcribeOnly = false, imageB64 = null, detectedColor = null } = {}) => {
     if (audioBlob) {
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      const ext = (audioBlob.type || '').includes('wav') ? 'wav' : 'webm';
+      formData.append('audio', audioBlob, `recording.${ext}`);
       if (transcript) formData.append('transcript', transcript);
       formData.append('language', language);
       formData.append('targetLanguage', targetLanguage);
+      if (transcribeOnly) formData.append('transcribeOnly', 'true');
+      if (imageB64) formData.append('imageB64', imageB64);
+      if (detectedColor) formData.append('detectedColor', JSON.stringify(detectedColor));
       return fetchJSON(`${API_BASE_URL}/process-voice`, { method: 'POST', body: formData });
     }
 
     return fetchJSON(`${API_BASE_URL}/process-voice`, {
       method: 'POST',
-      body: JSON.stringify({ transcript, language, targetLanguage }),
+      body: JSON.stringify({ transcript, language, targetLanguage, imageB64, detectedColor }),
     });
   },
 

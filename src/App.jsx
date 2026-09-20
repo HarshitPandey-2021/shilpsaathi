@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { CraftProvider, useCraft } from './context/CraftContext';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -13,7 +13,7 @@ import CatalogEditScreen from './screens/06_CatalogEdit';
 import PricingScreen     from './screens/07_Pricing';
 import ReviewScreen      from './screens/08_Review';
 import MyListingsScreen  from './screens/10_MyListings';
-import ProfileScreen from './screens/ProfilePage';
+import ProfileScreen     from './screens/ProfilePage';
 
 export const WIZARD_STEPS = [3, 4, 5, 6, 7, 8];
 
@@ -27,11 +27,16 @@ const SCREENS = {
   7: PricingScreen,
   8: ReviewScreen,
   10: MyListingsScreen,
-   11: ProfileScreen,
+  11: ProfileScreen,
 };
 
 function AppShell() {
   const { currentStep } = useCraft();
+
+  // remember where we came from so the screen knows which way to slide
+  const prev = useRef(currentStep);
+  const goingBack = currentStep < prev.current;
+  React.useEffect(() => { prev.current = currentStep; }, [currentStep]);
 
   const isWelcome = currentStep === 1;
   const isWizard  = WIZARD_STEPS.includes(currentStep);
@@ -53,20 +58,26 @@ function AppShell() {
 
       <LoadingOverlay />
 
-      {/* the ONLY scrolling region in the app */}
       <main
         key={currentStep}
-        className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 animate-fade-in"
+        className={`scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 ${
+          goingBack ? 'animate-slide-back' : 'animate-slide-fwd'
+        }`}
       >
         <Screen />
       </main>
 
       {isTab && <BottomNav />}
 
-      {/* home indicator */}
       <div className="hidden shrink-0 justify-center pb-2 pt-1 sm:flex">
         <span className="h-1 w-28 rounded-full bg-stone-300" />
       </div>
+
+      {/* sheets render here so they escape the animated <main> */}
+      <div
+        id="sheet-root"
+        className="pointer-events-none absolute inset-0 z-[70] [&>*]:pointer-events-auto"
+      />
     </div>
   );
 }

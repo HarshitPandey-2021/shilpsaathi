@@ -63,18 +63,49 @@ export default function CatalogEditScreen() {
             <Sparkles size={12} /> {t.aiHeard}
           </p>
           <p className="text-xs italic leading-relaxed text-mustard-800">"{productData.spoken_transcript}"</p>
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {[
-              productData.material && productData.material !== 'Not clearly identifiable' && productData.material,
-              productData.colour && productData.colour !== 'Not clearly identifiable' && productData.colour,
+          {(() => {
+            const said = (productData.spoken_transcript || '').toLowerCase();
+            const confirms = (v) => {
+              if (!v || v === 'Not clearly identifiable') return false;
+              return v.toLowerCase().split(/[\s&/,]+/).some((w) => w.length > 2 && said.includes(w));
+            };
+            const hasNum = /\d|घंट|hour|hr\b|रुपय|₹|rs\b/i.test(said);
+
+            const confirmed = [productData.material, productData.colour].filter(confirms);
+            const guessed = [
+              !confirms(productData.material) && productData.material,
+              !confirms(productData.colour) && productData.colour,
               productData.category,
-              productData.hours_spent && `${productData.hours_spent} hrs`,
-            ].filter(Boolean).map((v, i) => (
-              <span key={i} className="chip animate-pop border-white bg-white text-mustard-700" style={{ animationDelay: `${i * 80}ms` }}>
-                <Check size={11} strokeWidth={3} className="text-forest" /> {v}
-              </span>
-            ))}
-          </div>
+              !hasNum && productData.hours_spent && `${productData.hours_spent}h`,
+              !hasNum && productData.raw_material_cost && `₹${productData.raw_material_cost}`,
+            ].filter((v) => v && v !== 'Not clearly identifiable');
+
+            return (
+              <div className="space-y-2 pt-1">
+                {confirmed.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {confirmed.map((v, i) => (
+                      <span key={`c${i}`} className="chip animate-pop border-forest-200 bg-white text-forest-700" style={{ animationDelay: `${i * 70}ms` }}>
+                        <Check size={11} strokeWidth={3} /> {v}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {guessed.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-mustard-700/70">{t.aiGuessed}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {guessed.map((v, i) => (
+                        <span key={`g${i}`} className="chip border-dashed border-mustard-300 bg-white/60 text-mustard-800">
+                          <AlertCircle size={11} /> {v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
       <div className="flex gap-3 rounded-3xl border border-stone-200 bg-white p-3 shadow-card">

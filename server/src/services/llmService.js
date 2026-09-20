@@ -71,7 +71,7 @@ export function safeExtractJson(rawText) {
 /**
  * Invokes Google Gemini API with structured JSON output expectation and active model fallback.
  */
-export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 } = {}) {
+export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3, imageB64 = null, imageMime = 'image/jpeg' } = {}) {
   const { apiKey, model } = config.gemini;
   if (!apiKey) {
     return { success: false, reason: 'unconfigured' };
@@ -84,16 +84,15 @@ export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 
     model,
     'gemini-2.5-flash',
     'gemini-flash-latest',
-    'gemini-2.5-flash-lite',
   ])].filter(Boolean);
 
   try {
-    const contents = [];
-    if (systemPrompt) {
-      contents.push({ role: 'user', parts: [{ text: `System Instruction: ${systemPrompt}\n\nTask:\n${prompt}` }] });
-    } else {
-      contents.push({ parts: [{ text: prompt }] });
+    const parts = [];
+    parts.push({ text: systemPrompt ? `System Instruction: ${systemPrompt}\n\nTask:\n${prompt}` : prompt });
+    if (imageB64) {
+      parts.push({ inline_data: { mime_type: imageMime, data: imageB64 } });
     }
+    const contents = [{ role: 'user', parts }];
 
     let lastError = null;
 
@@ -163,7 +162,7 @@ export async function callGemini(prompt, { systemPrompt = '', temperature = 0.3 
 /**
  * Invokes Groq API (OpenAI-compatible) with structured JSON output expectation and active model fallback.
  */
-export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3 } = {}) {
+export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3, imageB64 = null, imageMime = 'image/jpeg' } = {}) {
   const { apiKey, model, timeoutMs } = config.groq;
   if (!apiKey) {
     return { success: false, reason: 'unconfigured' };
@@ -172,18 +171,27 @@ export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3 } 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs || 30000);
 
-  const candidateModels = [...new Set([
-    model,
-    'openai/gpt-oss-20b',
-    'openai/gpt-oss-120b',
-    'qwen/qwen3.6-27b',
-  ])].filter(Boolean);
+  // Vision-capable models first when an image is present
+  const candidateModels = imageB64
+    ? ['qwen/qwen3.6-27b', 'qwen/qwen3.8-27b']
+    : [...new Set([model, 'openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'qwen/qwen3.6-27b'])].filter(Boolean);
+
   try {
     const messages = [];
     if (systemPrompt) {
       messages.push({ role: 'system', content: systemPrompt });
     }
-    messages.push({ role: 'user', content: prompt });
+    messages.push(
+      imageB64
+        ? {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: `data:${imageMime};base64,${imageB64}` } },
+            ],
+          }
+        : { role: 'user', content: prompt }
+    );
 
     let lastError = null;
 
@@ -259,8 +267,9 @@ export async function callGroq(prompt, { systemPrompt = '', temperature = 0.3 } 
  * 3. If Groq fails -> log structured error & return failure so caller can run heuristics
  */
 export async function callLlmWithFallback(prompt, options = {}) {
-  // 1. Try Gemini
+  // 1. Try Gemini (vision-capable when options.imageB64 is present)
   if (config.gemini.enabled) {
+    if (options.imageB64) console.log('[AI] Sending product image to Gemini for visual grounding.');
     const geminiRes = await callGemini(prompt, options);
     if (geminiRes.success) {
       return { success: true, provider: 'gemini', data: geminiRes.data };
@@ -275,6 +284,7 @@ export async function callLlmWithFallback(prompt, options = {}) {
 
   // 2. Try Groq
   if (config.groq.enabled) {
+    if (options.imageB64) console.log('[AI] Gemini unavailable — sending image to Groq vision model.');
     const groqRes = await callGroq(prompt, options);
     if (groqRes.success) {
       return { success: true, provider: 'groq', data: groqRes.data };
@@ -289,4 +299,51 @@ export async function callLlmWithFallback(prompt, options = {}) {
 
   // 3. Complete fallback
   return { success: false, provider: 'none', data: null };
+}
+
+
+
+export async function callGeminiGrounded(prompt, { temperature = 0.2 } = {}) {
+  const { apiKey, model } = config.gemini;
+  if (!apiKey) return { success: false, reason: 'unconfigured' };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
+          generationConfig: { temperature },
+        }),
+        signal: controller.signal,
+      }
+    );
+
+    if (!res.ok) {
+      const t = (await res.text().catch(() => '')).slice(0, 200);
+      console.warn(`[AI:Grounded] HTTP ${res.status} — ${t}`);
+      return { success: false, status: res.status };
+    }
+
+    const data = await res.json();
+    const cand = data?.candidates?.[0];
+    const text = cand?.content?.parts?.map(p => p.text).filter(Boolean).join('\n') || '';
+    const chunks = cand?.groundingMetadata?.groundingChunks || [];
+    const sources = chunks
+      .map(c => ({ title: c.web?.title, uri: c.web?.uri }))
+      .filter(s => s.uri);
+
+    console.log(`[AI:Grounded] ${sources.length} web sources returned`);
+    return { success: true, text, sources };
+  } catch (err) {
+    console.warn('[AI:Grounded]', err.name === 'AbortError' ? 'timeout' : err.message);
+    return { success: false };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

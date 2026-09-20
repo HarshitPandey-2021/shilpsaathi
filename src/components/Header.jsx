@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronLeft, Globe, Check, X, User } from 'lucide-react';
 import { useCraft, TRANSLATIONS } from '../context/CraftContext';
+import Sheet from './ui/Sheet';
 
 const WIZARD_KEYS = { 3: 'wPhoto', 4: 'wStudio', 5: 'wVoice', 6: 'wDetails', 7: 'wPrice', 8: 'wPublish' };
 export default function Header({ isWizard = false }) {
@@ -63,15 +64,8 @@ export default function Header({ isWizard = false }) {
         )}
       </header>
 
-      {showLangModal && (
-        <div
-          className="absolute inset-0 z-50 flex items-end justify-center bg-stone-900/50 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowLangModal(false)}
-        >
-          <div
-            className="w-full space-y-4 rounded-t-[2rem] bg-white p-5 pb-8 shadow-2xl animate-fade-in-up"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Sheet open={showLangModal} onClose={() => setShowLangModal(false)}>
+        <div className="space-y-4 p-5">
             <span className="mx-auto block h-1 w-10 rounded-full bg-stone-300" />
                        <div>
               <h3 className="font-display text-lg font-black text-charcoal">{t.chooseLang}</h3>
@@ -100,9 +94,8 @@ export default function Header({ isWizard = false }) {
             >
               {t.viewWelcome}
             </button>
-          </div>
         </div>
-      )}
+      </Sheet>
     </>
   );
 }

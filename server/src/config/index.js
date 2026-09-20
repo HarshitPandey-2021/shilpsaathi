@@ -45,6 +45,7 @@ export const config = {
     model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
     enabled: process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim().length > 0 : false,
     timeoutMs: parseInt(process.env.GROQ_TIMEOUT_MS || '30000', 10),
+    sttModel: process.env.GROQ_STT_MODEL || 'whisper-large-v3',
   },
   openrouter: {
     apiKey: (process.env.OPENROUTER_API_KEY || '').trim(),

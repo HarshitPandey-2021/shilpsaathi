@@ -3,7 +3,7 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-           colors: {
+      colors: {
         // Primary — warm terracotta/vermilion (CTAs, brand accents)
         terracotta: {
           DEFAULT: '#D55E3A',
@@ -19,7 +19,7 @@ export default {
           300: '#FCD34D', 400: '#FBBF24', 500: '#F59E0B',
           600: '#D97706', 700: '#B45309', 800: '#92400E',
         },
-        // Success — peacock teal (was forest green)
+        // Success — peacock teal
         forest: {
           DEFAULT: '#0D9488',
           50:  '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4',
@@ -47,7 +47,7 @@ export default {
         display: ['Fraunces', 'Noto Sans Devanagari', 'Georgia', 'serif'],
         deva:    ['Noto Sans Devanagari', 'Inter', 'sans-serif'],
       },
-      // Nudged up ~8% for low-literacy legibility. Existing text-xs/sm just get better.
+      // Nudged up ~8% for low-literacy legibility
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
         xs:    ['0.8125rem', { lineHeight: '1.15rem' }],
@@ -69,7 +69,7 @@ export default {
         glow:  '0 0 0 4px rgba(164,73,50,0.10)',
         inset: 'inset 0 1px 2px rgba(41,37,36,0.06)',
       },
-            backgroundImage: {
+      backgroundImage: {
         'craft':   'linear-gradient(135deg, #E34A34 0%, #F59E0B 55%, #D55E3A 100%)',
         'royal':   'linear-gradient(135deg, #1E3ABA 0%, #3B4FD8 45%, #0D9488 100%)',
         'gold':    'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
@@ -84,6 +84,10 @@ export default {
         'shimmer':    { '100%': { transform: 'translateX(100%)' } },
         'breathe':    { '0%,100%': { transform: 'scale(1)', opacity: .85 }, '50%': { transform: 'scale(1.04)', opacity: 1 } },
         'pop':        { '0%': { transform: 'scale(.8)', opacity: 0 }, '60%': { transform: 'scale(1.06)' }, '100%': { transform: 'scale(1)', opacity: 1 } },
+        'slide-fwd':  { '0%': { opacity: 0, transform: 'translateX(22px)' },  '100%': { opacity: 1, transform: 'none' } },
+        'slide-back': { '0%': { opacity: 0, transform: 'translateX(-22px)' }, '100%': { opacity: 1, transform: 'none' } },
+        'burst':      { '0%': { transform: 'scale(0)', opacity: 1 }, '100%': { transform: 'scale(2.4)', opacity: 0 } },
+        'rise':       { '0%': { opacity: 0, transform: 'translateY(14px)' }, '100%': { opacity: 1, transform: 'none' } },
       },
       animation: {
         'fade-in':    'fade-in .35s ease-out both',
@@ -92,6 +96,10 @@ export default {
         'shimmer':    'shimmer 1.6s infinite',
         'breathe':    'breathe 2.6s ease-in-out infinite',
         'pop':        'pop .4s cubic-bezier(.34,1.56,.64,1) both',
+        'slide-fwd':  'slide-fwd .34s cubic-bezier(.22,1,.36,1) both',
+        'slide-back': 'slide-back .34s cubic-bezier(.22,1,.36,1) both',
+        'burst':      'burst .6s cubic-bezier(.22,1,.36,1) forwards',
+        'rise':       'rise .4s cubic-bezier(.22,1,.36,1) both',
       },
     },
   },

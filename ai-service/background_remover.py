@@ -3,7 +3,7 @@
 from functools import lru_cache
 from PIL import Image
 
-MODEL_NAME = "bria-rmbg"
+MODEL_NAME = "u2netp"
 _rembg_failed = False
 
 @lru_cache(maxsize=1)
@@ -28,8 +28,8 @@ def remove_background(image: Image.Image) -> Image.Image:
             return remove(
                 image,
                 session=session,
-                alpha_matting=False,
-                post_process_mask=True,
+                            alpha_matting=False,
+                post_process_mask=False,
             ).convert("RGBA")
         except Exception as e:
             print(f"[BG Remover] rembg processing error: {e}")

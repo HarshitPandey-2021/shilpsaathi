@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { RefreshCw, Inbox, Plus, X, Share2, Check } from 'lucide-react';
 import { useCraft } from '../context/CraftContext';
 import { api } from '../utils/api';
-
+import Sheet from '../components/ui/Sheet';
 export default function MyListingsScreen() {
   const { getArtisanId, startNewProduct, t, lang } = useCraft();
   const [products, setProducts] = useState([]);
@@ -125,16 +125,9 @@ export default function MyListingsScreen() {
           ))}
         </div>
       )}
-
-      {selected && (
-        <div
-          className="absolute inset-0 z-50 flex items-end bg-charcoal/50 backdrop-blur-sm animate-fade-in"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="max-h-[88%] w-full overflow-y-auto scrollbar-hide rounded-t-[2rem] bg-white pb-8 animate-fade-in-up"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Sheet open={Boolean(selected)} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
             <div className="relative">
               <img src={selected.image_url} alt="" className="h-60 w-full object-cover" />
               <button
@@ -205,9 +198,9 @@ export default function MyListingsScreen() {
                 {copied ? t.copied : t.shareWhatsapp}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Sheet>
     </div>
   );
 }
