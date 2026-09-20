@@ -1,0 +1,29 @@
+  name: Build AI Service
+
+on:
+  push:
+    branches: [feature/transform]
+    paths:
+      - 'ai-service/**'
+      - '.github/workflows/deploy-ai.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: shilpsaathiacr.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ai-service
+          push: true
+          tags: shilpsaathiacr.azurecr.io/ss-ai:latest
